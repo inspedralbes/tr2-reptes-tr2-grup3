@@ -1,16 +1,31 @@
-# transversals
-Esquema mínim de carpetes pels projectes transversals
+# Enginy - Sistema de Gestión de Talleres
 
-És obligatori seguir aquesta estructura tot i que la podeu ampliar.
+Proyecto full-stack para la gestión de talleres escolares.
 
-## Atenció
-Un cop comenceu heu de canviar aquesta explicació amb la corresponent al vostre projecte (utilitzant markdown)
+## Estructura del Proyecto
 
-# Aquest fitxer ha de contenir com a mínim:
- * Nom dels integrants
- * Nom del projecte
- * Petita descripció
- * Adreça del gestor de tasques (taiga, jira, trello...)
- * Adreça del prototip gràfic del projecte (Penpot, figma, moqups...)
- * URL de producció (quan la tingueu)
- * Estat: (explicació d'en quin punt està)
+- `/database` - Scripts SQL de inicialización
+- `/backend` - API Node.js + Express
+- `/frontend` - Aplicación React + Vite
+
+## Instalación
+
+### Backend
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Variables de Entorno
+
+Copiar los archivos `.env.example` a `.env` y configurar según sea necesario.
