@@ -1,14 +1,14 @@
-// NOTE: This is a lightweight placeholder implementation.
-// Replace with a real JWT library (e.g., jsonwebtoken) when wiring auth.
+const jwt = require('jsonwebtoken');
+
+const SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key-change-this';
+
 const signToken = (payload) => {
-  const encoded = Buffer.from(JSON.stringify({ ...payload, iat: Date.now() })).toString('base64url');
-  return encoded;
+  return jwt.sign(payload, SECRET_KEY, { expiresIn: '24h' });
 };
 
 const verifyToken = (token) => {
   try {
-    const decoded = Buffer.from(token, 'base64url').toString('utf-8');
-    return JSON.parse(decoded);
+    return jwt.verify(token, SECRET_KEY);
   } catch (error) {
     return null;
   }

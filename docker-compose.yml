@@ -23,6 +23,7 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
+      - JWT_SECRET=your-secret-key-change-in-production
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin123
       - POSTGRES_DB=enginy_db
@@ -45,7 +46,9 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=http://backend:3000/api
+    depends_on:
+      - backend
     networks:
       - enginy_network
 
