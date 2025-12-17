@@ -1,4 +1,5 @@
 const db = require('../../config/db');
+const sessionsService = require('../sessions/service');
 
 /**
  * GET /api/enrollment/periods
@@ -189,9 +190,19 @@ const publishPeriod = async (req, res) => {
       [id]
     );
 
+    // US #18: Generar automàticament les 10 sessions per a cada taller del període
+    let sessionsResult = null;
+    try {
+      sessionsResult = await sessionsService.generateSessionsForPeriod(id);
+    } catch (sessionError) {
+      console.error('Error generant sessions:', sessionError.message);
+      // No fem fail de la publicació, només loguem l'error
+    }
+
     res.json({ 
       message: 'Resultados publicados correctamente',
-      period: result.rows[0] 
+      period: result.rows[0],
+      sessions_generated: sessionsResult
     });
   } catch (error) {
     res.status(500).json({ error: `Failed to publish period: ${error.message}` });

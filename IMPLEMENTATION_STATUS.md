@@ -1,26 +1,46 @@
 # ENGINY - TAIGA IMPLEMENTATION STATUS
 
-## 📊 Overall Progress: **65% Complete**
+## 📊 Overall Progress: **95% Complete**
+
+---
+
+## 🌐 THREE-ZONE ARCHITECTURE
+
+La aplicación ahora tiene **3 zonas diferenciadas** según el rol del usuario:
+
+| Zona | Rol | URL Base | Diseño |
+|------|-----|----------|--------|
+| **ADMIN** | ADMIN | `/admin/*` | Desktop - DataGrids |
+| **CENTRO** | CENTER_COORD | `/center/*` | Responsive - Wizard/Forms |
+| **PROFESOR** | TEACHER | `/teacher/*` | Mobile First - Botones grandes |
+
+### Usuarios de prueba
+| Email | Password | Rol |
+|-------|----------|-----|
+| admin@enginy.cat | admin123 | ADMIN |
+| coord1@escola1.cat | admin123 | CENTER_COORD |
+| coord2@escola2.cat | admin123 | CENTER_COORD |
+| teacher@enginy.cat | admin123 | TEACHER |
 
 ---
 
 ## ✅ COMPLETED MODULES
 
 ### Module 1: Infrastructure (100%)
-- ✅ Docker Compose with 5 services (postgres, backend, frontend, adminer, network)
+- ✅ Docker Compose with 4 services (postgres, backend, frontend, adminer)
 - ✅ PostgreSQL 15 with complete normalized schema
-- ✅ Backend: Express.js + modular architecture (7 modules)
+- ✅ Backend: Express.js + modular architecture (10 modules)
 - ✅ Frontend: React 19 + Vite 5.4 + Tailwind CSS 4.1
 - ✅ Database seed data (users, schools, workshops, editions, periods)
 - ✅ Real JWT authentication with database validation
 
-### Module 2: Authentication & Users (90%)
+### Module 2: Authentication & Users (100%)
 - ✅ Real database login against `users` table
 - ✅ JWT generation and validation with Bearer token
 - ✅ User profile retrieval endpoint
-- ✅ Role-based access control (ADMIN, CENTER_COORD)
+- ✅ Role-based access control (ADMIN, CENTER_COORD, TEACHER)
 - ✅ Auth middleware protecting all routes
-- ⏳ User management endpoints (not critical path)
+- ✅ Login redirection based on role
 
 ### Module 3: Enrollment Periods (100%)
 - ✅ GET /api/enrollment/periods - List all with filters
@@ -28,9 +48,10 @@
 - ✅ POST /api/enrollment/periods - Create (ADMIN only)
 - ✅ PUT /api/enrollment/periods/:id - Update (ADMIN only)
 - ✅ DELETE /api/enrollment/periods/:id - Delete (ADMIN only)
+- ✅ PUT /api/enrollment/periods/:id/publish - Publish with session generation
 - ✅ Status validation (OPEN, PROCESSING, PUBLISHED, CLOSED)
 
-### Module 4: Catalog (90%)
+### Module 4: Catalog (100%)
 - ✅ GET /api/catalog/workshops - List with filters (?ambit=, ?is_new=)
 - ✅ GET /api/catalog/workshops/:id - Get with editions
 - ✅ POST /api/catalog/workshops - Create (ADMIN)
@@ -38,16 +59,18 @@
 - ✅ DELETE /api/catalog/workshops/:id - Delete (ADMIN)
 - ✅ Workshop editions with day_of_week, capacity, time
 - ✅ Filter by: ambit (Tecnologic, Artistic, Sustainability), is_new
+- ✅ Full CRUD for editions
 
-### Module 5: Requests (80%)
+### Module 5: Requests (100%)
 - ✅ POST /api/requests - Create with items + teacher preferences (transaction)
 - ✅ GET /api/requests/:id - Get request with all related data
 - ✅ GET /api/requests - List with filters (?period_id=, ?school_id=, ?status=)
+- ✅ PUT /api/requests/:id - Edit request (CENTER)
+- ✅ DELETE /api/requests/:id - Cancel request (CENTER)
 - ✅ Database transactions ensure atomicity
 - ✅ Validation: max 4 students per item, max 3 preferences
-- ⏳ Request status updates (need to implement)
 
-### Module 6: Allocation (95%)
+### Module 6: Allocation (100%)
 - ✅ GET /api/allocation/demand-summary - View all requests before allocation
 - ✅ POST /api/allocation/run - Execute intelligent algorithm (ADMIN)
 - ✅ GET /api/allocation - List all allocations with filters
@@ -57,8 +80,36 @@
   - Constraint 2: Max 4 students per center per workshop
   - Constraint 3: Max 16 students total per workshop
   - Constraint 4: Prioritize teacher referents
-- ✅ Transaction-based confirmation with student recording
-- ⏳ Publication of results (change status PROVISIONAL → PUBLISHED)
+
+### Module 7: Classroom (100%) - NEW
+- ✅ GET /api/classroom/sessions/:editionId - List sessions for edition
+- ✅ GET /api/classroom/students/:editionId - Get students for attendance
+- ✅ POST /api/classroom/attendance/:sessionId - Save attendance
+- ✅ GET /api/classroom/attendance/:sessionId - Get attendance
+- ✅ POST /api/classroom/evaluations/:editionId - Save evaluations
+- ✅ GET /api/classroom/evaluations/:editionId - Get evaluations
+
+### Module 8: Sessions (100%) - NEW (US #18)
+- ✅ GET /api/sessions/:editionId - List sessions for edition
+- ✅ POST /api/sessions/generate-period/:periodId - Generate sessions for all editions
+- ✅ PUT /api/sessions/:sessionId/cancel - Cancel a session
+- ✅ PUT /api/sessions/:sessionId/reactivate - Reactivate a session
+- ✅ Auto-generation: 10 consecutive Tuesdays/Thursdays from start date
+
+### Module 9: Teachers (100%) - NEW (US #17)
+- ✅ GET /api/teachers/my-workshops - Get workshops for current teacher
+- ✅ GET /api/teachers/candidates/:editionId - Get teacher candidates
+- ✅ GET /api/teachers/assigned/:editionId - Get assigned teachers
+- ✅ POST /api/teachers/assign - Assign teacher to workshop (max 2)
+- ✅ PUT /api/teachers/assign/:id - Update assignment
+- ✅ DELETE /api/teachers/assign/:id - Remove assignment
+
+### Module 10: Students (100%) - NEW (US #16)
+- ✅ GET /api/students - List all students
+- ✅ POST /api/students/:id/documents - Upload PDF documents (Multer)
+- ✅ GET /api/students/:id/documents - List student documents
+- ✅ PUT /api/students/documents/:id/verify - Admin verify document
+- ✅ Static file serving for /uploads/documents/
 
 ---
 
@@ -80,14 +131,49 @@
 
 ---
 
-## 📋 NOT STARTED
+## 📋 NOT STARTED / OPTIONAL
 
 ### Features Not Yet Implemented
-- ⏳ Publication endpoint: PUT /api/enrollment/periods/:id/publish
-- ⏳ Student record creation in allocation_students table
 - ⏳ Email notifications (optional, not in Taiga)
-- ⏳ Advanced filtering/sorting on frontend
 - ⏳ Export to CSV (optional)
+- ⏳ Rate limiting (security recommendation)
+
+---
+
+## 🏗️ FRONTEND PAGES IMPLEMENTED
+
+### 🔴 ZONA ADMIN (Desktop / DataGrid)
+| Página | Archivo | Estado |
+|--------|---------|--------|
+| Dashboard | `AdminDashboard.jsx` | ✅ Con estadísticas reales |
+| Períodos | `EnrollmentManager.jsx` | ✅ CRUD completo |
+| Catálogo | `CatalogManager.jsx` | ✅ CRUD + ediciones |
+| Detalle Taller | `WorkshopDetail.jsx` | ✅ Con referentes y sesiones |
+| Monitor Solicitudes | `RequestsMonitor.jsx` | ✅ Tabla con filtros |
+| Panel Asignación | `AllocationPanel.jsx` | ✅ Algoritmo + resultado |
+
+### 🟢 ZONA CENTRO (Responsive / Wizard)
+| Página | Archivo | Estado |
+|--------|---------|--------|
+| Dashboard | `CenterDashboard.jsx` | ✅ Alertas y acciones rápidas |
+| Catálogo Visual | `CatalogBrowser.jsx` | ✅ Grid con filtros |
+| Nueva Solicitud | `RequestWizard.jsx` | ✅ 4 pasos wizard |
+| Mis Solicitudes | `MyRequests.jsx` | ✅ Lista + editar/cancelar |
+| Mis Asignaciones | `MyAllocations.jsx` | ✅ Checklist alumnos |
+| Confirmación Nominal | `NominalConfirmation.jsx` | ✅ Añadir estudiantes |
+
+### 🔵 ZONA PROFESOR (Mobile First / Botones grandes)
+| Página | Archivo | Estado |
+|--------|---------|--------|
+| Mis Talleres | `TeacherDashboard.jsx` | ✅ Lista sesiones próximas |
+| Pasar Lista | `WorkshopAttendance.jsx` | ✅ Presente/Falta/Retraso |
+| Evaluar Alumnos | `WorkshopEvaluate.jsx` | ✅ Competencias 1-5 |
+
+### ⚠️ PÁGINAS DE ERROR
+| Página | Archivo | Estado |
+|--------|---------|--------|
+| 404 Not Found | `NotFound.jsx` | ✅ |
+| 403 Forbidden | `Forbidden.jsx` | ✅ Redirección por rol |
 
 ---
 

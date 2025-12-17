@@ -153,3 +153,34 @@ CREATE TABLE attendance_logs (
     observation TEXT,
     recorded_at TIMESTAMP DEFAULT NOW()
 );
+
+-- ==========================================
+-- ZONA 5: GESTIÓ DOCUMENTAL (CHECKLIST)
+-- ==========================================
+-- Taula per guardar els fitxers pujats (Autoritzacions, DNI, etc.)
+CREATE TYPE doc_type_enum AS ENUM ('AUTORITZACIO_IMATGE', 'AUTORITZACIO_SORTIDA', 'ALTRES');
+
+CREATE TABLE student_documents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    student_id UUID REFERENCES students(id) ON DELETE CASCADE,
+    document_type doc_type_enum NOT NULL,
+    file_url VARCHAR(500) NOT NULL, -- URL o Path on s'ha guardat el PDF
+    uploaded_at TIMESTAMP DEFAULT NOW(),
+    is_verified BOOLEAN DEFAULT FALSE -- L'admin pot verificar si el document és correcte
+);
+
+-- ==========================================
+-- ZONA 6: REFERENTS ASSIGNATS (PROFES)
+-- ==========================================
+-- Aquesta taula guarda QUI són els 2 profes que realment vigilaran el taller
+-- (Creua User-Professor amb WorkshopEdition)
+CREATE TABLE workshop_assigned_teachers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workshop_edition_id UUID REFERENCES workshop_editions(id) ON DELETE CASCADE,
+    teacher_user_id UUID REFERENCES users(id), -- El professor assignat
+    is_main_referent BOOLEAN DEFAULT TRUE, -- Si és el principal o suport
+    assigned_at TIMESTAMP DEFAULT NOW(),
+    
+    -- Constraint: Un profe no pot estar 2 cops al mateix taller
+    UNIQUE(workshop_edition_id, teacher_user_id) 
+);

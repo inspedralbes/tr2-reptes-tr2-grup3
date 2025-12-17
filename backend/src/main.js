@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const db = require('./config/db');
 
 const authRoutes = require('./modules/auth/routes');
@@ -9,11 +10,17 @@ const catalogRoutes = require('./modules/catalog/routes');
 const requestsRoutes = require('./modules/requests/routes');
 const allocationRoutes = require('./modules/allocation/routes');
 const classroomRoutes = require('./modules/classroom/routes');
+const studentsRoutes = require('./modules/students/routes');
+const teachersRoutes = require('./modules/teachers/routes');
+const sessionsRoutes = require('./modules/sessions/routes');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Servir fitxers estàtics (documents pujats)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Enginy Backend API' });
@@ -36,5 +43,8 @@ app.use('/api/catalog', catalogRoutes);
 app.use('/api/requests', requestsRoutes);
 app.use('/api/allocation', allocationRoutes);
 app.use('/api/classroom', classroomRoutes);
+app.use('/api/students', studentsRoutes);
+app.use('/api/teachers', teachersRoutes);
+app.use('/api/sessions', sessionsRoutes);
 
 module.exports = app;

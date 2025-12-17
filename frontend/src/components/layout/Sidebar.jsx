@@ -14,6 +14,7 @@ const Sidebar = () => {
   const { isAuthenticated, user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const isCenter = user?.role === 'CENTER_COORD';
+  const isTeacher = user?.role === 'TEACHER';
 
   return (
     <aside
@@ -31,29 +32,35 @@ const Sidebar = () => {
         </NavLink>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          {/* Opciones de ADMIN */}
+          {/* ==================== ZONA ADMIN ==================== */}
           {isAdmin && (
             <>
-              <span style={{ fontSize: "12px", color: "#6b7280" }}>Admin</span>
+              <span style={{ fontSize: "12px", color: "#6b7280", marginTop: "8px" }}>Admin</span>
               <NavLink to="/admin" style={linkStyle}>
                 📊 Dashboard
-              </NavLink>
-              <NavLink to="/admin/catalog" style={linkStyle}>
-                📚 Catálogo
-              </NavLink>
-              <NavLink to="/admin/allocation" style={linkStyle}>
-                🎯 Asignación
               </NavLink>
               <NavLink to="/admin/enrollment" style={linkStyle}>
                 📅 Períodos
               </NavLink>
+              <NavLink to="/admin/catalog" style={linkStyle}>
+                📚 Catálogo
+              </NavLink>
+              <NavLink to="/admin/requests" style={linkStyle}>
+                📋 Solicitudes
+              </NavLink>
+              <NavLink to="/admin/allocation" style={linkStyle}>
+                🎯 Asignación
+              </NavLink>
             </>
           )}
 
-          {/* Opciones de CENTRO */}
+          {/* ==================== ZONA CENTRO ==================== */}
           {isCenter && (
             <>
-              <span style={{ fontSize: "12px", color: "#6b7280" }}>Centro</span>
+              <span style={{ fontSize: "12px", color: "#6b7280", marginTop: "8px" }}>Centro</span>
+              <NavLink to="/center" style={linkStyle}>
+                🏫 Dashboard
+              </NavLink>
               <NavLink to="/center/catalog" style={linkStyle}>
                 🔍 Explorar Catálogo
               </NavLink>
@@ -65,6 +72,16 @@ const Sidebar = () => {
               </NavLink>
               <NavLink to="/center/allocations" style={linkStyle}>
                 📋 Mis Asignaciones
+              </NavLink>
+            </>
+          )}
+
+          {/* ==================== ZONA PROFESOR ==================== */}
+          {isTeacher && (
+            <>
+              <span style={{ fontSize: "12px", color: "#6b7280", marginTop: "8px" }}>Profesor</span>
+              <NavLink to="/teacher" style={linkStyle}>
+                🎓 Mis Talleres
               </NavLink>
             </>
           )}

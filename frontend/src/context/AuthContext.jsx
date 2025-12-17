@@ -44,6 +44,8 @@ export const AuthProvider = ({ children }) => {
       setToken(newToken);
       localStorage.setItem(TOKEN_KEY, newToken);
       localStorage.setItem(USER_KEY, JSON.stringify(loggedUser));
+      // Devolver el resultado para que Login.jsx pueda usar el rol
+      return { user: loggedUser, token: newToken };
     } finally {
       setLoading(false);
     }
