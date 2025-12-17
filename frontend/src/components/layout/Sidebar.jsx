@@ -11,7 +11,9 @@ const linkStyle = ({ isActive }) => ({
 });
 
 const Sidebar = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+  const isCenter = user?.role === 'CENTER_COORD';
 
   return (
     <aside
@@ -29,27 +31,37 @@ const Sidebar = () => {
         </NavLink>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ fontSize: "12px", color: "#6b7280" }}>Admin</span>
-          <NavLink to="/admin" style={linkStyle}>
-            Dashboard
-          </NavLink>
-          <NavLink to="/admin/catalog" style={linkStyle}>
-            Catálogo
-          </NavLink>
-          <NavLink to="/admin/allocation" style={linkStyle}>
-            Asignación
-          </NavLink>
+          {/* Opciones de ADMIN */}
+          {isAdmin && (
+            <>
+              <span style={{ fontSize: "12px", color: "#6b7280" }}>Admin</span>
+              <NavLink to="/admin" style={linkStyle}>
+                📊 Dashboard
+              </NavLink>
+              <NavLink to="/admin/catalog" style={linkStyle}>
+                📚 Catálogo
+              </NavLink>
+              <NavLink to="/admin/allocation" style={linkStyle}>
+                🎯 Asignación
+              </NavLink>
+            </>
+          )}
 
-          <span style={{ fontSize: "12px", color: "#6b7280", marginTop: "10px" }}>Centro</span>
-          <NavLink to="/center/catalog" style={linkStyle}>
-            Catálogo
-          </NavLink>
-          <NavLink to="/center/request" style={linkStyle}>
-            Solicitud
-          </NavLink>
-          <NavLink to="/center/allocations" style={linkStyle}>
-            Mis asignaciones
-          </NavLink>
+          {/* Opciones de CENTRO */}
+          {isCenter && (
+            <>
+              <span style={{ fontSize: "12px", color: "#6b7280" }}>Centro</span>
+              <NavLink to="/center/catalog" style={linkStyle}>
+                🔍 Explorar Catálogo
+              </NavLink>
+              <NavLink to="/center/request" style={linkStyle}>
+                📝 Nueva Solicitud
+              </NavLink>
+              <NavLink to="/center/allocations" style={linkStyle}>
+                📋 Mis Asignaciones
+              </NavLink>
+            </>
+          )}
         </div>
       )}
     </aside>

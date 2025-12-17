@@ -3,9 +3,16 @@ import { getProfile, login as loginApi, logout as logoutApi } from "../api/auth.
 
 const AuthContext = createContext(null);
 
+// Clave consistente para localStorage
+const TOKEN_KEY = "enginy_token";
+const USER_KEY = "enginy_user";
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem("enginy:token"));
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem(USER_KEY);
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -15,10 +22,13 @@ export const AuthProvider = ({ children }) => {
       try {
         const profile = await getProfile(token);
         setUser(profile);
+        localStorage.setItem(USER_KEY, JSON.stringify(profile));
       } catch (error) {
         console.error("Failed to restore session", error);
         setToken(null);
-        localStorage.removeItem("enginy:token");
+        setUser(null);
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
       } finally {
         setLoading(false);
       }
@@ -32,7 +42,8 @@ export const AuthProvider = ({ children }) => {
       const { user: loggedUser, token: newToken } = await loginApi(email, password);
       setUser(loggedUser);
       setToken(newToken);
-      localStorage.setItem("enginy:token", newToken);
+      localStorage.setItem(TOKEN_KEY, newToken);
+      localStorage.setItem(USER_KEY, JSON.stringify(loggedUser));
     } finally {
       setLoading(false);
     }
@@ -42,7 +53,8 @@ export const AuthProvider = ({ children }) => {
     logoutApi();
     setUser(null);
     setToken(null);
-    localStorage.removeItem("enginy:token");
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
   };
 
   const value = useMemo(
@@ -58,3 +70,5 @@ export const useAuth = () => {
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 };
+
+export { AuthContext };

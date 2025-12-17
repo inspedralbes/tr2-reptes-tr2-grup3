@@ -45,7 +45,8 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://backend:3000/api
+      # Para desarrollo local, usar localhost (el navegador no puede resolver 'backend')
+      - VITE_API_URL=http://localhost:3000/api
     depends_on:
       - backend
     networks:
