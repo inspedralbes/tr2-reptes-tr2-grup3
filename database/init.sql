@@ -52,6 +52,11 @@ CREATE TABLE students (
     idalu VARCHAR(50), -- Nullable al principio, se llena al confirmar
     full_name VARCHAR(255) NOT NULL,
     school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+    -- US #15: Dades del tutor acadèmic per a gestió d'assistència i avisos
+    tutor_email VARCHAR(255),      -- Email del tutor per notificacions d'absència
+    tutor_phone VARCHAR(50),       -- Telèfon del tutor
+    birth_date DATE,               -- Data de naixement de l'alumne
+    course VARCHAR(100),           -- Curs de l'alumne (ex: "4t ESO")
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -184,3 +189,100 @@ CREATE TABLE workshop_assigned_teachers (
     -- Constraint: Un profe no pot estar 2 cops al mateix taller
     UNIQUE(workshop_edition_id, teacher_user_id) 
 );
+
+-- ==========================================
+-- ZONA 7: AVALUACIÓ DE COMPETÈNCIES (US #19)
+-- ==========================================
+-- Taula per guardar les puntuacions de competències dels alumnes
+CREATE TABLE student_grades (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    student_id UUID REFERENCES students(id) ON DELETE CASCADE,
+    workshop_edition_id UUID REFERENCES workshop_editions(id) ON DELETE CASCADE,
+    
+    -- Competències Tècniques (puntuació 1-5)
+    tech_knowledge INT CHECK (tech_knowledge >= 1 AND tech_knowledge <= 5),
+    tech_skills INT CHECK (tech_skills >= 1 AND tech_skills <= 5),
+    tech_problem_solving INT CHECK (tech_problem_solving >= 1 AND tech_problem_solving <= 5),
+    
+    -- Competències Transversals (puntuació 1-5)
+    teamwork INT CHECK (teamwork >= 1 AND teamwork <= 5),
+    communication INT CHECK (communication >= 1 AND communication <= 5),
+    responsibility INT CHECK (responsibility >= 1 AND responsibility <= 5),
+    creativity INT CHECK (creativity >= 1 AND creativity <= 5),
+    
+    -- Comentaris del professor
+    comments TEXT,
+    
+    -- Metadades
+    evaluated_by UUID REFERENCES users(id), -- Professor que ha avaluat
+    evaluated_at TIMESTAMP DEFAULT NOW(),
+    
+    -- Constraint: Un alumne només pot tenir una avaluació per edició de taller
+    UNIQUE(student_id, workshop_edition_id)
+);
+
+-- ==========================================
+-- ZONA 8: ENQUESTES DE SATISFACCIÓ (US #20)
+-- ==========================================
+-- Definició d'enquestes
+CREATE TYPE survey_type_enum AS ENUM ('STUDENT', 'TEACHER', 'CENTER');
+CREATE TYPE survey_status_enum AS ENUM ('DRAFT', 'ACTIVE', 'CLOSED');
+CREATE TYPE question_type_enum AS ENUM ('RATING', 'TEXT', 'MULTIPLE_CHOICE', 'YES_NO');
+
+CREATE TABLE surveys (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    survey_type survey_type_enum NOT NULL,     -- A qui va dirigida
+    enrollment_period_id UUID REFERENCES enrollment_periods(id),
+    status survey_status_enum DEFAULT 'DRAFT',
+    send_date DATE,                            -- Quan s'ha d'enviar automàticament
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE survey_questions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    survey_id UUID REFERENCES surveys(id) ON DELETE CASCADE,
+    question_text TEXT NOT NULL,
+    question_type question_type_enum NOT NULL,
+    options JSONB,                             -- Per múltiple choice: ["Opció 1", "Opció 2"]
+    is_required BOOLEAN DEFAULT TRUE,
+    order_index INT NOT NULL,                  -- Ordre de les preguntes
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE survey_responses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    survey_id UUID REFERENCES surveys(id) ON DELETE CASCADE,
+    question_id UUID REFERENCES survey_questions(id) ON DELETE CASCADE,
+    respondent_user_id UUID REFERENCES users(id), -- Qui respon (pot ser NULL si és anònim)
+    respondent_student_id UUID REFERENCES students(id), -- Si és un alumne
+    workshop_edition_id UUID REFERENCES workshop_editions(id), -- Sobre quin taller opina
+    
+    -- Resposta (només un d'aquests camps tindrà valor segons el tipus)
+    rating_value INT CHECK (rating_value >= 1 AND rating_value <= 5),
+    text_value TEXT,
+    choice_value VARCHAR(255),
+    boolean_value BOOLEAN,
+    
+    submitted_at TIMESTAMP DEFAULT NOW(),
+    
+    -- Evitar respostes duplicades
+    UNIQUE(survey_id, question_id, respondent_user_id, respondent_student_id, workshop_edition_id)
+);
+
+-- ==========================================
+-- ÍNDEXS PER MILLORAR RENDIMENT
+-- ==========================================
+CREATE INDEX idx_students_school ON students(school_id);
+CREATE INDEX idx_students_tutor_email ON students(tutor_email);
+CREATE INDEX idx_allocations_edition ON allocations(workshop_edition_id);
+CREATE INDEX idx_allocations_school ON allocations(school_id);
+CREATE INDEX idx_attendance_session ON attendance_logs(session_id);
+CREATE INDEX idx_attendance_student ON attendance_logs(student_id);
+CREATE INDEX idx_workshop_sessions_edition ON workshop_sessions(workshop_edition_id);
+CREATE INDEX idx_student_grades_student ON student_grades(student_id);
+CREATE INDEX idx_student_grades_edition ON student_grades(workshop_edition_id);
+CREATE INDEX idx_survey_responses_survey ON survey_responses(survey_id);
+CREATE INDEX idx_requests_period ON requests(enrollment_period_id);
+CREATE INDEX idx_requests_school ON requests(school_id);
