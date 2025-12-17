@@ -13,6 +13,45 @@ services:
     volumes:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - enginy_network
+
+  backend:
+    build: ./backend
+    container_name: enginy_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin123
+      - POSTGRES_DB=enginy_db
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - enginy_network
+
+  frontend:
+    build: ./frontend
+    container_name: enginy_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    networks:
+      - enginy_network
 
 volumes:
   postgres_data:
+
+networks:
+  enginy_network:
+    driver: bridge
