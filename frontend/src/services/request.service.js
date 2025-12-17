@@ -23,6 +23,11 @@ export const requestService = {
     return data;
   },
 
+  async cancelRequest(id) {
+    const { data } = await api.delete(`/requests/${id}`);
+    return data;
+  },
+
   async updateStatus(id, status) {
     const { data } = await api.patch(`/requests/${id}/status`, { status });
     return data;

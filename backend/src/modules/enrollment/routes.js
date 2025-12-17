@@ -5,6 +5,7 @@ const {
   createPeriod,
   updatePeriod,
   deletePeriod,
+  publishPeriod,
 } = require('./controller');
 const { authenticate } = require('../../common/middleware/authMiddleware');
 
@@ -25,5 +26,8 @@ router.put('/periods/:id', authenticate, updatePeriod);
 
 // DELETE - Eliminar período (solo ADMIN)
 router.delete('/periods/:id', authenticate, deletePeriod);
+
+// PUT - Publicar resultados de un período (solo ADMIN)
+router.put('/periods/:id/publish', authenticate, publishPeriod);
 
 module.exports = router;

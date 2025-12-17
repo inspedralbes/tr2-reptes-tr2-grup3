@@ -6,9 +6,11 @@ import Login from "./pages/auth/Login.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import CatalogManager from "./pages/admin/CatalogManager.jsx";
 import AllocationPanel from "./pages/admin/AllocationPanel.jsx";
+import EnrollmentManager from "./pages/admin/EnrollmentManager.jsx";
 import CatalogBrowser from "./pages/center/CatalogBrowser.jsx";
 import RequestWizard from "./pages/center/RequestWizard.jsx";
 import MyAllocations from "./pages/center/MyAllocations.jsx";
+import MyRequests from "./pages/center/MyRequests.jsx";
 
 function App() {
   return (
@@ -44,6 +46,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/enrollment"
+              element={
+                <ProtectedRoute>
+                  <EnrollmentManager />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/center/catalog"
@@ -66,6 +76,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MyAllocations />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/center/requests"
+              element={
+                <ProtectedRoute>
+                  <MyRequests />
                 </ProtectedRoute>
               }
             />

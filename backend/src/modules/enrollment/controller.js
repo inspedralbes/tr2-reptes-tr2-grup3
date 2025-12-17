@@ -151,10 +151,58 @@ const deletePeriod = async (req, res) => {
   }
 };
 
+/**
+ * PUT /api/enrollment/periods/:id/publish
+ * Publica los resultados de un período (solo ADMIN)
+ * Cambia el estado a PUBLISHED y los centros pueden ver sus asignaciones
+ */
+const publishPeriod = async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Only admins can publish periods' });
+  }
+
+  const { id } = req.params;
+
+  try {
+    // Verificar que el período existe y está en estado PROCESSING
+    const check = await db.query(
+      'SELECT id, status FROM enrollment_periods WHERE id = $1',
+      [id]
+    );
+
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: 'Period not found' });
+    }
+
+    if (check.rows[0].status !== 'PROCESSING') {
+      return res.status(400).json({ 
+        error: 'Solo se pueden publicar períodos en estado PROCESSING' 
+      });
+    }
+
+    // Actualizar estado a PUBLISHED y establecer fecha de publicación
+    const result = await db.query(
+      `UPDATE enrollment_periods 
+       SET status = 'PUBLISHED', publication_date = NOW()
+       WHERE id = $1
+       RETURNING id, name, start_date_requests, end_date_requests, publication_date, status`,
+      [id]
+    );
+
+    res.json({ 
+      message: 'Resultados publicados correctamente',
+      period: result.rows[0] 
+    });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to publish period: ${error.message}` });
+  }
+};
+
 module.exports = {
   listEnrollmentPeriods,
   getPeriodById,
   createPeriod,
   updatePeriod,
   deletePeriod,
+  publishPeriod,
 };

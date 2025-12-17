@@ -44,6 +44,9 @@ const Sidebar = () => {
               <NavLink to="/admin/allocation" style={linkStyle}>
                 🎯 Asignación
               </NavLink>
+              <NavLink to="/admin/enrollment" style={linkStyle}>
+                📅 Períodos
+              </NavLink>
             </>
           )}
 
@@ -56,6 +59,9 @@ const Sidebar = () => {
               </NavLink>
               <NavLink to="/center/request" style={linkStyle}>
                 📝 Nueva Solicitud
+              </NavLink>
+              <NavLink to="/center/requests" style={linkStyle}>
+                📄 Mis Solicitudes
               </NavLink>
               <NavLink to="/center/allocations" style={linkStyle}>
                 📋 Mis Asignaciones
