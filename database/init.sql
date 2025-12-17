@@ -82,8 +82,8 @@ CREATE TABLE workshop_editions (
     day_of_week day_of_week_enum NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    [cite_start]capacity_total INT DEFAULT 16, -- [cite: 216]
-    [cite_start]max_per_school INT DEFAULT 4   -- [cite: 217]
+    capacity_total INT DEFAULT 16,
+    max_per_school INT DEFAULT 4
 );
 
 -- ==========================================
@@ -108,7 +108,7 @@ CREATE TABLE request_items (
     request_id UUID REFERENCES requests(id) ON DELETE CASCADE,
     workshop_edition_id UUID REFERENCES workshop_editions(id),
     priority INT NOT NULL, 
-    [cite_start]requested_students INT NOT NULL CHECK (requested_students <= 4) -- [cite: 217]
+    requested_students INT NOT NULL CHECK (requested_students <= 4)
 );
 
 -- Nueva tabla para "Voldríem ser referents del projecte"
