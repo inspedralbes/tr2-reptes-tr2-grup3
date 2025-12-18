@@ -1,11 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #005392;
+  --color-secondary: #F2F2F2;
+  --font-sans: "Open Sans", Arial, Helvetica, sans-serif;
+}
 
 * {
   @apply transition-colors;
 }
 
 body {
-  @apply bg-gray-100 text-gray-900;
+  @apply bg-secondary text-gray-900 font-sans;
 }

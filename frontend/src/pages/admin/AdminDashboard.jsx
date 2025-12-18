@@ -11,7 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  
+
   const [stats, setStats] = useState({
     activePeriod: null,
     totalWorkshops: 0,
@@ -197,7 +197,7 @@ const AdminDashboard = () => {
                 El período está en proceso. Ejecuta el algoritmo de asignación y publica los resultados.
               </p>
             </div>
-            <button 
+            <button
               onClick={() => navigate("/admin/allocation")}
               className="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600"
             >

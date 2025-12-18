@@ -3,30 +3,12 @@
  * Props: children, onClick, type, variant, disabled, className
  */
 const Button = ({ children, onClick, type = "button", variant = "primary", disabled = false, className = "" }) => {
-  const baseStyles = {
-    padding: "10px 14px",
-    borderRadius: "8px",
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.5 : 1,
-    transition: "all 0.2s",
-  };
+  const baseStyles = "px-5 py-2.5 rounded-[4px] font-semibold text-base transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
   const variants = {
-    primary: {
-      background: "#2563eb",
-      color: "white",
-      border: "none",
-    },
-    secondary: {
-      background: "white",
-      color: "#111",
-      border: "1px solid #e5e7eb",
-    },
-    danger: {
-      background: "#dc2626",
-      color: "white",
-      border: "none",
-    },
+    primary: "bg-primary text-white hover:bg-[#004275] focus:ring-primary border border-transparent shadow-none",
+    secondary: "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 focus:ring-gray-500 shadow-none",
+    danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 border border-transparent shadow-none",
   };
 
   return (
@@ -34,11 +16,7 @@ const Button = ({ children, onClick, type = "button", variant = "primary", disab
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={className}
-      style={{
-        ...baseStyles,
-        ...variants[variant],
-      }}
+      className={`${baseStyles} ${variants[variant]} ${className}`}
     >
       {children}
     </button>
