@@ -10,22 +10,38 @@ const listWorkshops = async (req, res) => {
   const { ambit, is_new } = req.query;
 
   try {
-    let query = 'SELECT id, title, ambit, is_new, description, provider_id FROM workshops WHERE 1=1';
+    let query = `
+      SELECT w.id, w.title, w.ambit, w.is_new, w.description, w.provider_id,
+             COALESCE(
+               JSON_AGG(
+                 JSON_BUILD_OBJECT(
+                   'id', we.id,
+                   'day_of_week', we.day_of_week,
+                   'start_time', we.start_time,
+                   'end_time', we.end_time
+                 ) ORDER BY we.day_of_week, we.start_time
+               ) FILTER (WHERE we.id IS NOT NULL),
+               '[]'
+             ) as editions
+      FROM workshops w
+      LEFT JOIN workshop_editions we ON w.id = we.workshop_id
+      WHERE 1=1
+    `;
     const params = [];
 
     // Filtro por ámbito
     if (ambit) {
       params.push(ambit);
-      query += ` AND ambit = $${params.length}`;
+      query += ` AND w.ambit = $${params.length}`;
     }
 
     // Filtro por si es nuevo
     if (is_new !== undefined) {
       params.push(is_new === 'true');
-      query += ` AND is_new = $${params.length}`;
+      query += ` AND w.is_new = $${params.length}`;
     }
 
-    query += ' ORDER BY title';
+    query += ' GROUP BY w.id ORDER BY w.title';
     const result = await db.query(query, params);
     res.json(result.rows);
   } catch (error) {

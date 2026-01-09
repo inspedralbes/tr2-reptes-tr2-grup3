@@ -31,11 +31,11 @@ import WorkshopEvaluate from "./pages/teacher/WorkshopEvaluate.jsx";
 
 function App() {
   return (
-    <div className="app-shell" style={{ display: "flex", minHeight: "100vh" }}>
-      <Sidebar />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <Navbar />
-        <main style={{ padding: "24px" }}>
+    <div className="app-shell min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex flex-1">
+        <Sidebar />
+        <main className="flex-1 p-6 bg-gray-50/30">
           <Routes>
             <Route path="/login" element={<Login />} />
 
@@ -169,8 +169,9 @@ function App() {
 
             {/* ==================== ERRORES Y FALLBACK ==================== */}
             <Route path="/forbidden" element={<Forbidden />} />
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<NotFound />} />
+            {/* ==================== ERRORES Y FALLBACK ==================== */}
+            <Route path="/forbidden" element={<Forbidden />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </main>
       </div>

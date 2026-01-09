@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Plus, Edit, Trash2, Filter } from "lucide-react";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
+import Modal from "../../components/common/Modal.jsx";
 import { listWorkshops, createWorkshop, updateWorkshop, deleteWorkshop } from "../../api/catalog.js";
 
 /**
@@ -11,7 +13,7 @@ const CatalogManager = () => {
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingWorkshop, setEditingWorkshop] = useState(null);
   const [filterAmbit, setFilterAmbit] = useState('');
 
@@ -51,7 +53,7 @@ const CatalogManager = () => {
       } else {
         await createWorkshop(formData);
       }
-      setShowForm(false);
+      setShowModal(false);
       setEditingWorkshop(null);
       setFormData({ title: '', ambit: '', is_new: false, description: '' });
       loadWorkshops();
@@ -69,7 +71,14 @@ const CatalogManager = () => {
       is_new: workshop.is_new,
       description: workshop.description || '',
     });
-    setShowForm(true);
+    setShowModal(true);
+  };
+
+  // Manejar creación
+  const handleCreate = () => {
+    setEditingWorkshop(null);
+    setFormData({ title: '', ambit: '', is_new: false, description: '' });
+    setShowModal(true);
   };
 
   // Manejar eliminación
@@ -90,139 +99,163 @@ const CatalogManager = () => {
     <div className="space-y-4">
       <Card title="Gestión del Catálogo de Talleres">
         {/* Barra de acciones */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex gap-2 items-center">
-            <label className="text-sm font-medium">Filtrar por ámbito:</label>
-            <select 
-              value={filterAmbit} 
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex gap-2 items-center bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+            <Filter size={18} className="text-gray-500" />
+            <select
+              value={filterAmbit}
               onChange={(e) => setFilterAmbit(e.target.value)}
-              className="border rounded px-2 py-1"
+              className="bg-transparent border-none text-sm focus:ring-0 cursor-pointer"
             >
-              <option value="">Todos</option>
+              <option value="">Todos los ámbitos</option>
               {ambits.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
-          <Button onClick={() => { setShowForm(true); setEditingWorkshop(null); }}>
-            + Nuevo Taller
+          <Button onClick={handleCreate}>
+            <div className="flex items-center gap-2">
+              <Plus size={18} /> Nuevo Taller
+            </div>
           </Button>
         </div>
 
         {/* Mensajes de error */}
         {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        {/* Formulario de creación/edición */}
-        {showForm && (
-          <div className="bg-gray-50 p-4 rounded mb-4 border">
-            <h3 className="font-semibold mb-3">
-              {editingWorkshop ? 'Editar Taller' : 'Nuevo Taller'}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Título *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Ámbito *</label>
-                <select
-                  value={formData.ambit}
-                  onChange={(e) => setFormData({...formData, ambit: e.target.value})}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                >
-                  <option value="">Seleccionar...</option>
-                  {ambits.map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Descripción</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full border rounded px-3 py-2"
-                  rows={3}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="is_new"
-                  checked={formData.is_new}
-                  onChange={(e) => setFormData({...formData, is_new: e.target.checked})}
-                />
-                <label htmlFor="is_new" className="text-sm">Es nuevo este año</label>
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit">Guardar</Button>
-                <Button type="button" variant="secondary" onClick={() => {
-                  setShowForm(false);
-                  setEditingWorkshop(null);
-                }}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+          <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 mb-4 flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">×</button>
           </div>
         )}
 
         {/* Tabla de talleres */}
         {loading ? (
-          <p className="text-center py-4">Cargando...</p>
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
         ) : (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="text-left border-b-2 border-gray-200">
-                <th className="py-2 px-2">Título</th>
-                <th className="py-2 px-2">Ámbito</th>
-                <th className="py-2 px-2">Nuevo</th>
-                <th className="py-2 px-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {workshops.map((w) => (
-                <tr key={w.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-2 px-2 font-medium">{w.title}</td>
-                  <td className="py-2 px-2">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                      {w.ambit}
-                    </span>
-                  </td>
-                  <td className="py-2 px-2">
-                    {w.is_new && <span className="text-green-600">✓ Sí</span>}
-                  </td>
-                  <td className="py-2 px-2">
-                    <button 
-                      onClick={() => handleEdit(w)}
-                      className="text-blue-600 hover:underline mr-3"
-                    >
-                      Editar
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(w.id)}
-                      className="text-red-600 hover:underline"
-                    >
-                      Eliminar
-                    </button>
-                  </td>
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full border-collapse bg-white text-left text-sm text-gray-500">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 font-medium text-gray-900">Título</th>
+                  <th className="px-6 py-4 font-medium text-gray-900">Ámbito</th>
+                  <th className="px-6 py-4 font-medium text-gray-900">Estado</th>
+                  <th className="px-6 py-4 font-medium text-gray-900 text-right">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 border-t border-gray-100">
+                {workshops.map((w) => (
+                  <tr key={w.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">{w.title}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600">
+                        {w.ambit}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {w.is_new ? (
+                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 border border-green-200">
+                          Nuevo
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 flex justify-end gap-3">
+                      <button
+                        onClick={() => handleEdit(w)}
+                        className="text-gray-400 hover:text-blue-600 transition-colors"
+                        title="Editar"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(w.id)}
+                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
-        <p className="text-sm text-gray-500 mt-4">
+        {!loading && workshops.length === 0 && (
+          <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            No hay talleres creados todavía.
+          </div>
+        )}
+
+        <p className="text-sm text-gray-500 mt-4 text-right">
           Total: {workshops.length} talleres
         </p>
       </Card>
+
+      {/* Modal de Creación/Edición */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingWorkshop ? 'Editar Taller' : 'Nuevo Taller'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="workshop-form">
+              Guardar
+            </Button>
+          </>
+        }
+      >
+        <form id="workshop-form" onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden transition-all"
+              required
+              placeholder="Introducción a la Robótica"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ámbito *</label>
+            <select
+              value={formData.ambit}
+              onChange={(e) => setFormData({ ...formData, ambit: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden bg-white"
+              required
+            >
+              <option value="">Seleccionar...</option>
+              {ambits.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              rows={4}
+              placeholder="Breve descripción del taller..."
+            />
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="is_new"
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+              checked={formData.is_new}
+              onChange={(e) => setFormData({ ...formData, is_new: e.target.checked })}
+            />
+            <label htmlFor="is_new" className="text-sm text-gray-700 select-none">Es un taller nuevo este año</label>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

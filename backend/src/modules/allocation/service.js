@@ -16,16 +16,14 @@ const runAllocationAlgorithm = async (periodId) => {
   try {
     await client.query('BEGIN');
 
-    // 1. Obtener todas las solicitudes para este período
+    // 1. Obtener todas las solicitudes para este período, ordenadas por prioridad y fecha de envío
     const requests = await client.query(
-      `SELECT r.id, r.school_id, r.available_for_tuesdays,
-              ri.workshop_edition_id, ri.requested_students, ri.priority,
-              rtp.workshop_edition_id as pref_workshop_id
+      `SELECT r.id, r.school_id, r.available_for_tuesdays, r.submitted_at,
+              ri.workshop_edition_id, ri.requested_students, ri.priority
        FROM requests r
-       LEFT JOIN request_items ri ON r.id = ri.request_id
-       LEFT JOIN request_teacher_preferences rtp ON r.id = rtp.request_id
+       JOIN request_items ri ON r.id = ri.request_id
        WHERE r.enrollment_period_id = $1 AND r.status = 'SUBMITTED'
-       ORDER BY r.id, ri.priority`,
+       ORDER BY ri.priority ASC, r.submitted_at ASC`,
       [periodId]
     );
 

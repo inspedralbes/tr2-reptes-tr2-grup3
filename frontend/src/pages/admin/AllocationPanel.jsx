@@ -1,11 +1,20 @@
 import { useEffect, useState } from "react";
+import {
+  Play,
+  BarChart,
+  CheckCircle,
+  Calendar,
+  AlertCircle,
+  Users,
+  Clock
+} from "lucide-react";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
-import { 
-  listEnrollmentPeriods, 
-  getDemandSummary, 
-  runAllocation, 
-  listAllocations 
+import {
+  listEnrollmentPeriods,
+  getDemandSummary,
+  runAllocation,
+  listAllocations
 } from "../../api/requests.js";
 
 /**
@@ -69,14 +78,14 @@ const AllocationPanel = () => {
     if (!window.confirm('¿Ejecutar el algoritmo de asignación? Esto procesará todas las solicitudes pendientes.')) {
       return;
     }
-    
+
     try {
       setLoading(true);
       setMessage(null);
       const result = await runAllocation(selectedPeriod);
-      setMessage({ 
-        type: 'success', 
-        text: `Asignación completada: ${result.allocations_created || 0} asignaciones creadas` 
+      setMessage({
+        type: 'success',
+        text: `Asignación completada: ${result.allocations_created || 0} asignaciones creadas`
       });
       loadAllocations();
     } catch (err) {
@@ -102,15 +111,17 @@ const AllocationPanel = () => {
   }, {});
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Card title="Panel de Asignación Automática">
         {/* Selector de período */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Período de inscripción:</label>
+        <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <Calendar size={18} /> Período de inscripción:
+          </label>
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="border rounded px-3 py-2 w-full max-w-md"
+            className="border-gray-300 rounded-lg px-3 py-2 w-full max-w-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
           >
             {periods.map(p => (
               <option key={p.id} value={p.id}>
@@ -122,103 +133,135 @@ const AllocationPanel = () => {
 
         {/* Mensajes */}
         {message && (
-          <div className={`p-3 rounded mb-4 ${
-            message.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-          }`}>
-            {message.text}
+          <div className={`p-4 rounded-lg mb-6 flex items-center gap-3 ${message.type === 'error'
+              ? 'bg-red-50 text-red-800 border border-red-200'
+              : 'bg-green-50 text-green-800 border border-green-200'
+            }`}>
+            {message.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
+            <span className="font-medium">{message.text}</span>
           </div>
         )}
 
         {/* Tabs */}
-        <div className="border-b mb-4">
+        <div className="flex border-b border-gray-200 mb-6">
           <button
-            className={`px-4 py-2 ${activeTab === 'demand' ? 'border-b-2 border-blue-500 font-semibold' : ''}`}
+            className={`px-6 py-3 flex items-center gap-2 font-medium transition-all ${activeTab === 'demand'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+              }`}
             onClick={() => setActiveTab('demand')}
           >
-            📊 Demanda ({demandSummary.length})
+            <BarChart size={18} /> Demanda <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs ml-1">{demandSummary.length}</span>
           </button>
           <button
-            className={`px-4 py-2 ${activeTab === 'results' ? 'border-b-2 border-blue-500 font-semibold' : ''}`}
+            className={`px-6 py-3 flex items-center gap-2 font-medium transition-all ${activeTab === 'results'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+              }`}
             onClick={() => setActiveTab('results')}
           >
-            ✅ Asignaciones ({allocations.length})
+            <CheckCircle size={18} /> Asignaciones <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs ml-1">{allocations.length}</span>
           </button>
         </div>
 
         {/* Tab: Demanda */}
         {activeTab === 'demand' && (
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold">Resumen de Demanda</h3>
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-gray-800">Resumen de Demanda</h3>
               <Button onClick={handleRunAllocation} disabled={loading}>
-                {loading ? 'Ejecutando...' : '🚀 Ejecutar Asignación'}
+                <div className="flex items-center gap-2">
+                  <Play size={18} fill="currentColor" />
+                  {loading ? 'Ejecutando...' : 'Ejecutar Asignación'}
+                </div>
               </Button>
             </div>
 
             {demandSummary.length === 0 ? (
-              <p className="text-gray-500 py-4">No hay solicitudes pendientes para este período.</p>
+              <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                <p className="text-gray-500">No hay solicitudes pendientes para este período.</p>
+              </div>
             ) : (
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="text-left border-b-2 border-gray-200">
-                    <th className="py-2 px-2">Centro</th>
-                    <th className="py-2 px-2">Taller</th>
-                    <th className="py-2 px-2">Día</th>
-                    <th className="py-2 px-2">Alumnos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {demandSummary.map((item, idx) => (
-                    <tr key={idx} className="border-b border-gray-100">
-                      <td className="py-2 px-2">{item.school_name}</td>
-                      <td className="py-2 px-2">{item.workshop_title}</td>
-                      <td className="py-2 px-2">
-                        <span className={`px-2 py-1 rounded text-sm ${
-                          item.day_of_week === 'TUESDAY' ? 'bg-blue-100' : 'bg-purple-100'
-                        }`}>
-                          {item.day_of_week === 'TUESDAY' ? 'Martes' : 'Jueves'}
-                        </span>
-                      </td>
-                      <td className="py-2 px-2 font-semibold">{item.total_requested}</td>
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="w-full border-collapse bg-white">
+                  <thead className="bg-gray-50">
+                    <tr className="text-left">
+                      <th className="py-3 px-4 font-medium text-gray-600">Centro</th>
+                      <th className="py-3 px-4 font-medium text-gray-600">Taller</th>
+                      <th className="py-3 px-4 font-medium text-gray-600">Día</th>
+                      <th className="py-3 px-4 font-medium text-gray-600">Alumnos</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {demandSummary.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                        <td className="py-3 px-4 text-gray-900 font-medium">{item.school_name}</td>
+                        <td className="py-3 px-4 text-gray-600">{item.workshop_title}</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${item.day_of_week === 'TUESDAY'
+                              ? 'bg-blue-50 text-blue-700 border-blue-100'
+                              : 'bg-purple-50 text-purple-700 border-purple-100'
+                            }`}>
+                            {item.day_of_week === 'TUESDAY' ? 'Martes' : 'Jueves'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-bold text-gray-800">{item.total_requested}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
 
         {/* Tab: Resultados */}
         {activeTab === 'results' && (
-          <div>
-            <h3 className="font-semibold mb-3">Asignaciones Realizadas</h3>
-            
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Asignaciones Realizadas</h3>
+
             {Object.keys(groupedAllocations).length === 0 ? (
-              <p className="text-gray-500 py-4">No hay asignaciones para mostrar.</p>
+              <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                <p className="text-gray-500">No hay asignaciones para mostrar.</p>
+              </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid gap-4">
                 {Object.values(groupedAllocations).map((workshop, idx) => (
-                  <div key={idx} className="border rounded p-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-semibold">{workshop.title}</h4>
-                      <span className="text-sm text-gray-500">
-                        {workshop.day === 'TUESDAY' ? '📅 Martes' : '📅 Jueves'} | 
-                        Total: {workshop.total}/16
+                  <div key={idx} className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${workshop.day === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
+                          {workshop.day === 'TUESDAY' ? <Calendar size={20} /> : <Calendar size={20} />}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 leading-tight">{workshop.title}</h4>
+                          <span className="text-sm text-gray-500 font-medium">{workshop.day === 'TUESDAY' ? 'Martes' : 'Jueves'}</span>
+                        </div>
+                      </div>
+                      <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
+                        <Users size={14} /> {workshop.total}/16
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {workshop.schools.map((school, sIdx) => (
-                        <span 
-                          key={sIdx} 
-                          className={`px-2 py-1 rounded text-sm ${
-                            school.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' : 
-                            school.status === 'ACCEPTED' ? 'bg-blue-100 text-blue-800' : 
-                            'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {school.name}: {school.seats} alumnos
-                        </span>
-                      ))}
+
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {workshop.schools.map((school, sIdx) => {
+                        let badgeStyle = '';
+                        if (school.status === 'PUBLISHED') badgeStyle = 'bg-green-50 text-green-700 border-green-200';
+                        else if (school.status === 'ACCEPTED') badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200';
+                        else badgeStyle = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+
+                        return (
+                          <span
+                            key={sIdx}
+                            className={`px-3 py-1.5 rounded-lg text-sm border font-medium flex items-center gap-2 ${badgeStyle}`}
+                          >
+                            <span>{school.name}</span>
+                            <span className="bg-white/50 px-1.5 rounded text-xs ml-1 font-bold">
+                              {school.seats}
+                            </span>
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}

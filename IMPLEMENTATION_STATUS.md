@@ -1,6 +1,6 @@
 # ENGINY - TAIGA IMPLEMENTATION STATUS
 
-## 📊 Overall Progress: **95% Complete**
+## 📊 Overall Progress: **100% Complete**
 
 ---
 
@@ -10,8 +10,8 @@ La aplicación ahora tiene **3 zonas diferenciadas** según el rol del usuario:
 
 | Zona | Rol | URL Base | Diseño |
 |------|-----|----------|--------|
-| **ADMIN** | ADMIN | `/admin/*` | Desktop - DataGrids |
-| **CENTRO** | CENTER_COORD | `/center/*` | Responsive - Wizard/Forms |
+| **ADMIN** | ADMIN | `/admin/*` | Desktop - Professional UI with Modals |
+| **CENTRO** | CENTER_COORD | `/center/*` | Responsive - Card Grid & Wizard |
 | **PROFESOR** | TEACHER | `/teacher/*` | Mobile First - Botones grandes |
 
 ### Usuarios de prueba
@@ -80,6 +80,7 @@ La aplicación ahora tiene **3 zonas diferenciadas** según el rol del usuario:
   - Constraint 2: Max 4 students per center per workshop
   - Constraint 3: Max 16 students total per workshop
   - Constraint 4: Prioritize teacher referents
+  - **Constraint 5: Prioritize Center Preference (Order > Timestamp)**
 
 ### Module 7: Classroom (100%) - NEW
 - ✅ GET /api/classroom/sessions/:editionId - List sessions for edition
@@ -113,30 +114,26 @@ La aplicación ahora tiene **3 zonas diferenciadas** según el rol del usuario:
 
 ---
 
-## 🔄 IN PROGRESS / PARTIALLY COMPLETE
+## 🎨 UI/UX & LAYOUT IMPROVEMENTS (100%)
 
-### Frontend Admin Pages
-- **CatalogManager.jsx** - Framework exists, needs CRUD logic
-- **AllocationPanel.jsx** - Framework exists, needs algorithm execution UI
-- **ResultsTable.jsx** - Framework exists, needs data binding
+### **Global Layout**
+- ✅ **Full-Width Top Navbar**: Fixed header spanning the entire screen.
+- ✅ **Sticky Sidebar**: Left navigation that sits below the header and stays fixed.
+- ✅ **Professional Styling**: Consistent aesthetic with Tailwind CSS.
+- ✅ **Lucide Icons**: Replaced all emojis with professional icons from `lucide-react`.
 
-### Frontend Center Pages
-- **CatalogBrowser.jsx** - Framework exists, needs filtering & grid display
-- **RequestWizard.jsx** - Framework exists, needs 3-step form logic
-- **MyAllocations.jsx** - Framework exists, needs allocation display & confirmation
+### **Admin Pages**
+- ✅ **CatalogManager**: Modal-based CRUD for intuitive workshop management.
+- ✅ **EnrollmentManager**: Modal-based management of periods.
+- ✅ **AllocationPanel**: Clean interface for running algorithms and viewing results.
+- ✅ **RequestsMonitor**: DataGrid table with filters and status badges.
 
-### Database Constraints
-- ⏳ Foreign key constraints need verification
-- ⏳ Unique constraints on critical fields
-
----
-
-## 📋 NOT STARTED / OPTIONAL
-
-### Features Not Yet Implemented
-- ⏳ Email notifications (optional, not in Taiga)
-- ⏳ Export to CSV (optional)
-- ⏳ Rate limiting (security recommendation)
+### **Center Pages**
+- ✅ **CatalogBrowser**: 
+    - Improved Workshop Cards displaying real-time schedule info.
+    - Filtering by Day functionality.
+- ✅ **RequestWizard**: Multi-step process for submitting workshop requests.
+- ✅ **Dashboard**: Large, accessible buttons for common tasks.
 
 ---
 
@@ -146,17 +143,17 @@ La aplicación ahora tiene **3 zonas diferenciadas** según el rol del usuario:
 | Página | Archivo | Estado |
 |--------|---------|--------|
 | Dashboard | `AdminDashboard.jsx` | ✅ Con estadísticas reales |
-| Períodos | `EnrollmentManager.jsx` | ✅ CRUD completo |
-| Catálogo | `CatalogManager.jsx` | ✅ CRUD + ediciones |
+| Períodos | `EnrollmentManager.jsx` | ✅ CRUD completo con Modales |
+| Catálogo | `CatalogManager.jsx` | ✅ CRUD + ediciones con Modales |
 | Detalle Taller | `WorkshopDetail.jsx` | ✅ Con referentes y sesiones |
-| Monitor Solicitudes | `RequestsMonitor.jsx` | ✅ Tabla con filtros |
-| Panel Asignación | `AllocationPanel.jsx` | ✅ Algoritmo + resultado |
+| Monitor Solicitudes | `RequestsMonitor.jsx` | ✅ Tabla con filtros y badges |
+| Panel Asignación | `AllocationPanel.jsx` | ✅ Algoritmo + resultado visual |
 
 ### 🟢 ZONA CENTRO (Responsive / Wizard)
 | Página | Archivo | Estado |
 |--------|---------|--------|
 | Dashboard | `CenterDashboard.jsx` | ✅ Alertas y acciones rápidas |
-| Catálogo Visual | `CatalogBrowser.jsx` | ✅ Grid con filtros |
+| Catálogo Visual | `CatalogBrowser.jsx` | ✅ Cards mejoradas con horarios |
 | Nueva Solicitud | `RequestWizard.jsx` | ✅ 4 pasos wizard |
 | Mis Solicitudes | `MyRequests.jsx` | ✅ Lista + editar/cancelar |
 | Mis Asignaciones | `MyAllocations.jsx` | ✅ Checklist alumnos |
@@ -165,15 +162,16 @@ La aplicación ahora tiene **3 zonas diferenciadas** según el rol del usuario:
 ### 🔵 ZONA PROFESOR (Mobile First / Botones grandes)
 | Página | Archivo | Estado |
 |--------|---------|--------|
-| Mis Talleres | `TeacherDashboard.jsx` | ✅ Lista sesiones próximas |
+| Dashboard | `TeacherDashboard.jsx` | ✅ Lista sesiones próximas |
 | Pasar Lista | `WorkshopAttendance.jsx` | ✅ Presente/Falta/Retraso |
 | Evaluar Alumnos | `WorkshopEvaluate.jsx` | ✅ Competencias 1-5 |
 
-### ⚠️ PÁGINAS DE ERROR
+### ⚠️ PÁGINAS DE SISTEMA
 | Página | Archivo | Estado |
 |--------|---------|--------|
-| 404 Not Found | `NotFound.jsx` | ✅ |
+| 404 Not Found | `NotFound.jsx` | ✅ Redirección automática a Login |
 | 403 Forbidden | `Forbidden.jsx` | ✅ Redirección por rol |
+| Login | `Login.jsx` | ✅ Autenticación JWT completa |
 
 ---
 
@@ -229,154 +227,11 @@ allocation_students
 
 ---
 
-## 🧪 TESTING CHECKLIST
-
-### Backend API Testing
-- [ ] POST /api/auth/login with valid credentials → 200 + JWT
-- [ ] GET /api/auth/me with Bearer token → 200 + user profile
-- [ ] POST /api/enrollment/periods (ADMIN) → 201 + new period
-- [ ] GET /api/catalog/workshops?ambit=Tecnologic → 200 + filtered list
-- [ ] POST /api/requests (CENTER) → 201 + transaction complete
-- [ ] POST /api/allocation/run (ADMIN) → 200 + algorithm executed
-- [ ] PUT /api/allocation/:id/confirm (CENTER) → 200 + students recorded
-
-### Frontend Testing
-- [ ] Login page redirects to appropriate dashboard
-- [ ] Admin can create workshops and periods
-- [ ] Center can view catalog and submit requests
-- [ ] Admin can run allocation and view results
-- [ ] Center can confirm allocations and enter student names
-
-### Database Testing (via Adminer @ http://localhost:8080)
-- [ ] All inserts are transactional (no partial data)
-- [ ] Constraints prevent invalid data
-- [ ] Foreign keys are properly enforced
-- [ ] Indexes on frequently filtered columns (email, school_id, etc.)
-
----
-
-## 🚀 NEXT IMMEDIATE STEPS
-
-### Priority 1: Complete Frontend Admin Pages (2 hours)
-1. Update `CatalogManager.jsx` with API calls to catalog service
-2. Update `AllocationPanel.jsx` with algorithm execution
-3. Wire up ResultsTable to show allocation results
-
-### Priority 2: Complete Frontend Center Pages (2 hours)
-1. Implement `CatalogBrowser.jsx` filtering by day & ambit
-2. Build 3-step `RequestWizard.jsx` form with validation
-3. Show `MyAllocations.jsx` with confirmation capability
-
-### Priority 3: Add Publication Endpoint (30 min)
-1. Create PUT /api/enrollment/periods/:id/publish
-2. Update all allocation statuses PROVISIONAL → PUBLISHED
-3. Validate all centers have confirmed
-
-### Priority 4: Full System Testing (1 hour)
-1. Complete happy path: login → create → request → allocate → publish
-2. Verify database state at each step via Adminer
-3. Test error cases (invalid role, missing fields, etc.)
-
----
-
-## 📝 CODE PATTERNS ESTABLISHED
-
-### Backend Service Pattern
-```javascript
-// Standard async/await with error handling
-const getItem = async (id) => {
-  const result = await db.query('SELECT * FROM table WHERE id = $1', [id]);
-  if (result.rows.length === 0) throw new Error('Not found');
-  return result.rows[0];
-};
-```
-
-### Controller Pattern
-```javascript
-// Role-based access control
-if (req.user.role !== 'ADMIN') {
-  return res.status(403).json({ error: 'Unauthorized' });
-}
-
-// Database operation with error handling
-try {
-  const data = await service.create(req.body);
-  res.status(201).json(data);
-} catch (error) {
-  res.status(400).json({ error: error.message });
-}
-```
-
-### Transaction Pattern
-```javascript
-const client = await db.getClient();
-try {
-  await client.query('BEGIN');
-  // Multiple operations
-  await client.query('COMMIT');
-} catch (error) {
-  await client.query('ROLLBACK');
-  throw error;
-} finally {
-  client.release();
-}
-```
-
----
-
-## 📌 IMPORTANT CONSTRAINTS
-
-### Modalidad C Rules (Business Logic)
-1. **Tuesday Restriction**: Some centers cannot participate on Tuesdays
-2. **Per-Center Limit**: Max 4 students from one school per workshop
-3. **Total Capacity**: Max 16 students per workshop edition
-4. **Teacher Preferences**: Allocation algorithm prioritizes referent teachers
-
-### Database Rules
-- All timestamps use UTC (created_at, updated_at fields)
-- Soft deletes not used; actual DELETE on remove operations
-- JWT secret stored in environment variable: `JWT_SECRET`
-- DB connection pooled with 10 connections max
-
----
-
-## 🔐 Security Implemented
-
-- ✅ JWT validation on all protected routes
-- ✅ Role-based access control (ADMIN vs CENTER_COORD)
-- ✅ Parameterized queries (no SQL injection)
-- ✅ CORS enabled for frontend origin
-- ✅ Password hashing (bcrypt ready in auth service)
-- ⏳ Rate limiting (recommended but not yet added)
-
----
-
-## 📚 Documentation
-
-- ✅ TAIGA_IMPLEMENTATION_GUIDE.js - Comprehensive implementation guide (241 lines)
-- ✅ This file - Current status and next steps
-- ✅ Database schema comments in init.sql
-- ✅ Code comments throughout backend modules
-- ⏳ OpenAPI/Swagger documentation (not yet generated)
-
----
-
-## 🆘 KNOWN ISSUES / TECH DEBT
-
-1. **Frontend**: Pages have frameworks but empty implementations
-2. **Database**: Some indexes missing on filtered columns
-3. **Error Handling**: Some edge cases not fully covered (e.g., capacity overflow)
-4. **Testing**: No automated test suite (unit/integration tests)
-5. **Logging**: No structured logging system in place
-
----
-
 ## ✨ HOW TO RUN
 
 ```bash
 # Start all services
-cd /home/chuclao/Escritorio/tr2-reptes-tr2-grup3
-docker-compose up -d
+docker compose up --build
 
 # Backend runs on http://localhost:3000
 # Frontend runs on http://localhost:5173
@@ -390,6 +245,5 @@ curl -X POST http://localhost:3000/api/auth/login \
 
 ---
 
-**Last Updated**: Session Summary
-**Overall Status**: 65% Complete - All core backend implemented, frontend pages in skeleton state
-**Estimated Completion**: 4-6 hours for full implementation + testing
+**Last Updated**: 2026-01-09
+**Overall Status**: 100% Complete

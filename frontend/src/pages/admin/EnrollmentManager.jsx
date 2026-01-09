@@ -3,14 +3,11 @@
  * 
  * Página de administración para gestionar los períodos de inscripción.
  * Permite crear, editar, eliminar y publicar resultados de períodos.
- * 
- * Estados de un período:
- * - OPEN: Abierto para solicitudes de centros
- * - PROCESSING: Cerrado, pendiente de ejecutar algoritmo
- * - PUBLISHED: Resultados publicados y visibles
- * - CLOSED: Período finalizado
  */
 import { useState, useEffect } from "react";
+import { Plus, Edit, Trash2, Megaphone, Calendar } from "lucide-react";
+import Modal from "../../components/common/Modal.jsx";
+import Button from "../../components/ui/Button.jsx";
 import enrollmentService from "../../services/enrollment.service";
 
 const EnrollmentManager = () => {
@@ -18,11 +15,11 @@ const EnrollmentManager = () => {
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Estado para modal de crear/editar
   const [showModal, setShowModal] = useState(false);
   const [editingPeriod, setEditingPeriod] = useState(null);
-  
+
   // Estado del formulario
   const [formData, setFormData] = useState({
     name: "",
@@ -87,10 +84,8 @@ const EnrollmentManager = () => {
     e.preventDefault();
     try {
       if (editingPeriod) {
-        // Actualizar período existente
         await enrollmentService.update(editingPeriod.id, formData);
       } else {
-        // Crear nuevo período
         await enrollmentService.create(formData);
       }
       setShowModal(false);
@@ -117,7 +112,6 @@ const EnrollmentManager = () => {
 
   /**
    * Publica los resultados de un período
-   * Cambia el estado de PROCESSING a PUBLISHED
    */
   const handlePublish = async (id) => {
     if (!window.confirm("¿Publicar los resultados de este período? Los centros podrán ver sus asignaciones.")) {
@@ -136,12 +130,12 @@ const EnrollmentManager = () => {
    */
   const getStatusColor = (status) => {
     const colors = {
-      OPEN: "bg-green-100 text-green-800",
-      PROCESSING: "bg-yellow-100 text-yellow-800",
-      PUBLISHED: "bg-blue-100 text-blue-800",
-      CLOSED: "bg-gray-100 text-gray-800"
+      OPEN: "bg-green-100 text-green-800 border-green-200",
+      PROCESSING: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      PUBLISHED: "bg-blue-100 text-blue-800 border-blue-200",
+      CLOSED: "bg-gray-100 text-gray-800 border-gray-200"
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    return colors[status] || "bg-gray-100 text-gray-800 border-gray-200";
   };
 
   /**
@@ -157,200 +151,188 @@ const EnrollmentManager = () => {
     return labels[status] || status;
   };
 
-  // Mostrar loading mientras carga
-  if (loading) {
-    return (
-      <div className="p-6">
-        <p className="text-gray-500">Cargando períodos...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Cabecera */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Períodos de Inscripción</h1>
-          <p className="text-gray-500">Gestiona los períodos en los que los centros pueden solicitar talleres</p>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <Calendar className="text-blue-600" /> Períodos de Inscripción
+          </h1>
+          <p className="text-gray-500 mt-1">Gestiona los plazos y estados de las solicitudes</p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          ➕ Nuevo Período
-        </button>
+        <Button onClick={handleCreate}>
+          <div className="flex items-center gap-2">
+            <Plus size={18} /> Nuevo Período
+          </div>
+        </Button>
       </div>
 
       {/* Mensaje de error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">×</button>
         </div>
       )}
 
       {/* Tabla de períodos */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Inicio</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Fin</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {periods.length === 0 ? (
+      <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                  No hay períodos creados. Crea uno nuevo para empezar.
-                </td>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Inicio</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fin</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
-            ) : (
-              periods.map((period) => (
-                <tr key={period.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{period.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {period.start_date ? new Date(period.start_date).toLocaleDateString("es-ES") : "-"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {period.end_date ? new Date(period.end_date).toLocaleDateString("es-ES") : "-"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(period.status)}`}>
-                      {getStatusLabel(period.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                    <div className="flex justify-end gap-2">
-                      {/* Botón publicar - solo si está en PROCESSING */}
-                      {period.status === "PROCESSING" && (
-                        <button
-                          onClick={() => handlePublish(period.id)}
-                          className="text-green-600 hover:text-green-800"
-                          title="Publicar resultados"
-                        >
-                          📢 Publicar
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleEdit(period)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Editar período"
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(period.id)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Eliminar período"
-                      >
-                        🗑️ Eliminar
-                      </button>
-                    </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {periods.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                    No hay períodos creados. Crea uno nuevo para empezar.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                periods.map((period) => (
+                  <tr key={period.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="font-medium text-gray-900">{period.name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {period.start_date ? new Date(period.start_date).toLocaleDateString("es-ES") : "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {period.end_date ? new Date(period.end_date).toLocaleDateString("es-ES") : "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(period.status)}`}>
+                        {getStatusLabel(period.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end gap-3">
+                        {/* Botón publicar - solo si está en PROCESSING */}
+                        {period.status === "PROCESSING" && (
+                          <button
+                            onClick={() => handlePublish(period.id)}
+                            className="text-green-600 hover:text-green-800 transition-colors"
+                            title="Publicar resultados"
+                          >
+                            <Megaphone size={18} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleEdit(period)}
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                          title="Editar período"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(period.id)}
+                          className="text-red-400 hover:text-red-600 transition-colors"
+                          title="Eliminar período"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Modal de Crear/Editar */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {editingPeriod ? "Editar Período" : "Nuevo Período"}
-            </h2>
-            
-            <form onSubmit={handleSave}>
-              {/* Nombre */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre del período
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ej: Curso 2024-2025 Q1"
-                  required
-                />
-              </div>
-
-              {/* Fecha inicio */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de inicio
-                </label>
-                <input
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Fecha fin */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de fin
-                </label>
-                <input
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Estado (solo en edición) */}
-              {editingPeriod && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Estado
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="OPEN">Abierto</option>
-                    <option value="PROCESSING">Procesando</option>
-                    <option value="PUBLISHED">Publicado</option>
-                    <option value="CLOSED">Cerrado</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Botones */}
-              <div className="flex justify-end gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  {editingPeriod ? "Guardar cambios" : "Crear período"}
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingPeriod ? "Editar Período" : "Nuevo Período"}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="enrollment-form">
+              {editingPeriod ? "Guardar cambios" : "Crear período"}
+            </Button>
+          </>
+        }
+      >
+        <form id="enrollment-form" onSubmit={handleSave} className="space-y-4">
+          {/* Nombre */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre del período
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              placeholder="Ej: Curso 2024-2025 Q1"
+              required
+            />
           </div>
-        </div>
-      )}
+
+          {/* Fecha inicio */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha de inicio (Solicitudes)
+            </label>
+            <input
+              type="date"
+              value={formData.start_date}
+              onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              required
+            />
+          </div>
+
+          {/* Fecha fin */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha de fin (Solicitudes)
+            </label>
+            <input
+              type="date"
+              value={formData.end_date}
+              onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              required
+            />
+          </div>
+
+          {/* Estado (solo en edición) */}
+          {editingPeriod && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Estado
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden bg-white"
+              >
+                <option value="OPEN">Abierto</option>
+                <option value="PROCESSING">Procesando (Cerrado)</option>
+                <option value="PUBLISHED">Publicado</option>
+                <option value="CLOSED">Finalizado</option>
+              </select>
+            </div>
+          )}
+        </form>
+      </Modal>
     </div>
   );
 };
