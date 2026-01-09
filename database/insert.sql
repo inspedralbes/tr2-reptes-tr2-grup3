@@ -62,21 +62,28 @@ BEGIN
     INSERT INTO providers (name, address) VALUES 
         ('Artixoc', 'Rambla de Badal, 53') RETURNING id INTO v_prov_artixoc;
 
-    -- 3. INSERTAR CENTROS EDUCATIVOS
+    -- 3. INSERTAR CENTROS EDUCATIVOS (Datos reales de Barcelona)
     INSERT INTO schools (name, code) VALUES 
-        ('CEE Josep Pla', 'UNK-001'), ('INS Puigverd', 'UNK-002'), ('INS Poeta Maragall', 'UNK-003'), 
-        ('IE El Til·ler', 'UNK-004'), ('Escola Fasià Sarrià', 'UNK-005'), ('IE Tramuntana', 'UNK-006'),
-        ('INS Maria Espinalt', 'UNK-007'), ('Escola Faisà Eixample', 'UNK-008'), ('IE Rec Comtal', 'UNK-009'),
-        ('IE Trinitat Nova', 'UNK-010'), ('INS L''Alzina', 'UNK-011'), ('INS Sants', 'UNK-012'),
-        ('INS Joan Salvat Papasseit', 'UNK-013'), ('INS Coves d''en Cimany', 'UNK-014'), ('INS Jaume Balmes', 'UNK-015'),
-        ('INS Milà i Fontanals', 'UNK-016'), ('INS Salvador Espriu', 'UNK-017'), ('INS Pau Claris', 'UNK-018'),
-        ('Escola Lexia', 'UNK-019'), ('IE Eixample', 'UNK-020'), ('INS Consell de Cent', 'UNK-021'),
-        ('IE Arts', 'UNK-022'), ('INS Angeleta Ferrer', 'UNK-023'), ('IE Mirades', 'UNK-024'),
-        ('CEE La Ginesta', 'UNK-025'), ('INS Joan Brossa', 'UNK-026'), ('INS Flos i Calcat', 'UNK-027'),
-        ('INS Anna Gironella de Mundet', 'UNK-028'), ('INS Bernat Metge', 'UNK-029'), ('INS Fort Pius', 'UNK-030'),
-        ('INS El Joncar', 'UNK-031'), ('INS Eixample', 'UNK-032'), ('INS J. Serrat i Bonastre', 'UNK-033'),
-        ('INS Vila de Gràcia', 'UNK-034'), ('INS Nou Barris', 'UNK-035'), ('INS Caterina Albert', 'UNK-036'),
-        ('INS Montserrat', 'UNK-037'), ('Reprèn Pro', 'UNK-038')
+        ('Escola Baixeras', '08001595'), ('Escola Parc de la Ciutadella', '08001601'), 
+        ('Escola Mossén Jacint Verdaguer', '08001649'), ('Escola El Polvorí', '08001650'), 
+        ('Escola Can Clos', '08001674'), ('Escola Dolors Monserdà-Santapau', '08001716'),
+        ('Escola Poeta Foix', '08001731'), ('Escola Ramon Llull', '08001777'), 
+        ('Escola Cervantes', '08001789'), ('Escola Pere Vila', '08001790'),
+        ('Escola de la Concepció', '08001807'), ('Escola Collaso i Gil', '08001819'), 
+        ('Escola Milà i Fontanals', '08001820'), ('Escola Castella', '08001832'),
+        ('Escola Drassanes', '08001856'), ('Escola Rubén Darío', '08001868'), 
+        ('Escola Els Llorers', '08001911'), ('Escola Diputació', '08001923'),
+        ('Escola Mallorca', '08001947'), ('Escola Francesc Macià', '08002009'), 
+        ('Escola Lluís Vives', '08002010'), ('Escola Cal Maiol', '08002022'),
+        ('Escola Pràctiques', '08002058'), ('Escola Jaume I', '08002061'), 
+        ('Escola Gayarre', '08002071'), ('Escola Rius i Taulet', '08002113'),
+        ('Escola Baldiri Reixac', '08002174'), ('Escola Mare de Déu de Montserrat', '08002186'), 
+        ('Escola La Farigola de Vallcarca', '08002198'), ('Escola Montseny', '08002204'),
+        ('Escola Josep Maria de Sagarra', '08002216'), ('Escola Calderón de la Barca', '08002277'), 
+        ('Escola Emili Juncadella', '08002290'), ('Escola El Turó', '08002344'),
+        ('Escola Timbaler del Bruc', '08002368'), ('Escola L''Arc de Sant Martí', '08002393'), 
+        ('Escola Baró de Viver', '08002411'), ('Escola Marta Mata', '08002484'),
+        ('Escola Tibidabo', '08002526'), ('Escola Víctor Català', '08002538')
     ON CONFLICT (code) DO NOTHING;
 
     -- =======================================================================
@@ -93,11 +100,11 @@ BEGIN
 
     -- Asignaciones Jardineria 2n Trim
     INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'CEE Josep Pla'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE El Til·ler'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Fasià Sarrià'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Baixeras'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Parc de la Ciutadella'), 1, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Cervantes'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Pere Vila'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Faisà Eixample'), 2, 'PUBLISHED'),
@@ -112,7 +119,7 @@ BEGIN
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 4, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Pau Claris'), 3, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Caterina Albert'), 2, 'PUBLISHED'),
@@ -211,7 +218,7 @@ BEGIN
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'CEE La Ginesta'), 3, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 2, 'PUBLISHED'),
@@ -246,9 +253,9 @@ BEGIN
     INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
     VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '11:30', '14:30') RETURNING id INTO v_edition_id;
     INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 1, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Parc de la Ciutadella'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Nou Barris'), 4, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Caterina Albert'), 3, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Fort Pius'), 1, 'PUBLISHED'),
@@ -275,10 +282,10 @@ BEGIN
     VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '11:30', '14:30') RETURNING id INTO v_edition_id;
     INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
         (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Faisà Eixample'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'CEE Josep Pla'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Baixeras'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Sants'), 2, 'PUBLISHED'),
@@ -312,7 +319,7 @@ BEGIN
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Bernat Metge'), 3, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Eixample'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS El Joncar'), 3, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED');
 
@@ -351,7 +358,7 @@ BEGIN
     VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '08:30', '11:30') RETURNING id INTO v_edition_id;
     INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Flos i Calcat'), 4, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 3, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 3, 'PUBLISHED'),
@@ -392,10 +399,10 @@ BEGIN
     VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '11:30', '14:30') RETURNING id INTO v_edition_id;
     INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'CEE Josep Pla'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Baixeras'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Caterina Albert'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'CEE La Ginesta'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 2, 'PUBLISHED'),
@@ -409,7 +416,7 @@ BEGIN
     INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
     VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
     INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 1, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Parc de la Ciutadella'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
@@ -464,7 +471,7 @@ BEGIN
     INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Pau Claris'), 3, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Nou Barris'), 4, 'PUBLISHED');
@@ -489,7 +496,7 @@ BEGIN
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Fort Pius'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Bernat Metge'), 4, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Jaume Balmes'), 3, 'PUBLISHED'), 
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'CEE Josep Pla'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Baixeras'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS J. Serrat i Bonastre'), 3, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'), 
@@ -534,7 +541,7 @@ BEGIN
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Nou Barris'), 4, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 3, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 1, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Parc de la Ciutadella'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Caterina Albert'), 2, 'PUBLISHED'),
