@@ -13,6 +13,8 @@ const classroomRoutes = require('./modules/classroom/routes');
 const studentsRoutes = require('./modules/students/routes');
 const teachersRoutes = require('./modules/teachers/routes');
 const sessionsRoutes = require('./modules/sessions/routes');
+const providersRoutes = require('./modules/providers/routes');
+const centersRoutes = require('./modules/centers/routes');
 
 const app = express();
 
@@ -46,5 +48,8 @@ app.use('/api/classroom', classroomRoutes);
 app.use('/api/students', studentsRoutes);
 app.use('/api/teachers', teachersRoutes);
 app.use('/api/sessions', sessionsRoutes);
+app.use('/api/providers', providersRoutes);
+app.use('/api/centers', centersRoutes);
+console.log('Providers and Centers routes registered');
 
 module.exports = app;

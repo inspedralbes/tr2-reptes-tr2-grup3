@@ -26,9 +26,11 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('enginy_token');
-      localStorage.removeItem('enginy_user');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        localStorage.removeItem('enginy_token');
+        localStorage.removeItem('enginy_user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

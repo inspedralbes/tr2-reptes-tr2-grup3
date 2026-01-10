@@ -19,7 +19,9 @@ import {
   Lock,
   PauseCircle,
   BarChart3,
-  Users
+  Users,
+  Briefcase,
+  Building2
 } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -227,6 +229,28 @@ const AdminDashboard = () => {
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">Asignación</h3>
             <p className="text-sm text-gray-500 mt-2">Ejecutar algoritmo y publicar resultados</p>
+          </button>
+
+          <button
+            onClick={() => navigate("/admin/providers")}
+            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-blue-100"
+          >
+            <div className="bg-orange-50 text-orange-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+              <Briefcase size={32} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors">Proveedores</h3>
+            <p className="text-sm text-gray-500 mt-2">Gestionar empresas y colaboradores</p>
+          </button>
+
+          <button
+            onClick={() => navigate("/admin/centers")}
+            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-blue-100"
+          >
+            <div className="bg-indigo-50 text-indigo-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <Building2 size={32} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">Centros</h3>
+            <p className="text-sm text-gray-500 mt-2">Administrar centros educativos</p>
           </button>
         </div>
       </div>

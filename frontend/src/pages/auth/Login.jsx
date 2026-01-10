@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Card from "../../components/ui/Card.jsx";
 import LoginForm from "../../components/forms/LoginForm.jsx";
@@ -41,10 +42,11 @@ const Login = () => {
     navigate(redirectTo, { replace: true });
   };
 
-  // Si ya está autenticado, redirigir según rol
-  if (isAuthenticated && user) {
-    navigate(getRedirectPath(user.role), { replace: true });
-  }
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate(getRedirectPath(user.role), { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   return (
     <div style={{ display: "grid", placeItems: "center", minHeight: "70vh" }}>

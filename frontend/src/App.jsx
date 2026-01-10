@@ -15,6 +15,8 @@ import AllocationPanel from "./pages/admin/AllocationPanel.jsx";
 import EnrollmentManager from "./pages/admin/EnrollmentManager.jsx";
 import WorkshopDetail from "./pages/admin/WorkshopDetail.jsx";
 import RequestsMonitor from "./pages/admin/RequestsMonitor.jsx";
+import ProviderManager from "./pages/admin/ProviderManager.jsx";
+import CenterManager from "./pages/admin/CenterManager.jsx";
 
 // ZONA CENTRO
 import CenterDashboard from "./pages/center/CenterDashboard.jsx";
@@ -60,6 +62,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <WorkshopDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/providers"
+              element={
+                <ProtectedRoute>
+                  <ProviderManager />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/centers"
+              element={
+                <ProtectedRoute>
+                  <CenterManager />
                 </ProtectedRoute>
               }
             />

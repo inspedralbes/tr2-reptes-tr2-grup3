@@ -12,7 +12,9 @@ import {
   FileStack,
   CheckCircle,
   GraduationCap,
-  LogOut
+  LogOut,
+  Briefcase,
+  Building2
 } from "lucide-react";
 
 /**
@@ -96,6 +98,28 @@ const Sidebar = () => {
                       <div className="flex items-center gap-5">
                         <BookOpen size={28} className={getIconClass(isActive)} />
                         <span className="text-lg">Gestión de Catálogo</span>
+                      </div>
+                    </>
+                  )}
+                </NavLink>
+
+                <NavLink to="/admin/providers" className={getLinkClass}>
+                  {({ isActive }) => (
+                    <>
+                      <div className="flex items-center gap-5">
+                        <Briefcase size={28} className={getIconClass(isActive)} />
+                        <span className="text-lg">Gestión de Proveedores</span>
+                      </div>
+                    </>
+                  )}
+                </NavLink>
+
+                <NavLink to="/admin/centers" className={getLinkClass}>
+                  {({ isActive }) => (
+                    <>
+                      <div className="flex items-center gap-5">
+                        <Building2 size={28} className={getIconClass(isActive)} />
+                        <span className="text-lg">Gestión de Centros</span>
                       </div>
                     </>
                   )}
