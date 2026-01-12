@@ -1,5 +1,5 @@
-const { signToken } = require('../../common/jwtHelpers');
-const db = require('../../config/db');
+const { signToken } = require("../../common/jwtHelpers");
+const db = require("../../config/db");
 
 /**
  * Autentica un usuario validando email contra la base de datos
@@ -8,18 +8,26 @@ const db = require('../../config/db');
  * @returns {Promise<{user: Object, token: string}>} Usuario autenticado y token JWT
  */
 const login = async ({ email, password }) => {
+  const bcrypt = require("bcrypt");
+
   try {
-    // Consultar usuario en BD por email
+    // Consultar usuario en BD por email (necesitamos el password_hash)
     const result = await db.query(
-      'SELECT id, email, full_name, role FROM users WHERE email = $1 LIMIT 1',
+      "SELECT id, email, full_name, role, password_hash FROM users WHERE email = $1 LIMIT 1",
       [email]
     );
 
     if (result.rows.length === 0) {
-      throw new Error('Invalid email or password');
+      throw new Error("Invalid email or password");
     }
 
     const user = result.rows[0];
+
+    // Validar contraseña con bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      throw new Error("Invalid email or password");
+    }
 
     // Generar token JWT con los datos del usuario
     const token = signToken({
@@ -51,12 +59,12 @@ const login = async ({ email, password }) => {
 const getProfile = async (userId) => {
   try {
     const result = await db.query(
-      'SELECT id, email, full_name, role FROM users WHERE id = $1 LIMIT 1',
+      "SELECT id, email, full_name, role FROM users WHERE id = $1 LIMIT 1",
       [userId]
     );
 
     if (result.rows.length === 0) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     const user = result.rows[0];

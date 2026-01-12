@@ -2,8 +2,8 @@ import { useState } from "react";
 import Button from "../ui/Button.jsx";
 
 const LoginForm = ({ onSubmit, loading }) => {
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState("admin@enginy.cat");
+  const [password, setPassword] = useState("admin123");
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -11,14 +11,21 @@ const LoginForm = ({ onSubmit, loading }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "grid", gap: "12px", maxWidth: "360px" }}>
+    <form
+      onSubmit={handleSubmit}
+      style={{ display: "grid", gap: "12px", maxWidth: "360px" }}
+    >
       <label style={{ display: "grid", gap: "4px" }}>
         <span>Email</span>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db" }}
+          style={{
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #d1d5db",
+          }}
           required
         />
       </label>
@@ -28,7 +35,11 @@ const LoginForm = ({ onSubmit, loading }) => {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{ padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db" }}
+          style={{
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #d1d5db",
+          }}
           required
         />
       </label>

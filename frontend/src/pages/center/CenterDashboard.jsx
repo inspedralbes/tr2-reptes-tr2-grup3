@@ -1,6 +1,6 @@
 /**
  * CenterDashboard.jsx
- * 
+ *
  * ZONA CENTRO: Dashboard principal
  * Muestra estado de la convocatoria, avisos y accesos rápidos
  */
@@ -19,10 +19,11 @@ import {
   PauseCircle,
   Megaphone,
   BookOpen,
-  Calendar
+  Calendar,
 } from "lucide-react";
+import client from "../../api/client";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const CenterDashboard = () => {
   const { user } = useAuth();
@@ -32,7 +33,7 @@ const CenterDashboard = () => {
     activePeriod: null,
     myRequests: 0,
     myAllocations: 0,
-    pendingDocuments: 0
+    pendingDocuments: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -43,32 +44,28 @@ const CenterDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const headers = { "Authorization": `Bearer ${token}` };
 
-      // Cargar período activo
-      const periodsRes = await fetch(`${API_URL}/enrollment/periods?status=OPEN`, { headers });
-      if (periodsRes.ok) {
-        const periods = await periodsRes.json();
-        if (periods.length > 0) {
-          setStats(prev => ({ ...prev, activePeriod: periods[0] }));
-        }
+      // Usar Promise.all para cargar en paralelo
+      const [periodsRes, requestsRes, allocationsRes] = await Promise.all([
+        client.get("/enrollment/periods?status=OPEN"),
+        client.get("/requests"),
+        client.get("/allocation"),
+      ]);
+
+      // Procesar periodos
+      const periods = periodsRes.data;
+      if (periods.length > 0) {
+        setStats((prev) => ({ ...prev, activePeriod: periods[0] }));
       }
 
-      // Cargar mis solicitudes
-      const requestsRes = await fetch(`${API_URL}/requests`, { headers });
-      if (requestsRes.ok) {
-        const requests = await requestsRes.json();
-        setStats(prev => ({ ...prev, myRequests: requests.length }));
-      }
+      // Procesar mis solicitudes
+      setStats((prev) => ({ ...prev, myRequests: requestsRes.data.length }));
 
-      // Cargar mis asignaciones
-      const allocationsRes = await fetch(`${API_URL}/allocation`, { headers });
-      if (allocationsRes.ok) {
-        const allocations = await allocationsRes.json();
-        setStats(prev => ({ ...prev, myAllocations: allocations.length }));
-      }
-
+      // Procesar mis asignaciones
+      setStats((prev) => ({
+        ...prev,
+        myAllocations: allocationsRes.data.length,
+      }));
     } catch (err) {
       console.error("Error cargando dashboard:", err);
     } finally {
@@ -81,17 +78,37 @@ const CenterDashboard = () => {
    */
   const getPeriodStatus = () => {
     if (!stats.activePeriod) {
-      return { color: "bg-gray-100 text-gray-600 border-gray-200", text: "Sin convocatoria activa", icon: <PauseCircle size={40} /> };
+      return {
+        color: "bg-gray-100 text-gray-600 border-gray-200",
+        text: "Sin convocatoria activa",
+        icon: <PauseCircle size={40} />,
+      };
     }
     switch (stats.activePeriod.status) {
       case "OPEN":
-        return { color: "bg-green-50 text-green-800 border-green-200", text: "Convocatoria Abierta", icon: <CheckCircle size={40} /> };
+        return {
+          color: "bg-green-50 text-green-800 border-green-200",
+          text: "Convocatoria Abierta",
+          icon: <CheckCircle size={40} />,
+        };
       case "PROCESSING":
-        return { color: "bg-yellow-50 text-yellow-800 border-yellow-200", text: "En Proceso", icon: <Clock size={40} /> };
+        return {
+          color: "bg-yellow-50 text-yellow-800 border-yellow-200",
+          text: "En Proceso",
+          icon: <Clock size={40} />,
+        };
       case "PUBLISHED":
-        return { color: "bg-blue-50 text-blue-800 border-blue-200", text: "Resultados Publicados", icon: <Megaphone size={40} /> };
+        return {
+          color: "bg-blue-50 text-blue-800 border-blue-200",
+          text: "Resultados Publicados",
+          icon: <Megaphone size={40} />,
+        };
       default:
-        return { color: "bg-gray-100 text-gray-600 border-gray-200", text: "Cerrada", icon: <Lock size={40} /> };
+        return {
+          color: "bg-gray-100 text-gray-600 border-gray-200",
+          text: "Cerrada",
+          icon: <Lock size={40} />,
+        };
     }
   };
 
@@ -110,13 +127,18 @@ const CenterDashboard = () => {
       {/* Bienvenida */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <span className="text-4xl">👋</span> Bienvenido/a, {user?.full_name || "Coordinador/a"}
+          <span className="text-4xl">👋</span> Bienvenido/a,{" "}
+          {user?.full_name || "Coordinador/a"}
         </h1>
-        <p className="text-lg text-gray-500 mt-2">Panel de control del centro educativo</p>
+        <p className="text-lg text-gray-500 mt-2">
+          Panel de control del centro educativo
+        </p>
       </div>
 
       {/* Estado de la convocatoria */}
-      <div className={`${periodStatus.color} rounded-2xl p-8 border-2 shadow-xs transition-transform hover:scale-[1.01]`}>
+      <div
+        className={`${periodStatus.color} rounded-2xl p-8 border-2 shadow-xs transition-transform hover:scale-[1.01]`}
+      >
         <div className="flex items-center gap-6">
           <div className="p-2 bg-white/40 rounded-full backdrop-blur-sm">
             {periodStatus.icon}
@@ -126,7 +148,10 @@ const CenterDashboard = () => {
             {stats.activePeriod && (
               <p className="opacity-80 font-medium flex items-center gap-2">
                 <Calendar size={18} />
-                {stats.activePeriod.name} — Hasta: {new Date(stats.activePeriod.end_date_requests).toLocaleDateString("es-ES")}
+                {stats.activePeriod.name} — Hasta:{" "}
+                {new Date(
+                  stats.activePeriod.end_date_requests
+                ).toLocaleDateString("es-ES")}
               </p>
             )}
           </div>
@@ -141,9 +166,12 @@ const CenterDashboard = () => {
               <AlertCircle size={28} />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-orange-800">Documentos pendientes</h3>
+              <h3 className="text-lg font-bold text-orange-800">
+                Documentos pendientes
+              </h3>
               <p className="text-orange-700">
-                Tienes <strong>{stats.pendingDocuments}</strong> alumno(s) sin documentación completa.
+                Tienes <strong>{stats.pendingDocuments}</strong> alumno(s) sin
+                documentación completa.
               </p>
             </div>
             <button
@@ -160,14 +188,18 @@ const CenterDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
-            <div className="text-4xl font-bold text-blue-600">{stats.myRequests}</div>
+            <div className="text-4xl font-bold text-blue-600">
+              {stats.myRequests}
+            </div>
             <FileStack className="text-blue-100" size={32} />
           </div>
           <div className="text-gray-500 font-medium">Solicitudes enviadas</div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
-            <div className="text-4xl font-bold text-green-600">{stats.myAllocations}</div>
+            <div className="text-4xl font-bold text-green-600">
+              {stats.myAllocations}
+            </div>
             <CheckCircle className="text-green-100" size={32} />
           </div>
           <div className="text-gray-500 font-medium">Talleres asignados</div>
@@ -196,22 +228,44 @@ const CenterDashboard = () => {
             <div className="bg-blue-50 text-blue-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <Search size={32} />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors">Ver Catálogo</h3>
-            <p className="text-sm text-gray-500 mt-2">Explora los talleres disponibles</p>
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+              Ver Catálogo
+            </h3>
+            <p className="text-sm text-gray-500 mt-2">
+              Explora los talleres disponibles
+            </p>
           </button>
 
           <button
             onClick={() => navigate("/center/request")}
-            disabled={!stats.activePeriod || stats.activePeriod.status !== "OPEN"}
+            disabled={
+              !stats.activePeriod || stats.activePeriod.status !== "OPEN"
+            }
             className={`group bg-white rounded-2xl shadow-sm p-6 text-left transition-all duration-300 border border-transparent 
-                ${!stats.activePeriod || stats.activePeriod.status !== "OPEN"
-                ? "opacity-60 cursor-not-allowed"
-                : "hover:shadow-xl hover:-translate-y-1 hover:border-green-100"}`}
+                ${
+                  !stats.activePeriod || stats.activePeriod.status !== "OPEN"
+                    ? "opacity-60 cursor-not-allowed"
+                    : "hover:shadow-xl hover:-translate-y-1 hover:border-green-100"
+                }`}
           >
-            <div className={`bg-green-50 text-green-600 p-4 rounded-xl w-fit mb-4 ${!stats.activePeriod || stats.activePeriod.status !== "OPEN" ? "" : "group-hover:bg-green-600 group-hover:text-white transition-colors"}`}>
+            <div
+              className={`bg-green-50 text-green-600 p-4 rounded-xl w-fit mb-4 ${
+                !stats.activePeriod || stats.activePeriod.status !== "OPEN"
+                  ? ""
+                  : "group-hover:bg-green-600 group-hover:text-white transition-colors"
+              }`}
+            >
               <PlusCircle size={32} />
             </div>
-            <h3 className={`text-lg font-bold text-gray-900 ${!stats.activePeriod || stats.activePeriod.status !== "OPEN" ? "" : "group-hover:text-green-700 transition-colors"}`}>Nueva Solicitud</h3>
+            <h3
+              className={`text-lg font-bold text-gray-900 ${
+                !stats.activePeriod || stats.activePeriod.status !== "OPEN"
+                  ? ""
+                  : "group-hover:text-green-700 transition-colors"
+              }`}
+            >
+              Nueva Solicitud
+            </h3>
             <p className="text-sm text-gray-500 mt-2">
               {stats.activePeriod?.status === "OPEN"
                 ? "Solicitar talleres"
@@ -226,8 +280,12 @@ const CenterDashboard = () => {
             <div className="bg-purple-50 text-purple-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
               <FileStack size={32} />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-700 transition-colors">Mis Solicitudes</h3>
-            <p className="text-sm text-gray-500 mt-2">Ver historial de solicitudes</p>
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-700 transition-colors">
+              Mis Solicitudes
+            </h3>
+            <p className="text-sm text-gray-500 mt-2">
+              Ver historial de solicitudes
+            </p>
           </button>
 
           <button
@@ -237,8 +295,12 @@ const CenterDashboard = () => {
             <div className="bg-teal-50 text-teal-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-teal-600 group-hover:text-white transition-colors">
               <CheckCircle size={32} />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">Mis Asignaciones</h3>
-            <p className="text-sm text-gray-500 mt-2">Talleres asignados y checklist</p>
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
+              Mis Asignaciones
+            </h3>
+            <p className="text-sm text-gray-500 mt-2">
+              Talleres asignados y checklist
+            </p>
           </button>
         </div>
       </div>

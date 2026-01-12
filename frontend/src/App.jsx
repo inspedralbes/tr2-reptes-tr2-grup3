@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./components/layout/Navbar.jsx";
 import Sidebar from "./components/layout/Sidebar.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -32,11 +32,14 @@ import WorkshopAttendance from "./pages/teacher/WorkshopAttendance.jsx";
 import WorkshopEvaluate from "./pages/teacher/WorkshopEvaluate.jsx";
 
 function App() {
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
+
   return (
     <div className="app-shell min-h-screen flex flex-col">
       <Navbar />
       <div className="flex flex-1">
-        <Sidebar />
+        {!isLoginPage && <Sidebar />}
         <main className="flex-1 p-6 bg-gray-50/30">
           <Routes>
             <Route path="/login" element={<Login />} />

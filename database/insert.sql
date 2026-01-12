@@ -3,12 +3,12 @@
 -- ==================================================================
 
 -- 0. INSERTAR USUARIOS PARA AUTENTICACIÓN (fuera del bloque DO)
--- Password hash para 'admin123' usando bcrypt
+-- Password hash para 'admin123' usando bcrypt (generado en Docker Linux)
 INSERT INTO users (email, password_hash, full_name, role) VALUES 
-    ('admin@enginy.cat', '$2b$10$4YzRJfMt.qJvE9RAMjVnUeqbY7gJ4FZH2dEK3C8vhqGPkXoZvMOYO', 'Admin Enginy', 'ADMIN'),
-    ('coord1@escola1.cat', '$2b$10$4YzRJfMt.qJvE9RAMjVnUeqbY7gJ4FZH2dEK3C8vhqGPkXoZvMOYO', 'Coordinador Escola 1', 'CENTER_COORD'),
-    ('coord2@escola2.cat', '$2b$10$4YzRJfMt.qJvE9RAMjVnUeqbY7gJ4FZH2dEK3C8vhqGPkXoZvMOYO', 'Coordinador Escola 2', 'CENTER_COORD'),
-    ('teacher@enginy.cat', '$2b$10$4YzRJfMt.qJvE9RAMjVnUeqbY7gJ4FZH2dEK3C8vhqGPkXoZvMOYO', 'Professor Referent', 'TEACHER')
+    ('admin@enginy.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Admin Enginy', 'ADMIN'),
+    ('coord1@escola1.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Coordinador Escola 1', 'CENTER_COORD'),
+    ('coord2@escola2.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Coordinador Escola 2', 'CENTER_COORD'),
+    ('teacher@enginy.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Professor Referent', 'TEACHER')
 ON CONFLICT (email) DO NOTHING;
 
 DO $$

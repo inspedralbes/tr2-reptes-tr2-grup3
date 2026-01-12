@@ -1,5 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getProfile, login as loginApi, logout as logoutApi } from "../api/auth.js";
+import {
+  getProfile,
+  login as loginApi,
+  logout as logoutApi,
+} from "../api/auth.js";
 
 const AuthContext = createContext(null);
 
@@ -39,13 +43,20 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     setLoading(true);
     try {
-      const { user: loggedUser, token: newToken } = await loginApi(email, password);
+      const { user: loggedUser, token: newToken } = await loginApi(
+        email,
+        password
+      );
       setUser(loggedUser);
       setToken(newToken);
       localStorage.setItem(TOKEN_KEY, newToken);
       localStorage.setItem(USER_KEY, JSON.stringify(loggedUser));
       // Devolver el resultado para que Login.jsx pueda usar el rol
       return { user: loggedUser, token: newToken };
+    } catch (error) {
+      console.error("Login failed:", error);
+      // Re-lanzar el error para que Login.jsx pueda manejarlo
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -60,7 +71,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const value = useMemo(
-    () => ({ user, token, loading, login, logout, isAuthenticated: Boolean(user && token) }),
+    () => ({
+      user,
+      token,
+      loading,
+      login,
+      logout,
+      isAuthenticated: Boolean(user && token),
+    }),
     [user, token, loading]
   );
 
