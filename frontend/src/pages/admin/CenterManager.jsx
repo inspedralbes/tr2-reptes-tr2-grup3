@@ -19,6 +19,12 @@ const CenterManager = () => {
   const [formData, setFormData] = useState({
     name: "",
     code: "",
+    address: "",
+    postal_code: "",
+    municipality: "",
+    email: "",
+    phone: "",
+    ownership_type: ""
   });
 
   useEffect(() => {
@@ -34,7 +40,7 @@ const CenterManager = () => {
     } catch (err) {
       setError(
         "Error al cargar centros: " +
-          (err.response?.data?.message || err.message)
+        (err.response?.data?.message || err.message)
       );
     } finally {
       setLoading(false);
@@ -51,7 +57,16 @@ const CenterManager = () => {
       }
       setShowModal(false);
       setEditingCenter(null);
-      setFormData({ name: "", code: "" });
+      setFormData({
+        name: "",
+        code: "",
+        address: "",
+        postal_code: "",
+        municipality: "",
+        email: "",
+        phone: "",
+        ownership_type: ""
+      });
       loadCenters();
     } catch (err) {
       setError(
@@ -65,6 +80,12 @@ const CenterManager = () => {
     setFormData({
       name: center.name,
       code: center.code || "",
+      address: center.address || "",
+      postal_code: center.postal_code || "",
+      municipality: center.municipality || "",
+      email: center.email || "",
+      phone: center.phone || "",
+      ownership_type: center.ownership_type || ""
     });
     setShowModal(true);
   };
@@ -193,6 +214,18 @@ const CenterManager = () => {
                   <th className="px-6 py-4 font-medium text-gray-900">
                     Nombre
                   </th>
+                  <th className="px-6 py-4 font-medium text-gray-900">
+                    Dirección
+                  </th>
+                  <th className="px-6 py-4 font-medium text-gray-900">
+                    Teléfono
+                  </th>
+                  <th className="px-6 py-4 font-medium text-gray-900">
+                    Email
+                  </th>
+                  <th className="px-6 py-4 font-medium text-gray-900">
+                    Titularidad
+                  </th>
                   <th className="px-6 py-4 font-medium text-gray-900 text-right">
                     Acciones
                   </th>
@@ -204,6 +237,32 @@ const CenterManager = () => {
                     <td className="px-6 py-4 font-mono text-xs">{c.code}</td>
                     <td className="px-6 py-4 font-medium text-gray-900">
                       {c.name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      <div>{c.address}</div>
+                      <div className="text-xs text-gray-400">
+                        {c.postal_code} {c.municipality}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-mono text-xs">
+                      {c.phone}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {c.email && (
+                        <a href={`mailto:${c.email}`} className="text-blue-600 hover:underline truncate max-w-[150px] block" title={c.email}>
+                          {c.email}
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {c.ownership_type && (
+                        <span className={`px-2 py-1 rounded text-xs ${c.ownership_type.includes('Públic') || c.ownership_type.includes('Educació')
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                          {c.ownership_type}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 flex justify-end gap-3">
                       <button
@@ -226,7 +285,7 @@ const CenterManager = () => {
                 {centers.length === 0 && (
                   <tr>
                     <td
-                      colSpan="3"
+                      colSpan="7"
                       className="px-6 py-8 text-center text-gray-500"
                     >
                       No hay centros registrados.
@@ -284,6 +343,105 @@ const CenterManager = () => {
               placeholder="08013275"
             />
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Municipio
+              </label>
+              <input
+                type="text"
+                value={formData.municipality}
+                onChange={(e) =>
+                  setFormData({ ...formData, municipality: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                placeholder="Barcelona"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CP
+              </label>
+              <input
+                type="text"
+                value={formData.postal_code}
+                onChange={(e) =>
+                  setFormData({ ...formData, postal_code: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                placeholder="08019"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Dirección
+            </label>
+            <input
+              type="text"
+              value={formData.address}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              placeholder="C/ Ejemplo, 123"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                placeholder="centro@xtec.cat"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Teléfono
+              </label>
+              <input
+                type="text"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                placeholder="93..."
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Titularidad
+            </label>
+            <select
+              value={formData.ownership_type}
+              onChange={(e) =>
+                setFormData({ ...formData, ownership_type: e.target.value })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+            >
+              <option value="">Seleccionar...</option>
+              <option value="Departament d'Educació i Formació Professional">Público (Generalitat)</option>
+              <option value="Corporacions Locals">Público (Municipal)</option>
+              <option value="Privat">Privado</option>
+              <option value="Fundacions">Fundación</option>
+              <option value="Ordes i Congregacions Catòlics">Religioso</option>
+              <option value="Societats Mercantils">Sociedad Mercantil</option>
+              <option value="Cooperatives">Cooperativa</option>
+            </select>
+          </div>
         </form>
       </Modal>
 
@@ -320,16 +478,14 @@ const CenterManager = () => {
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragActive
-                ? "border-blue-500 bg-blue-50"
-                : "border-gray-300 hover:border-gray-400"
-            }`}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-300 hover:border-gray-400"
+              }`}
           >
             <Upload
-              className={`mx-auto mb-4 ${
-                dragActive ? "text-blue-500" : "text-gray-400"
-              }`}
+              className={`mx-auto mb-4 ${dragActive ? "text-blue-500" : "text-gray-400"
+                }`}
               size={48}
             />
             <p className="text-sm text-gray-600 mb-2">

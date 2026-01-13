@@ -44,7 +44,14 @@ CREATE TABLE schools (
     code VARCHAR(50) UNIQUE NOT NULL, -- Codi Centre
     name VARCHAR(255) NOT NULL,
     coordinator_user_id UUID REFERENCES users(id),
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    -- US #New: Detalles completos del centro
+    address TEXT,
+    postal_code VARCHAR(10),
+    municipality VARCHAR(100),
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    ownership_type VARCHAR(100)
 );
 
 CREATE TABLE students (
