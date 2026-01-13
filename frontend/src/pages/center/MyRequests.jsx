@@ -1,6 +1,6 @@
 /**
  * MyRequests.jsx
- * 
+ *
  * Página para que los centros vean sus solicitudes enviadas.
  * Permite ver el estado, editar (si está en SUBMITTED) o cancelar.
  */
@@ -12,7 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 const MyRequests = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,7 +41,11 @@ const MyRequests = () => {
    * Cancela una solicitud tras confirmación
    */
   const handleCancel = async (id) => {
-    if (!window.confirm("¿Cancelar esta solicitud? Esta acción no se puede deshacer.")) {
+    if (
+      !window.confirm(
+        "¿Cancelar esta solicitud? Esta acción no se puede deshacer."
+      )
+    ) {
       return;
     }
     try {
@@ -50,13 +54,6 @@ const MyRequests = () => {
     } catch (err) {
       setError("Error al cancelar: " + err.message);
     }
-  };
-
-  /**
-   * Navega al wizard para editar una solicitud
-   */
-  const handleEdit = (id) => {
-    navigate(`/center/request?edit=${id}`);
   };
 
   /**
@@ -99,14 +96,10 @@ const MyRequests = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Mis Solicitudes</h1>
-          <p className="text-gray-500">Historial de solicitudes de talleres enviadas</p>
+          <p className="text-gray-500">
+            Historial de solicitudes de talleres enviadas
+          </p>
         </div>
-        <button
-          onClick={() => navigate("/center/request")}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          ➕ Nueva Solicitud
-        </button>
       </div>
 
       {/* Mensaje de error */}
@@ -120,23 +113,30 @@ const MyRequests = () => {
       {requests.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-8 text-center">
           <p className="text-gray-500 mb-4">No tienes solicitudes enviadas.</p>
-          <button
-            onClick={() => navigate("/center/request")}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Crear primera solicitud
-          </button>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Período</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Envío</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Período
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Resumen
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Fecha Envío
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -148,39 +148,66 @@ const MyRequests = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-gray-700">
                     Período #{req.enrollment_period_id}
                   </td>
+                  <td className="px-6 py-4 text-gray-600 text-xs">
+                    {/* Profesores Acompañantes */}
+                    {req.request_teachers &&
+                      req.request_teachers.length > 0 && (
+                        <div className="mb-2 bg-blue-50 p-2 rounded border border-blue-100">
+                          <span className="font-bold text-blue-900 block mb-1">
+                            Profesores Acompañantes:
+                          </span>
+                          <div className="text-blue-800">
+                            {req.request_teachers
+                              .map((t) => t.full_name)
+                              .join(", ")}
+                          </div>
+                        </div>
+                      )}
+
+                    {req.items_summary?.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="mb-2 border-b pb-1 last:border-0 last:pb-0"
+                      >
+                        <div className="font-bold text-gray-800">
+                          {item.workshop_name} (
+                          {item.day === "TUESDAY" ? "Martes" : "Jueves"}{" "}
+                          {item.start_time?.slice(0, 5)})
+                        </div>
+                        <div className="ml-2">
+                          <span className="font-semibold text-gray-700">
+                            Alumnos:
+                          </span>{" "}
+                          {item.students?.join(", ") || "Sin alumnos"}
+                        </div>
+                      </div>
+                    ))}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {req.submitted_at ? new Date(req.submitted_at).toLocaleDateString("es-ES") : "-"}
+                    {req.submitted_at
+                      ? new Date(req.submitted_at).toLocaleDateString("es-ES")
+                      : "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(req.status)}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                        req.status
+                      )}`}
+                    >
                       {getStatusLabel(req.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="flex justify-end gap-2">
-                      {/* Solo mostrar editar/cancelar si está en SUBMITTED */}
+                      {/* Solo mostrar cancelar si está en SUBMITTED */}
                       {req.status === "SUBMITTED" && (
-                        <>
-                          <button
-                            onClick={() => handleEdit(req.id)}
-                            className="text-blue-600 hover:text-blue-800 text-sm"
-                          >
-                            ✏️ Editar
-                          </button>
-                          <button
-                            onClick={() => handleCancel(req.id)}
-                            className="text-red-600 hover:text-red-800 text-sm"
-                          >
-                            ❌ Cancelar
-                          </button>
-                        </>
+                        <button
+                          onClick={() => handleCancel(req.id)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          ❌ Cancelar
+                        </button>
                       )}
-                      <button
-                        onClick={() => navigate(`/center/request/${req.id}`)}
-                        className="text-gray-600 hover:text-gray-800 text-sm"
-                      >
-                        👁️ Ver
-                      </button>
                     </div>
                   </td>
                 </tr>

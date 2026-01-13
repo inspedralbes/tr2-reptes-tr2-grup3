@@ -18,8 +18,8 @@ const CatalogBrowser = () => {
   const [detailsLoading, setDetailsLoading] = useState(false);
 
   // Filtros
-  const [filterAmbit, setFilterAmbit] = useState('');
-  const [filterDay, setFilterDay] = useState('');
+  const [filterAmbit, setFilterAmbit] = useState("");
+  const [filterDay, setFilterDay] = useState("");
 
   // Cargar talleres
   useEffect(() => {
@@ -33,7 +33,7 @@ const CatalogBrowser = () => {
       const data = await listWorkshops(filters);
       setWorkshops(data);
     } catch (err) {
-      console.error('Error loading workshops:', err);
+      console.error("Error loading workshops:", err);
     } finally {
       setLoading(false);
     }
@@ -51,25 +51,31 @@ const CatalogBrowser = () => {
       const data = await getWorkshop(workshop.id);
       setSelectedWorkshop(data);
     } catch (err) {
-      console.error('Error loading workshop details:', err);
+      console.error("Error loading workshop details:", err);
     } finally {
       setDetailsLoading(false);
     }
   };
 
   // Ámbitos disponibles
-  const ambits = ['Tecnològic', 'Artístic', 'Sostenibilitat', 'Oci i benestar', 'Comunicació'];
+  const ambits = [
+    "Tecnològic",
+    "Artístic",
+    "Sostenibilitat",
+    "Oci i benestar",
+    "Comunicació",
+  ];
 
   // Filtrar por día si está activo
-  const filteredWorkshops = workshops.filter(w => {
+  const filteredWorkshops = workshops.filter((w) => {
     if (!filterDay) return true;
     // Filtrar si alguna de las ediciones coincide con el día seleccionado
-    return w.editions && w.editions.some(e => e.day_of_week === filterDay);
+    return w.editions && w.editions.some((e) => e.day_of_week === filterDay);
   });
 
   // Helper para formatear hora
   const formatTime = (timeStr) => {
-    if (!timeStr) return '';
+    if (!timeStr) return "";
     return timeStr.slice(0, 5); // 15:30:00 -> 15:30
   };
 
@@ -92,7 +98,11 @@ const CatalogBrowser = () => {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white"
             >
               <option value="">Todos los ámbitos</option>
-              {ambits.map(a => <option key={a} value={a}>{a}</option>)}
+              {ambits.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -112,7 +122,7 @@ const CatalogBrowser = () => {
           </div>
 
           <div className="flex-1 text-right">
-            <Button onClick={() => navigate('/center/request')}>
+            <Button onClick={() => navigate("/center/request")}>
               📝 Nueva Solicitud
             </Button>
           </div>
@@ -143,9 +153,16 @@ const CatalogBrowser = () => {
                   )}
                 </div>
 
-                <h3 className="font-bold text-lg text-gray-900 mb-2 leading-tight group-hover:text-blue-600 transition-colors">
+                <h3 className="font-bold text-lg text-gray-900 mb-1 leading-tight group-hover:text-blue-600 transition-colors">
                   {workshop.title}
                 </h3>
+
+                {/* Nueva ubicación - Texto plano sin icono */}
+                {workshop.address && (
+                  <p className="text-xs text-gray-500 mb-2 font-medium">
+                    {workshop.address}
+                  </p>
+                )}
 
                 {workshop.description && (
                   <p className="text-gray-500 text-sm mb-4 line-clamp-2">
@@ -155,23 +172,35 @@ const CatalogBrowser = () => {
 
                 {/* Horarios visibles directamente */}
                 <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-auto">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Horarios Disponibles</p>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                    Horarios Disponibles
+                  </p>
                   {workshop.editions && workshop.editions.length > 0 ? (
                     workshop.editions.map((ed, idx) => (
-                      <div key={idx} className="flex items-center text-sm text-gray-700 gap-2">
-                        {ed.day_of_week === 'TUESDAY' ? (
-                          <span className="w-20 text-xs font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-center">Martes</span>
+                      <div
+                        key={idx}
+                        className="flex items-center text-sm text-gray-700 gap-2"
+                      >
+                        {ed.day_of_week === "TUESDAY" ? (
+                          <span className="w-20 text-xs font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-center">
+                            Martes
+                          </span>
                         ) : (
-                          <span className="w-20 text-xs font-medium bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-center">Jueves</span>
+                          <span className="w-20 text-xs font-medium bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-center">
+                            Jueves
+                          </span>
                         )}
                         <span className="flex items-center gap-1 text-gray-600">
                           <Clock size={14} />
-                          {formatTime(ed.start_time)} - {formatTime(ed.end_time)}
+                          {formatTime(ed.start_time)} -{" "}
+                          {formatTime(ed.end_time)}
                         </span>
                       </div>
                     ))
                   ) : (
-                    <span className="text-sm text-gray-400 italic">Sin ediciones programadas</span>
+                    <span className="text-sm text-gray-400 italic">
+                      Sin ediciones programadas
+                    </span>
                   )}
                 </div>
               </div>
@@ -192,7 +221,8 @@ const CatalogBrowser = () => {
       {/* Helper text */}
       {!loading && (
         <div className="text-center text-sm text-gray-500 mt-8">
-          Mostrando {filteredWorkshops.length} de {workshops.length} talleres disponibles
+          Mostrando {filteredWorkshops.length} de {workshops.length} talleres
+          disponibles
         </div>
       )}
 
@@ -200,16 +230,21 @@ const CatalogBrowser = () => {
       <Modal
         isOpen={!!selectedWorkshop}
         onClose={() => setSelectedWorkshop(null)}
-        title={selectedWorkshop?.title || 'Detalle del Taller'}
+        title={selectedWorkshop?.title || "Detalle del Taller"}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setSelectedWorkshop(null)}>
+            <Button
+              variant="secondary"
+              onClick={() => setSelectedWorkshop(null)}
+            >
               Cerrar
             </Button>
-            <Button onClick={() => {
-              setSelectedWorkshop(null);
-              navigate('/center/request');
-            }}>
+            <Button
+              onClick={() => {
+                setSelectedWorkshop(null);
+                navigate("/center/request");
+              }}
+            >
               Solicitar Taller
             </Button>
           </>
@@ -222,7 +257,7 @@ const CatalogBrowser = () => {
                 {selectedWorkshop.ambit}
               </span>
               <p className="text-gray-700 leading-relaxed text-base">
-                {selectedWorkshop.description || 'Sin descripción disponible.'}
+                {selectedWorkshop.description || "Sin descripción disponible."}
               </p>
             </div>
 
@@ -231,37 +266,59 @@ const CatalogBrowser = () => {
                 <Calendar size={18} className="text-gray-500" />
                 Sesiones y Capacidad
               </h4>
-              {selectedWorkshop.editions && selectedWorkshop.editions.length > 0 ? (
+              {selectedWorkshop.editions &&
+              selectedWorkshop.editions.length > 0 ? (
                 <div className="grid gap-3">
                   {selectedWorkshop.editions.map((edition, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-white hover:shadow-xs transition-colors">
+                    <div
+                      key={idx}
+                      className="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-white hover:shadow-xs transition-colors"
+                    >
                       <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${edition.day_of_week === 'TUESDAY' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                            }`}>
-                            {edition.day_of_week === 'TUESDAY' ? 'Martes' : 'Jueves'}
+                          <span
+                            className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${
+                              edition.day_of_week === "TUESDAY"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-purple-100 text-purple-700"
+                            }`}
+                          >
+                            {edition.day_of_week === "TUESDAY"
+                              ? "Martes"
+                              : "Jueves"}
                           </span>
                           <span className="flex items-center gap-1 text-sm font-medium text-gray-700">
                             <Clock size={16} />
-                            {formatTime(edition.start_time)} - {formatTime(edition.end_time)}
+                            {formatTime(edition.start_time)} -{" "}
+                            {formatTime(edition.end_time)}
                           </span>
                         </div>
                       </div>
                       <div className="flex gap-4 text-sm text-gray-600">
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-400 uppercase">Capacidad Total</span>
-                          <span className="font-semibold">{edition.capacity_total} alumnos</span>
+                          <span className="text-xs text-gray-400 uppercase">
+                            Capacidad Total
+                          </span>
+                          <span className="font-semibold">
+                            {edition.capacity_total} alumnos
+                          </span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-400 uppercase">Máx. por Centro</span>
-                          <span className="font-semibold">{edition.max_per_school} alumnos</span>
+                          <span className="text-xs text-gray-400 uppercase">
+                            Máx. por Centro
+                          </span>
+                          <span className="font-semibold">
+                            {edition.max_per_school} alumnos
+                          </span>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 italic">No hay sesiones definidas para este taller.</p>
+                <p className="text-gray-500 italic">
+                  No hay sesiones definidas para este taller.
+                </p>
               )}
             </div>
           </div>

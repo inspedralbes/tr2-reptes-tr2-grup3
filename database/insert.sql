@@ -86,6 +86,10 @@ BEGIN
         ('Escola Tibidabo', '08002526'), ('Escola Víctor Català', '08002538')
     ON CONFLICT (code) DO NOTHING;
 
+    -- VINCULAR COORDINADOR A ESCUELA (Manual seeding fix)
+    UPDATE schools SET coordinator_user_id = (SELECT id FROM users WHERE email = 'coord1@escola1.cat') 
+    WHERE name = 'Escola Baixeras';
+
     -- =======================================================================
     -- 4. INSERTAR TALLERES (WORKSHOPS) Y EDICIONES
     -- =======================================================================

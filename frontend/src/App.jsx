@@ -24,7 +24,9 @@ import CatalogBrowser from "./pages/center/CatalogBrowser.jsx";
 import RequestWizard from "./pages/center/RequestWizard.jsx";
 import MyAllocations from "./pages/center/MyAllocations.jsx";
 import MyRequests from "./pages/center/MyRequests.jsx";
+import RequestDetail from "./pages/center/RequestDetail.jsx";
 import NominalConfirmation from "./pages/center/NominalConfirmation.jsx";
+import StudentManager from "./pages/center/StudentManager.jsx";
 
 // ZONA PROFESOR
 import TeacherDashboard from "./pages/teacher/TeacherDashboard.jsx";
@@ -138,6 +140,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MyRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/center/request/:id"
+              element={
+                <ProtectedRoute>
+                  <RequestDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/center/students"
+              element={
+                <ProtectedRoute>
+                  <StudentManager />
                 </ProtectedRoute>
               }
             />
