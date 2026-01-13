@@ -1,4 +1,4 @@
-const db = require('../../config/db');
+const db = require("../../config/db");
 
 /**
  * GET /api/catalog/workshops
@@ -11,7 +11,7 @@ const listWorkshops = async (req, res) => {
 
   try {
     let query = `
-      SELECT w.id, w.title, w.ambit, w.is_new, w.description, w.provider_id,
+      SELECT w.id, w.title, w.ambit, w.is_new, w.description, w.provider_id, p.address,
              COALESCE(
                JSON_AGG(
                  JSON_BUILD_OBJECT(
@@ -25,6 +25,7 @@ const listWorkshops = async (req, res) => {
              ) as editions
       FROM workshops w
       LEFT JOIN workshop_editions we ON w.id = we.workshop_id
+      LEFT JOIN providers p ON w.provider_id = p.id
       WHERE 1=1
     `;
     const params = [];
@@ -37,11 +38,11 @@ const listWorkshops = async (req, res) => {
 
     // Filtro por si es nuevo
     if (is_new !== undefined) {
-      params.push(is_new === 'true');
+      params.push(is_new === "true");
       query += ` AND w.is_new = $${params.length}`;
     }
 
-    query += ' GROUP BY w.id ORDER BY w.title';
+    query += " GROUP BY w.id, p.address ORDER BY w.title";
     const result = await db.query(query, params);
     res.json(result.rows);
   } catch (error) {
@@ -60,12 +61,12 @@ const getWorkshop = async (req, res) => {
   try {
     // Obtener workshop
     const workshopResult = await db.query(
-      'SELECT id, title, ambit, is_new, description, provider_id FROM workshops WHERE id = $1',
+      "SELECT id, title, ambit, is_new, description, provider_id FROM workshops WHERE id = $1",
       [id]
     );
 
     if (workshopResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Workshop not found' });
+      return res.status(404).json({ error: "Workshop not found" });
     }
 
     const workshop = workshopResult.rows[0];
@@ -96,15 +97,15 @@ const getWorkshop = async (req, res) => {
  * Body: { title, ambit, is_new, description, provider_id }
  */
 const createWorkshop = async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Only admins can create workshops' });
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({ error: "Only admins can create workshops" });
   }
 
   const { title, ambit, is_new, description, provider_id } = req.body;
 
   // Validar campos requeridos
   if (!title || !ambit) {
-    return res.status(400).json({ error: 'title and ambit are required' });
+    return res.status(400).json({ error: "title and ambit are required" });
   }
 
   try {
@@ -128,8 +129,8 @@ const createWorkshop = async (req, res) => {
  * Body: { title?, ambit?, is_new?, description?, provider_id? }
  */
 const updateWorkshop = async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Only admins can update workshops' });
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({ error: "Only admins can update workshops" });
   }
 
   const { id } = req.params;
@@ -137,9 +138,12 @@ const updateWorkshop = async (req, res) => {
 
   try {
     // Verificar que el workshop existe
-    const checkResult = await db.query('SELECT id FROM workshops WHERE id = $1', [id]);
+    const checkResult = await db.query(
+      "SELECT id FROM workshops WHERE id = $1",
+      [id]
+    );
     if (checkResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Workshop not found' });
+      return res.status(404).json({ error: "Workshop not found" });
     }
 
     // Construir UPDATE dinámico
@@ -174,11 +178,13 @@ const updateWorkshop = async (req, res) => {
     }
 
     if (updates.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
+      return res.status(400).json({ error: "No fields to update" });
     }
 
     params.push(id);
-    const query = `UPDATE workshops SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
+    const query = `UPDATE workshops SET ${updates.join(
+      ", "
+    )} WHERE id = $${paramCount} RETURNING *`;
 
     const result = await db.query(query, params);
     res.json(result.rows[0]);
@@ -194,8 +200,8 @@ const updateWorkshop = async (req, res) => {
  * Precondición: no debe tener ediciones asociadas con solicitudes
  */
 const deleteWorkshop = async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Only admins can delete workshops' });
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({ error: "Only admins can delete workshops" });
   }
 
   const { id } = req.params;
@@ -203,12 +209,15 @@ const deleteWorkshop = async (req, res) => {
   const client = await db.getClient();
 
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // Verificar que existe
-    const checkResult = await client.query('SELECT id FROM workshops WHERE id = $1', [id]);
+    const checkResult = await client.query(
+      "SELECT id FROM workshops WHERE id = $1",
+      [id]
+    );
     if (checkResult.rows.length === 0) {
-      throw new Error('Workshop not found');
+      throw new Error("Workshop not found");
     }
 
     // Verificar que no tiene ediciones con solicitudes activas
@@ -220,26 +229,28 @@ const deleteWorkshop = async (req, res) => {
     );
 
     if (parseInt(activeRequestsResult.rows[0].count) > 0) {
-      throw new Error('Cannot delete workshop with active requests');
+      throw new Error("Cannot delete workshop with active requests");
     }
 
     // Eliminar ediciones
-    await client.query('DELETE FROM workshop_editions WHERE workshop_id = $1', [id]);
+    await client.query("DELETE FROM workshop_editions WHERE workshop_id = $1", [
+      id,
+    ]);
 
     // Eliminar workshop
     const result = await client.query(
-      'DELETE FROM workshops WHERE id = $1 RETURNING id, title',
+      "DELETE FROM workshops WHERE id = $1 RETURNING id, title",
       [id]
     );
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
     res.json({
-      message: 'Workshop deleted successfully',
+      message: "Workshop deleted successfully",
       deleted: result.rows[0],
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     res.status(400).json({ error: error.message });
   } finally {
     client.release();

@@ -14,7 +14,8 @@ import {
   GraduationCap,
   LogOut,
   Briefcase,
-  Building2
+  Building2,
+  Users,
 } from "lucide-react";
 
 /**
@@ -23,35 +24,39 @@ import {
  */
 const Sidebar = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
-  const isCenter = user?.role === 'CENTER_COORD';
-  const isTeacher = user?.role === 'TEACHER';
+  const isAdmin = user?.role === "ADMIN";
+  const isCenter = user?.role === "CENTER_COORD";
+  const isTeacher = user?.role === "TEACHER";
 
   // Helper para clases de NavLink
   const getLinkClass = ({ isActive }) => {
     // Cambio a estilo de alto contraste para estado activo
     // Inactivo: Texto gris, hover blanco/azul
-    // Activo: Fondo blanco (resalta sobre gris), texto azul fuerte, borde azul 
-    const base = "group flex items-center justify-between px-6 py-5 rounded-2xl text-base font-medium transition-all duration-200 mb-3 border-l-4";
+    // Activo: Fondo blanco (resalta sobre gris), texto azul fuerte, borde azul
+    const base =
+      "group flex items-center justify-between px-6 py-5 rounded-2xl text-base font-medium transition-all duration-200 mb-3 border-l-4";
 
     return isActive
-      ? "bg-white border-blue-600 text-blue-700 shadow-sm"  // Activo: Fondo blanco + Borde izquierdo azul
+      ? "bg-white border-blue-600 text-blue-700 shadow-sm" // Activo: Fondo blanco + Borde izquierdo azul
       : "border-transparent text-gray-600 hover:bg-white/50 hover:text-blue-700"; // Inactivo
   };
 
   const getIconClass = (isActive) => {
-    return isActive ? "text-blue-600" : "text-gray-400 group-hover:text-blue-600";
+    return isActive
+      ? "text-blue-600"
+      : "text-gray-400 group-hover:text-blue-600";
   };
 
   return (
     // Sticky top-20 para compensar la Navbar de 80px (h-20)
     <aside className="w-96 bg-gray-50 border-r border-gray-200 flex flex-col h-[calc(100vh-5rem)] sticky top-20 overflow-hidden shadow-xl z-20">
-
       {/* Contenido scrolleable - Aumentado espaciado vertical */}
       <nav className="flex-1 overflow-y-auto p-8 space-y-12 scrollbar-thin scrollbar-thumb-gray-200">
         {!isAuthenticated ? (
           <div>
-            <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Acceso</h3>
+            <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">
+              Acceso
+            </h3>
             <NavLink to="/login" className={getLinkClass}>
               {({ isActive }) => (
                 <>
@@ -68,13 +73,18 @@ const Sidebar = () => {
             {/* ==================== ZONA ADMIN ==================== */}
             {isAdmin && (
               <div>
-                <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Administración</h3>
+                <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">
+                  Administración
+                </h3>
 
                 <NavLink to="/admin" end className={getLinkClass}>
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <LayoutDashboard size={28} className={getIconClass(isActive)} />
+                        <LayoutDashboard
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Panel de Control</span>
                       </div>
                     </>
@@ -85,7 +95,10 @@ const Sidebar = () => {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <CalendarDays size={28} className={getIconClass(isActive)} />
+                        <CalendarDays
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Convocatorias</span>
                       </div>
                     </>
@@ -96,7 +109,10 @@ const Sidebar = () => {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <BookOpen size={28} className={getIconClass(isActive)} />
+                        <BookOpen
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Gestión de Catálogo</span>
                       </div>
                     </>
@@ -107,7 +123,10 @@ const Sidebar = () => {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <Briefcase size={28} className={getIconClass(isActive)} />
+                        <Briefcase
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Gestión de Proveedores</span>
                       </div>
                     </>
@@ -118,7 +137,10 @@ const Sidebar = () => {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <Building2 size={28} className={getIconClass(isActive)} />
+                        <Building2
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Gestión de Centros</span>
                       </div>
                     </>
@@ -129,7 +151,10 @@ const Sidebar = () => {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <FileText size={28} className={getIconClass(isActive)} />
+                        <FileText
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Monitor de Solicitudes</span>
                       </div>
                     </>
@@ -152,7 +177,9 @@ const Sidebar = () => {
             {/* ==================== ZONA CENTRO ==================== */}
             {isCenter && (
               <div>
-                <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Centro Educativo</h3>
+                <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">
+                  Centro Educativo
+                </h3>
 
                 <NavLink to="/center" end className={getLinkClass}>
                   {({ isActive }) => (
@@ -180,7 +207,10 @@ const Sidebar = () => {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <PlusCircle size={28} className={getIconClass(isActive)} />
+                        <PlusCircle
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Realizar Solicitud</span>
                       </div>
                     </>
@@ -191,7 +221,10 @@ const Sidebar = () => {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <FileStack size={28} className={getIconClass(isActive)} />
+                        <FileStack
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Historial Solicitudes</span>
                       </div>
                     </>
@@ -202,8 +235,22 @@ const Sidebar = () => {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <CheckCircle size={28} className={getIconClass(isActive)} />
+                        <CheckCircle
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Plazas Asignadas</span>
+                      </div>
+                    </>
+                  )}
+                </NavLink>
+
+                <NavLink to="/center/students" className={getLinkClass}>
+                  {({ isActive }) => (
+                    <>
+                      <div className="flex items-center gap-5">
+                        <Users size={28} className={getIconClass(isActive)} />
+                        <span className="text-lg">Mis Alumnos</span>
                       </div>
                     </>
                   )}
@@ -214,12 +261,17 @@ const Sidebar = () => {
             {/* ==================== ZONA PROFESOR ==================== */}
             {isTeacher && (
               <div>
-                <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Docencia</h3>
+                <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">
+                  Docencia
+                </h3>
                 <NavLink to="/teacher" className={getLinkClass}>
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <GraduationCap size={28} className={getIconClass(isActive)} />
+                        <GraduationCap
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
                         <span className="text-lg">Mis Talleres</span>
                       </div>
                     </>
@@ -242,8 +294,12 @@ const Sidebar = () => {
               {user.email.substring(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 overflow-hidden">
-              <div className="font-bold text-gray-900 truncate text-lg leading-tight">{user.full_name || user.email}</div>
-              <div className="text-sm text-gray-500 font-medium mt-1">{user.role}</div>
+              <div className="font-bold text-gray-900 truncate text-lg leading-tight">
+                {user.full_name || user.email}
+              </div>
+              <div className="text-sm text-gray-500 font-medium mt-1">
+                {user.role}
+              </div>
             </div>
             <div className="text-gray-400 group-hover:text-red-500 transition-colors">
               <LogOut size={28} />

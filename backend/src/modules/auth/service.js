@@ -37,12 +37,25 @@ const login = async ({ email, password }) => {
       name: user.full_name,
     });
 
+    // Si es coordinador, buscar su escuela
+    let school_id = null;
+    if (user.role === "CENTER_COORD") {
+      const schoolRes = await db.query(
+        "SELECT id FROM schools WHERE coordinator_user_id = $1",
+        [user.id]
+      );
+      if (schoolRes.rows.length > 0) {
+        school_id = schoolRes.rows[0].id;
+      }
+    }
+
     return {
       user: {
         id: user.id,
         email: user.email,
         name: user.full_name,
         role: user.role,
+        school_id,
       },
       token,
     };
@@ -68,11 +81,25 @@ const getProfile = async (userId) => {
     }
 
     const user = result.rows[0];
+
+    // Si es coordinador, buscar su escuela
+    let school_id = null;
+    if (user.role === "CENTER_COORD") {
+      const schoolRes = await db.query(
+        "SELECT id FROM schools WHERE coordinator_user_id = $1",
+        [user.id]
+      );
+      if (schoolRes.rows.length > 0) {
+        school_id = schoolRes.rows[0].id;
+      }
+    }
+
     return {
       id: user.id,
       email: user.email,
       name: user.full_name,
       role: user.role,
+      school_id, // Añadir school_id
     };
   } catch (error) {
     throw new Error(`Failed to fetch profile: ${error.message}`);

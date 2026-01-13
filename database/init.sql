@@ -52,11 +52,8 @@ CREATE TABLE students (
     idalu VARCHAR(50), -- Nullable al principio, se llena al confirmar
     full_name VARCHAR(255) NOT NULL,
     school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
-    -- US #15: Dades del tutor acadèmic per a gestió d'assistència i avisos
-    tutor_email VARCHAR(255),      -- Email del tutor per notificacions d'absència
-    tutor_phone VARCHAR(50),       -- Telèfon del tutor
-    birth_date DATE,               -- Data de naixement de l'alumne
-    course VARCHAR(100),           -- Curs de l'alumne (ex: "4t ESO")
+    dni_front_url VARCHAR(500), -- Foto DNI Frontal
+    dni_back_url VARCHAR(500),  -- Foto DNI Trasero
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -116,6 +113,12 @@ CREATE TABLE request_items (
     requested_students INT NOT NULL CHECK (requested_students <= 4)
 );
 
+CREATE TABLE request_item_students (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    request_item_id UUID REFERENCES request_items(id) ON DELETE CASCADE,
+    student_id UUID REFERENCES students(id)
+);
+
 -- Nueva tabla para "Voldríem ser referents del projecte"
 CREATE TABLE request_teacher_preferences (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -163,7 +166,7 @@ CREATE TABLE attendance_logs (
 -- ZONA 5: GESTIÓ DOCUMENTAL (CHECKLIST)
 -- ==========================================
 -- Taula per guardar els fitxers pujats (Autoritzacions, DNI, etc.)
-CREATE TYPE doc_type_enum AS ENUM ('AUTORITZACIO_IMATGE', 'AUTORITZACIO_SORTIDA', 'ALTRES');
+CREATE TYPE doc_type_enum AS ENUM ('AUTORITZACIO_IMATGE', 'AUTORITZACIO_SORTIDA', 'ALTRES', 'DNI_FRONT', 'DNI_BACK');
 
 CREATE TABLE student_documents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
