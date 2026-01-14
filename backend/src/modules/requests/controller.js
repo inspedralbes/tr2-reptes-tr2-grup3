@@ -68,13 +68,14 @@ const createRequest = async (req, res) => {
     // 2. Insertar items (talleres solicitados con número de alumnos)
     for (const item of items) {
       const itemResult = await client.query(
-        `INSERT INTO request_items (request_id, workshop_edition_id, priority, requested_students)
-         VALUES ($1, $2, $3, $4) RETURNING id`,
+        `INSERT INTO request_items (request_id, workshop_edition_id, priority, requested_students, preferred_date)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
         [
           request_id,
           item.workshop_edition_id,
           item.priority || 999,
           item.requested_students,
+          item.preferred_date || null,
         ]
       );
 
@@ -318,13 +319,14 @@ const updateRequest = async (req, res) => {
           });
         }
         await client.query(
-          `INSERT INTO request_items (request_id, workshop_edition_id, priority, requested_students)
-           VALUES ($1, $2, $3, $4)`,
+          `INSERT INTO request_items (request_id, workshop_edition_id, priority, requested_students, preferred_date)
+           VALUES ($1, $2, $3, $4, $5)`,
           [
             id,
             item.workshop_edition_id,
             item.priority || 999,
             item.requested_students,
+            item.preferred_date || null,
           ]
         );
       }
