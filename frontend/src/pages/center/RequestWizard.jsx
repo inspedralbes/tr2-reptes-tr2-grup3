@@ -153,6 +153,24 @@ const RequestWizard = () => {
       return;
     }
 
+    // Validar asignación de alumnos (No permitir huecos vacíos)
+    for (const [index, item] of selectedItems.entries()) {
+      if (!item.selected_students || item.selected_students.length === 0) {
+        setError(`El taller #${index + 1} no tiene alumnos asignados.`);
+        return;
+        s;
+      }
+      const emptySlots = item.selected_students.some((s) => !s || s === "");
+      if (emptySlots) {
+        setError(
+          `El taller #${
+            index + 1
+          } tiene alumnos sin seleccionar. Por favor, selecciona un alumno o elimina el hueco.`
+        );
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -173,6 +191,7 @@ const RequestWizard = () => {
           requested_students: parseInt(item.requested_students),
           priority: item.priority,
           student_ids: item.selected_students,
+          preferred_date: item.preferred_date,
         })),
         teacher_preferences: teacherPreferences
           .filter((p) => p.workshop_edition_id)
@@ -358,6 +377,70 @@ const RequestWizard = () => {
                         )
                       )}
                     </select>
+                  </div>
+
+                  {/* Fecha Específica (Nueva funcionalidad) */}
+                  <div className="col-span-1 md:col-span-2">
+                    <label className="block text-sm mb-1">
+                      Fecha Específica (Opcional)
+                    </label>
+                    <select
+                      value={item.preferred_date || ""}
+                      onChange={(e) =>
+                        updateItem(index, "preferred_date", e.target.value)
+                      }
+                      className="w-full border rounded px-2 py-1"
+                      disabled={!item.workshop_edition_id}
+                    >
+                      <option value="">Cualquier fecha (Indiferente)</option>
+                      {(() => {
+                        const edition = workshopDetails[
+                          item.workshop_id
+                        ]?.editions?.find(
+                          (e) => e.id === item.workshop_edition_id
+                        );
+                        const period = periods.find(
+                          (p) => p.id === formData.enrollment_period_id
+                        );
+
+                        if (edition && period) {
+                          const dates = [];
+                          const start = new Date(
+                            period.start_date_workshops || period.start_date
+                          ); // Use workshop start if available
+                          const end = new Date(
+                            period.end_date_workshops || period.end_date
+                          );
+                          const targetDay =
+                            edition.day_of_week === "TUESDAY" ? 2 : 4;
+
+                          let current = new Date(start);
+                          while (current <= end) {
+                            if (current.getDay() === targetDay) {
+                              dates.push(new Date(current));
+                            }
+                            current.setDate(current.getDate() + 1);
+                          }
+
+                          return dates.map((d, i) => (
+                            <option
+                              key={i}
+                              value={d.toISOString().split("T")[0]}
+                            >
+                              {d.toLocaleDateString("es-ES", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                              })}
+                            </option>
+                          ));
+                        }
+                        return null;
+                      })()}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Si no seleccionas fecha, se asignará según disponibilidad.
+                    </p>
                   </div>
                 </div>
 
