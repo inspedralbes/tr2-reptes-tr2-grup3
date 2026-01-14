@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { requestService } from "../../services/request.service";
 import { useAuth } from "../../context/AuthContext";
+import { FileText } from "lucide-react";
 
 const MyRequests = () => {
   const { user } = useAuth();
@@ -27,7 +28,6 @@ const MyRequests = () => {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      // TODO: Filtrar por school_id del usuario cuando esté implementado
       const data = await requestService.getRequests();
       setRequests(data);
     } catch (err) {
@@ -50,7 +50,7 @@ const MyRequests = () => {
     }
     try {
       await requestService.cancelRequest(id);
-      loadRequests(); // Recargar lista
+      loadRequests();
     } catch (err) {
       setError("Error al cancelar: " + err.message);
     }
@@ -82,21 +82,15 @@ const MyRequests = () => {
     return labels[status] || status;
   };
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <p className="text-gray-500">Cargando solicitudes...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Cabecera */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Mis Solicitudes</h1>
-          <p className="text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <FileText className="text-blue-600" /> Mis Solicitudes
+          </h1>
+          <p className="text-gray-500 mt-1">
             Historial de solicitudes de talleres enviadas
           </p>
         </div>
@@ -104,153 +98,182 @@ const MyRequests = () => {
 
       {/* Mensaje de error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-6 border border-red-200">
           {error}
         </div>
       )}
 
       {/* Lista de solicitudes */}
-      {requests.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <p className="text-gray-500 mb-4">No tienes solicitudes enviadas.</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/2">
-                  Resumen de Solicitud
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Fecha Envío
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {requests.map((req) => (
-                <tr key={req.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    {/* Profesores Acompañantes Globales */}
-                    {req.request_teachers &&
-                      req.request_teachers.length > 0 && (
-                        <div className="mb-3 text-sm text-gray-600">
-                          <span className="font-bold text-gray-800">
-                            Profesores Acompañantes:
-                          </span>{" "}
-                          {req.request_teachers
-                            .map((t) => t.full_name)
-                            .join(", ")}
-                        </div>
-                      )}
-
-                    {/* Lista de Talleres */}
-                    <div className="space-y-3">
-                      {req.items_summary?.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-gray-50 p-3 rounded-md border border-gray-100"
-                        >
-                          <div className="flex justify-between items-start mb-1">
-                            <div className="font-bold text-gray-800">
-                              {item.workshop_name}
-                            </div>
-                            <div className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                              {item.day === "TUESDAY" ? "Martes" : "Jueves"}{" "}
-                              {item.start_time?.slice(0, 5)} -{" "}
-                              {item.end_time?.slice(0, 5)}
-                            </div>
-                          </div>
-
-                          {/* Alumnos */}
-                          <div className="mb-1">
-                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                              Alumnos
+      <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">
+            Cargando solicitudes...
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            No tienes solicitudes enviadas.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase w-[45%]">
+                    Resumen de Solicitud
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase w-[18%]">
+                    Fecha Envío
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase w-[17%]">
+                    Estado
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase w-[20%]">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {requests.map((req) => (
+                  <tr
+                    key={req.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-5">
+                      {/* Profesores Acompañantes Globales */}
+                      {req.request_teachers &&
+                        req.request_teachers.length > 0 && (
+                          <div className="mb-4 pb-3 border-b border-gray-200">
+                            <span className="font-semibold text-gray-800 text-sm">
+                              Profesores Acompañantes:
+                            </span>{" "}
+                            <span className="text-gray-600 text-sm">
+                              {req.request_teachers
+                                .map((t) => t.full_name)
+                                .join(", ")}
                             </span>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {item.students?.map((s, i) => (
-                                <span
-                                  key={i}
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white border border-gray-200 text-gray-800"
-                                >
-                                  {s.name}
-                                  <span
-                                    title={`Nivel absentismo: ${
-                                      s.absentismo || 0
-                                    }`}
-                                    className={`ml-1.5 px-1 rounded-full text-[10px] ${
-                                      (s.absentismo || 0) >= 4
-                                        ? "bg-red-100 text-red-700"
-                                        : (s.absentismo || 0) >= 2
-                                        ? "bg-yellow-100 text-yellow-700"
-                                        : "bg-green-100 text-green-700"
-                                    }`}
-                                  >
-                                    Abs: {s.absentismo || 0}
-                                  </span>
-                                </span>
-                              )) || (
-                                <span className="text-gray-400 italic text-sm">
-                                  Sin alumnos
-                                </span>
+                          </div>
+                        )}
+
+                      {/* Lista de Talleres */}
+                      <div className="space-y-5">
+                        {req.items_summary?.map((item, idx) => (
+                          <div key={idx}>
+                            {/* Separador entre talleres */}
+                            {idx > 0 && (
+                              <div className="mb-5 border-t-2 border-dashed border-gray-300"></div>
+                            )}
+
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                              {/* Header del taller */}
+                              <div className="flex justify-between items-start mb-3">
+                                <div className="font-semibold text-gray-900 text-base">
+                                  {item.workshop_name}
+                                </div>
+                                <div className="text-xs bg-blue-500 text-white px-3 py-1.5 rounded-md font-semibold whitespace-nowrap ml-2 shadow-sm">
+                                  {item.day === "TUESDAY" ? "Martes" : "Jueves"}{" "}
+                                  {item.start_time?.slice(0, 5)} -{" "}
+                                  {item.end_time?.slice(0, 5)}
+                                </div>
+                              </div>
+
+                              {/* Alumnos */}
+                              <div className="mb-3">
+                                <div className="text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">
+                                  Alumnos
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {item.students?.map((s, i) => (
+                                    <span
+                                      key={i}
+                                      className="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs bg-white border border-gray-300 text-gray-800 font-medium shadow-sm"
+                                    >
+                                      {s.name}
+                                      <span
+                                        title={`Nivel absentismo: ${
+                                          s.absentismo || 0
+                                        }`}
+                                        className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                          (s.absentismo || 0) >= 4
+                                            ? "bg-red-500 text-white"
+                                            : (s.absentismo || 0) >= 2
+                                            ? "bg-yellow-500 text-white"
+                                            : "bg-green-500 text-white"
+                                        }`}
+                                      >
+                                        {s.absentismo || 0}
+                                      </span>
+                                    </span>
+                                  )) || (
+                                    <span className="text-gray-400 italic text-sm">
+                                      Sin alumnos
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Profesores Preferentes */}
+                              {item.teachers && item.teachers.length > 0 && (
+                                <div className="text-xs text-gray-600 bg-purple-50 px-3 py-2 rounded border border-purple-100">
+                                  <span className="font-semibold text-purple-700">
+                                    Preferencias:
+                                  </span>{" "}
+                                  {item.teachers.join(", ")}
+                                </div>
                               )}
                             </div>
                           </div>
+                        ))}
+                      </div>
+                    </td>
 
-                          {/* Profesores Preferentes (del taller) */}
-                          {item.teachers && item.teachers.length > 0 && (
-                            <div className="mt-2 text-xs">
-                              <span className="font-semibold text-gray-500">
-                                Preferencias Docentes:
-                              </span>{" "}
-                              <span className="text-gray-700">
-                                {item.teachers.join(", ")}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">
-                    {req.submitted_at
-                      ? new Date(req.submitted_at).toLocaleDateString("es-ES")
-                      : "-"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap align-top">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                        req.status
-                      )}`}
-                    >
-                      {getStatusLabel(req.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium align-top">
-                    <div className="flex justify-end gap-2">
-                      {/* Solo mostrar cancelar si está en SUBMITTED */}
+                    <td className="px-6 py-5 align-top">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {req.submitted_at
+                            ? new Date(req.submitted_at).toLocaleDateString(
+                                "es-ES",
+                                { day: "2-digit", month: "short" }
+                              )
+                            : "-"}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {req.submitted_at
+                            ? new Date(req.submitted_at).toLocaleDateString(
+                                "es-ES",
+                                { year: "numeric" }
+                              )
+                            : ""}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-5 text-center align-top">
+                      <span
+                        className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold shadow-sm ${getStatusColor(
+                          req.status
+                        )}`}
+                      >
+                        {getStatusLabel(req.status)}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-5 text-center align-top">
                       {req.status === "SUBMITTED" && (
                         <button
                           onClick={() => handleCancel(req.id)}
-                          className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded transition-colors"
+                          className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all border border-red-200 hover:border-red-600 shadow-sm"
                         >
-                          Cancelar Solicitud
+                          Cancelar
                         </button>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
