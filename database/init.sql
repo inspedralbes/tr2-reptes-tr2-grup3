@@ -66,11 +66,19 @@ CREATE TABLE teachers (
 
 CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    idalu VARCHAR(50), -- Nullable al principio, se llena al confirmar
-    full_name VARCHAR(255) NOT NULL,
+    id_alu VARCHAR(50) UNIQUE, -- El oficial para el CEB
+    nombre_completo VARCHAR(255) NOT NULL,
+    curso VARCHAR(20) CHECK (curso IN ('3 ESO', '4 ESO')),
+    
+    -- Checklists de documentación (0 = No, 1 = Sí)
+    check_acuerdo_pedagogico SMALLINT DEFAULT 0,
+    check_autorizacion_movilidad SMALLINT DEFAULT 0,
+    check_derechos_imagen SMALLINT DEFAULT 0,
+    
+    -- Perfil
+    nivel_absentismo INT, -- Escala 1 a 5 o similar
+    
     school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
-    dni_front_url VARCHAR(500), -- Foto DNI Frontal
-    dni_back_url VARCHAR(500),  -- Foto DNI Trasero
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -117,6 +125,7 @@ CREATE TABLE requests (
     is_first_time_participation BOOLEAN DEFAULT FALSE, -- ¿Es 1a vez?
     available_for_tuesdays BOOLEAN DEFAULT FALSE,      -- ¿Disponible Martes?
     teacher_comments TEXT,                             -- Comentarios libres
+    request_teachers JSONB,                            -- Profesores acompañantes (Nombre + ID)
     
     submitted_at TIMESTAMP,
     status request_status_enum DEFAULT 'DRAFT'

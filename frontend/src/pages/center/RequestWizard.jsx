@@ -55,6 +55,37 @@ const RequestWizard = () => {
     }
   }, [user]);
 
+  // Auto-llenar prioridades al cambiar de paso o items seleccionados
+  useEffect(() => {
+    if (step === 3) {
+      const validItems = selectedItems.filter((i) => i.workshop_edition_id);
+      const newPrefs = [...teacherPreferences];
+
+      if (validItems.length === 1) {
+        // Caso 1: Solo 1 taller -> Prioridad 1 fija
+        newPrefs[0].workshop_edition_id = validItems[0].workshop_edition_id;
+        newPrefs[1].workshop_edition_id = "";
+        newPrefs[2].workshop_edition_id = "";
+      } else if (validItems.length === 2) {
+        // Caso 2: 2 talleres -> Ponerlos en orden por defecto si están vacíos
+        if (!newPrefs[0].workshop_edition_id)
+          newPrefs[0].workshop_edition_id = validItems[0].workshop_edition_id;
+        if (!newPrefs[1].workshop_edition_id)
+          newPrefs[1].workshop_edition_id = validItems[1].workshop_edition_id;
+        newPrefs[2].workshop_edition_id = "";
+      } else if (validItems.length >= 3) {
+        // Caso 3+: Rellenar los 3 primeros por defecto si están vacíos
+        if (!newPrefs[0].workshop_edition_id)
+          newPrefs[0].workshop_edition_id = validItems[0].workshop_edition_id;
+        if (!newPrefs[1].workshop_edition_id)
+          newPrefs[1].workshop_edition_id = validItems[1].workshop_edition_id;
+        if (!newPrefs[2].workshop_edition_id)
+          newPrefs[2].workshop_edition_id = validItems[2].workshop_edition_id;
+      }
+      setTeacherPreferences(newPrefs);
+    }
+  }, [step, selectedItems]);
+
   const loadInitialData = async () => {
     try {
       const [periodsData, workshopsData, studentsData, teachersRes] =
@@ -119,6 +150,12 @@ const RequestWizard = () => {
       updated[index].workshop_edition_id = ""; // Reset edition
     }
 
+    // Si selecciona edición, intentar preseleccionar la primera fecha disponible si no hay fecha
+    if (field === "workshop_edition_id" && value) {
+      // La lógica de fechas se renderiza en el select, pero podríamos setear un default aquí
+      // Dejamos que el usuario elija, pero ya no hay opción "indiferente" vacía válida en UI
+    }
+
     setSelectedItems(updated);
   };
 
@@ -148,7 +185,7 @@ const RequestWizard = () => {
     );
     if (invalidItems.length > 0) {
       setError(
-        "Todos los talleres deben tener una edición seleccionada y entre 1-4 alumnos"
+        "Todos los talleres deben tener edición seleccionada y entre 1-4 alumnos"
       );
       return;
     }
@@ -191,7 +228,6 @@ const RequestWizard = () => {
           requested_students: parseInt(item.requested_students),
           priority: item.priority,
           student_ids: item.selected_students,
-          preferred_date: item.preferred_date,
         })),
         teacher_preferences: teacherPreferences
           .filter((p) => p.workshop_edition_id)
@@ -378,70 +414,6 @@ const RequestWizard = () => {
                       )}
                     </select>
                   </div>
-
-                  {/* Fecha Específica (Nueva funcionalidad) */}
-                  <div className="col-span-1 md:col-span-2">
-                    <label className="block text-sm mb-1">
-                      Fecha Específica (Opcional)
-                    </label>
-                    <select
-                      value={item.preferred_date || ""}
-                      onChange={(e) =>
-                        updateItem(index, "preferred_date", e.target.value)
-                      }
-                      className="w-full border rounded px-2 py-1"
-                      disabled={!item.workshop_edition_id}
-                    >
-                      <option value="">Cualquier fecha (Indiferente)</option>
-                      {(() => {
-                        const edition = workshopDetails[
-                          item.workshop_id
-                        ]?.editions?.find(
-                          (e) => e.id === item.workshop_edition_id
-                        );
-                        const period = periods.find(
-                          (p) => p.id === formData.enrollment_period_id
-                        );
-
-                        if (edition && period) {
-                          const dates = [];
-                          const start = new Date(
-                            period.start_date_workshops || period.start_date
-                          ); // Use workshop start if available
-                          const end = new Date(
-                            period.end_date_workshops || period.end_date
-                          );
-                          const targetDay =
-                            edition.day_of_week === "TUESDAY" ? 2 : 4;
-
-                          let current = new Date(start);
-                          while (current <= end) {
-                            if (current.getDay() === targetDay) {
-                              dates.push(new Date(current));
-                            }
-                            current.setDate(current.getDate() + 1);
-                          }
-
-                          return dates.map((d, i) => (
-                            <option
-                              key={i}
-                              value={d.toISOString().split("T")[0]}
-                            >
-                              {d.toLocaleDateString("es-ES", {
-                                weekday: "long",
-                                day: "numeric",
-                                month: "long",
-                              })}
-                            </option>
-                          ));
-                        }
-                        return null;
-                      })()}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Si no seleccionas fecha, se asignará según disponibilidad.
-                    </p>
-                  </div>
                 </div>
 
                 {/* Selector de alumnos nominal */}
@@ -515,7 +487,8 @@ const RequestWizard = () => {
                                   value={s.id}
                                   disabled={isReserved}
                                 >
-                                  {s.full_name} ({s.idalu || "Sin ID"}){" "}
+                                  {s.nombre_completo || s.full_name} (
+                                  {s.id_alu || s.idalu || "Sin ID"}){" "}
                                   {isReserved
                                     ? "(Ocupado en este horario)"
                                     : ""}
@@ -621,53 +594,63 @@ const RequestWizard = () => {
 
           <div className="mb-6">
             <h3 className="font-semibold text-lg mb-2">
-              2. Preferencias de Talleres (3)
+              2. Preferencias de Talleres
             </h3>
             <p className="text-sm text-gray-600 mb-3">
-              Indica 3 talleres por orden de prioridad para la asignación de
-              roles.
+              Indica el orden de prioridad para la asignación de plazas.
+              {selectedItems.length === 1 &&
+                " (Solo 1 taller seleccionado, prioridad fija)."}
             </p>
             <div className="space-y-3">
-              {teacherPreferences.map((pref, index) => (
-                <div key={index} className="flex gap-3 items-center">
-                  <span className="font-medium w-6">#{index + 1}</span>
-                  <select
-                    value={pref.workshop_edition_id}
-                    onChange={(e) => {
-                      const updated = [...teacherPreferences];
-                      updated[index].workshop_edition_id = e.target.value;
-                      setTeacherPreferences(updated);
-                    }}
-                    className="flex-1 border rounded px-2 py-1"
-                  >
-                    <option value="">Seleccionar taller...</option>
-                    {selectedItems
-                      .filter((i) => i.workshop_edition_id)
-                      // Unique editions only
-                      .filter(
-                        (item, i, self) =>
-                          i ===
-                          self.findIndex(
-                            (t) =>
-                              t.workshop_edition_id === item.workshop_edition_id
-                          )
-                      )
-                      .map((item, idx) => (
-                        <option key={idx} value={item.workshop_edition_id}>
-                          {workshops.find((w) => w.id === item.workshop_id)
-                            ?.title || "Taller"}{" "}
-                          (
-                          {workshopDetails[item.workshop_id]?.editions?.find(
-                            (e) => e.id === item.workshop_edition_id
-                          )?.day_of_week === "TUESDAY"
-                            ? "M"
-                            : "J"}
-                          )
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              ))}
+              {teacherPreferences.map((pref, index) => {
+                // No mostrar prioridad 3 si hay menos de 3 talleres, etc.
+                if (index >= selectedItems.length) return null;
+
+                const isSingleItem = selectedItems.length === 1;
+
+                return (
+                  <div key={index} className="flex gap-3 items-center">
+                    <span className="font-medium w-6">#{index + 1}</span>
+                    <select
+                      value={pref.workshop_edition_id}
+                      onChange={(e) => {
+                        const updated = [...teacherPreferences];
+                        updated[index].workshop_edition_id = e.target.value;
+                        setTeacherPreferences(updated);
+                      }}
+                      className="flex-1 border rounded px-2 py-1"
+                      disabled={isSingleItem} // Si solo hay 1, no se edita
+                    >
+                      <option value="">Seleccionar taller...</option>
+                      {selectedItems
+                        .filter((i) => i.workshop_edition_id)
+                        // Unique editions only
+                        .filter(
+                          (item, i, self) =>
+                            i ===
+                            self.findIndex(
+                              (t) =>
+                                t.workshop_edition_id ===
+                                item.workshop_edition_id
+                            )
+                        )
+                        .map((item, idx) => (
+                          <option key={idx} value={item.workshop_edition_id}>
+                            {workshops.find((w) => w.id === item.workshop_id)
+                              ?.title || "Taller"}{" "}
+                            (
+                            {workshopDetails[item.workshop_id]?.editions?.find(
+                              (e) => e.id === item.workshop_edition_id
+                            )?.day_of_week === "TUESDAY"
+                              ? "M"
+                              : "J"}
+                            )
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

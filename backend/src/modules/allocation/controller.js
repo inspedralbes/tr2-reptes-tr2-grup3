@@ -1,5 +1,5 @@
-const { runAllocationAlgorithm, getDemandSummary } = require('./service');
-const db = require('../../config/db');
+const { runAllocationAlgorithm, getDemandSummary } = require("./service");
+const db = require("../../config/db");
 
 /**
  * GET /api/allocation/demand-summary?period_id=xxx
@@ -8,14 +8,16 @@ const db = require('../../config/db');
  * Útil para monitoreo y validación antes de la asignación
  */
 const getDemandSummaryController = async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Only admins can view demand summary' });
+  if (req.user.role !== "ADMIN") {
+    return res
+      .status(403)
+      .json({ error: "Only admins can view demand summary" });
   }
 
   const { period_id } = req.query;
 
   if (!period_id) {
-    return res.status(400).json({ error: 'period_id is required' });
+    return res.status(400).json({ error: "period_id is required" });
   }
 
   try {
@@ -31,7 +33,7 @@ const getDemandSummaryController = async (req, res) => {
  * Ejecuta el algoritmo de asignación inteligente
  * Solo ADMIN puede hacer esto
  * Body: { period_id: UUID }
- * 
+ *
  * El algoritmo:
  * 1. Respeta restricción de disponibilidad (martes)
  * 2. Máximo 4 alumnos por centro, por taller
@@ -39,30 +41,30 @@ const getDemandSummaryController = async (req, res) => {
  * 4. Prioriza profesores referentes
  */
 const runAllocation = async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Only admins can run allocation' });
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({ error: "Only admins can run allocation" });
   }
 
   const { period_id } = req.body;
 
   if (!period_id) {
-    return res.status(400).json({ error: 'period_id is required' });
+    return res.status(400).json({ error: "period_id is required" });
   }
 
   try {
     // Verificar que el período existe y está en estado OPEN
     const periodResult = await db.query(
-      'SELECT id, status FROM enrollment_periods WHERE id = $1',
+      "SELECT id, status FROM enrollment_periods WHERE id = $1",
       [period_id]
     );
 
     if (periodResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Period not found' });
+      return res.status(404).json({ error: "Period not found" });
     }
 
-    if (periodResult.rows[0].status !== 'OPEN') {
+    if (periodResult.rows[0].status !== "OPEN") {
       return res.status(400).json({
-        error: 'Period must be in OPEN status to run allocation',
+        error: "Period must be in OPEN status to run allocation",
       });
     }
 
@@ -71,7 +73,7 @@ const runAllocation = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Allocation algorithm executed successfully',
+      message: "Allocation algorithm executed successfully",
       ...result,
     });
   } catch (error) {
@@ -118,7 +120,7 @@ const listAllocations = async (req, res) => {
       query += ` AND a.status = $${params.length}`;
     }
 
-    query += ' ORDER BY s.name, w.title';
+    query += " ORDER BY s.name, w.title";
 
     const result = await db.query(query, params);
     res.json(result.rows);
@@ -133,9 +135,9 @@ const listAllocations = async (req, res) => {
  * Body: { students: [ { name, idalu }, ... ] }
  */
 const confirmAllocation = async (req, res) => {
-  if (req.user.role !== 'CENTER_COORD') {
+  if (req.user.role !== "CENTER_COORD") {
     return res.status(403).json({
-      error: 'Only centers can confirm allocations',
+      error: "Only centers can confirm allocations",
     });
   }
 
@@ -143,13 +145,13 @@ const confirmAllocation = async (req, res) => {
   const { students } = req.body;
 
   if (!students || students.length === 0) {
-    return res.status(400).json({ error: 'students array is required' });
+    return res.status(400).json({ error: "students array is required" });
   }
 
   const client = await db.getClient();
 
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // Actualizar estado de asignación a ACCEPTED
     const allocResult = await client.query(
@@ -158,7 +160,7 @@ const confirmAllocation = async (req, res) => {
     );
 
     if (allocResult.rows.length === 0) {
-      throw new Error('Allocation not found');
+      throw new Error("Allocation not found");
     }
 
     const assignment = allocResult.rows[0];
@@ -176,10 +178,10 @@ const confirmAllocation = async (req, res) => {
     for (const student of students) {
       // Crear o actualizar estudiante
       const studentResult = await client.query(
-        `INSERT INTO students (full_name, school_id)
-         VALUES ($1, (SELECT school_id FROM allocations WHERE id = $2))
+        `INSERT INTO students (nombre_completo, id_alu, school_id)
+         VALUES ($1, $2, (SELECT school_id FROM allocations WHERE id = $3))
          RETURNING id`,
-        [student.name, allocation_id]
+        [student.name, student.idalu || null, allocation_id]
       );
 
       const student_id = studentResult.rows[0].id;
@@ -192,16 +194,16 @@ const confirmAllocation = async (req, res) => {
       );
     }
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
     res.json({
       allocation_id: id,
-      status: 'ACCEPTED',
+      status: "ACCEPTED",
       students_confirmed: students.length,
-      message: 'Allocation confirmed successfully',
+      message: "Allocation confirmed successfully",
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     res.status(400).json({ error: error.message });
   } finally {
     client.release();

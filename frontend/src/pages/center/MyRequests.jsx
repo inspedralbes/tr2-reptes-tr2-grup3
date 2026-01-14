@@ -119,14 +119,8 @@ const MyRequests = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Período
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Resumen
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/2">
+                  Resumen de Solicitud
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Fecha Envío
@@ -142,53 +136,94 @@ const MyRequests = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {requests.map((req) => (
                 <tr key={req.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="font-mono text-sm">#{req.id}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                    Período #{req.enrollment_period_id}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600 text-xs">
-                    {/* Profesores Acompañantes */}
+                  <td className="px-6 py-4">
+                    {/* Profesores Acompañantes Globales */}
                     {req.request_teachers &&
                       req.request_teachers.length > 0 && (
-                        <div className="mb-2 bg-blue-50 p-2 rounded border border-blue-100">
-                          <span className="font-bold text-blue-900 block mb-1">
+                        <div className="mb-3 text-sm text-gray-600">
+                          <span className="font-bold text-gray-800">
                             Profesores Acompañantes:
-                          </span>
-                          <div className="text-blue-800">
-                            {req.request_teachers
-                              .map((t) => t.full_name)
-                              .join(", ")}
-                          </div>
+                          </span>{" "}
+                          {req.request_teachers
+                            .map((t) => t.full_name)
+                            .join(", ")}
                         </div>
                       )}
 
-                    {req.items_summary?.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="mb-2 border-b pb-1 last:border-0 last:pb-0"
-                      >
-                        <div className="font-bold text-gray-800">
-                          {item.workshop_name} (
-                          {item.day === "TUESDAY" ? "Martes" : "Jueves"}{" "}
-                          {item.start_time?.slice(0, 5)})
+                    {/* Lista de Talleres */}
+                    <div className="space-y-3">
+                      {req.items_summary?.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-gray-50 p-3 rounded-md border border-gray-100"
+                        >
+                          <div className="flex justify-between items-start mb-1">
+                            <div className="font-bold text-gray-800">
+                              {item.workshop_name}
+                            </div>
+                            <div className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                              {item.day === "TUESDAY" ? "Martes" : "Jueves"}{" "}
+                              {item.start_time?.slice(0, 5)} -{" "}
+                              {item.end_time?.slice(0, 5)}
+                            </div>
+                          </div>
+
+                          {/* Alumnos */}
+                          <div className="mb-1">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                              Alumnos
+                            </span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {item.students?.map((s, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white border border-gray-200 text-gray-800"
+                                >
+                                  {s.name}
+                                  <span
+                                    title={`Nivel absentismo: ${
+                                      s.absentismo || 0
+                                    }`}
+                                    className={`ml-1.5 px-1 rounded-full text-[10px] ${
+                                      (s.absentismo || 0) >= 4
+                                        ? "bg-red-100 text-red-700"
+                                        : (s.absentismo || 0) >= 2
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-green-100 text-green-700"
+                                    }`}
+                                  >
+                                    Abs: {s.absentismo || 0}
+                                  </span>
+                                </span>
+                              )) || (
+                                <span className="text-gray-400 italic text-sm">
+                                  Sin alumnos
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Profesores Preferentes (del taller) */}
+                          {item.teachers && item.teachers.length > 0 && (
+                            <div className="mt-2 text-xs">
+                              <span className="font-semibold text-gray-500">
+                                Preferencias Docentes:
+                              </span>{" "}
+                              <span className="text-gray-700">
+                                {item.teachers.join(", ")}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        <div className="ml-2">
-                          <span className="font-semibold text-gray-700">
-                            Alumnos:
-                          </span>{" "}
-                          {item.students?.join(", ") || "Sin alumnos"}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">
                     {req.submitted_at
                       ? new Date(req.submitted_at).toLocaleDateString("es-ES")
                       : "-"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap align-top">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
                         req.status
@@ -197,15 +232,15 @@ const MyRequests = () => {
                       {getStatusLabel(req.status)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium align-top">
                     <div className="flex justify-end gap-2">
                       {/* Solo mostrar cancelar si está en SUBMITTED */}
                       {req.status === "SUBMITTED" && (
                         <button
                           onClick={() => handleCancel(req.id)}
-                          className="text-red-600 hover:text-red-800 text-sm"
+                          className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded transition-colors"
                         >
-                          ❌ Cancelar
+                          Cancelar Solicitud
                         </button>
                       )}
                     </div>
