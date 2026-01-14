@@ -18,7 +18,7 @@ const listStudents = async (req, res) => {
 
   try {
     let query = `
-      SELECT s.id, s.idalu, s.full_name, s.school_id, s.dni_front_url, s.dni_back_url, s.created_at,
+      SELECT s.id, s.id_alu, s.nombre_completo, s.curso, s.check_acuerdo_pedagogico, s.check_autorizacion_movilidad, s.check_derechos_imagen, s.nivel_absentismo, s.school_id, s.created_at,
              sc.name as school_name
       FROM students s
       LEFT JOIN schools sc ON s.school_id = sc.id
@@ -37,7 +37,7 @@ const listStudents = async (req, res) => {
       query += ` AND s.id IN (SELECT student_id FROM allocation_students WHERE allocation_id = $${params.length})`;
     }
 
-    query += " ORDER BY s.full_name";
+    query += " ORDER BY s.nombre_completo";
 
     const result = await db.query(query, params);
     res.json(result.rows);
@@ -91,11 +91,11 @@ const getStudentById = async (req, res) => {
  * Crear nou alumne (quan el centre confirma nominalment)
  */
 const createStudent = async (req, res) => {
-  let { full_name, idalu, school_id } = req.body;
+  let { nombre_completo, id_alu, curso, school_id } = req.body;
   const user = req.user;
 
-  if (!full_name) {
-    return res.status(400).json({ error: "full_name és requerit" });
+  if (!nombre_completo) {
+    return res.status(400).json({ error: "nombre_completo és requerit" });
   }
 
   try {
@@ -119,10 +119,10 @@ const createStudent = async (req, res) => {
     }
 
     const result = await db.query(
-      `INSERT INTO students (full_name, idalu, school_id)
-       VALUES ($1, $2, $3)
-       RETURNING id, full_name, idalu, school_id, created_at`,
-      [full_name, idalu || null, school_id]
+      `INSERT INTO students (nombre_completo, id_alu, curso, school_id)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, nombre_completo, id_alu, curso, school_id, created_at`,
+      [nombre_completo, id_alu || null, curso || null, school_id]
     );
 
     res.status(201).json(result.rows[0]);
@@ -137,16 +137,38 @@ const createStudent = async (req, res) => {
  */
 const updateStudent = async (req, res) => {
   const { id } = req.params;
-  const { full_name, idalu } = req.body;
+  const {
+    nombre_completo,
+    id_alu,
+    curso,
+    check_acuerdo_pedagogico,
+    check_autorizacion_movilidad,
+    check_derechos_imagen,
+    nivel_absentismo,
+  } = req.body;
 
   try {
     const result = await db.query(
       `UPDATE students
-       SET full_name = COALESCE($1, full_name),
-           idalu = COALESCE($2, idalu)
-       WHERE id = $3
-       RETURNING id, full_name, idalu, dni_front_url, dni_back_url, school_id, created_at`,
-      [full_name, idalu, id]
+       SET nombre_completo = COALESCE($1, nombre_completo),
+           id_alu = COALESCE($2, id_alu),
+           curso = COALESCE($3, curso),
+           check_acuerdo_pedagogico = COALESCE($4, check_acuerdo_pedagogico),
+           check_autorizacion_movilidad = COALESCE($5, check_autorizacion_movilidad),
+           check_derechos_imagen = COALESCE($6, check_derechos_imagen),
+           nivel_absentismo = COALESCE($7, nivel_absentismo)
+       WHERE id = $8
+       RETURNING *`,
+      [
+        nombre_completo,
+        id_alu,
+        curso,
+        check_acuerdo_pedagogico,
+        check_autorizacion_movilidad,
+        check_derechos_imagen,
+        nivel_absentismo,
+        id,
+      ]
     );
 
     if (result.rows.length === 0) {
@@ -202,18 +224,8 @@ const uploadDocument = async (req, res) => {
 
     const fileUrl = `/uploads/documents/${req.file.filename}`;
 
-    // Si es DNI, actualizar la columna en la tabla students
-    if (document_type === "DNI_FRONT") {
-      await db.query(`UPDATE students SET dni_front_url = $1 WHERE id = $2`, [
-        fileUrl,
-        id,
-      ]);
-    } else if (document_type === "DNI_BACK") {
-      await db.query(`UPDATE students SET dni_back_url = $1 WHERE id = $2`, [
-        fileUrl,
-        id,
-      ]);
-    }
+    // Si es DNI, ya no actualizamos columnas en tabla students porque fueron eliminadas
+    // if (document_type === "DNI_FRONT") { ... }
 
     // Tambien guardar en historial de documentos (opcional, pero util)
     const result = await db.query(

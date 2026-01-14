@@ -19,6 +19,7 @@ const createRequest = async (req, res) => {
     available_for_tuesdays,
     items,
     teacher_preferences,
+    request_teachers,
   } = req.body;
 
   // Validaciones
@@ -52,14 +53,15 @@ const createRequest = async (req, res) => {
 
     // 1. Crear la solicitud principal
     const reqResult = await client.query(
-      `INSERT INTO requests (enrollment_period_id, school_id, is_first_time_participation, available_for_tuesdays, status, submitted_at)
-       VALUES ($1, $2, $3, $4, 'SUBMITTED', NOW())
+      `INSERT INTO requests (enrollment_period_id, school_id, is_first_time_participation, available_for_tuesdays, request_teachers, status, submitted_at)
+       VALUES ($1, $2, $3, $4, $5, 'SUBMITTED', NOW())
        RETURNING id, enrollment_period_id, school_id, status, submitted_at`,
       [
         enrollment_period_id,
         school_id,
         is_first_time_participation || false,
         available_for_tuesdays || false,
+        JSON.stringify(request_teachers || []),
       ]
     );
 
@@ -68,14 +70,13 @@ const createRequest = async (req, res) => {
     // 2. Insertar items (talleres solicitados con número de alumnos)
     for (const item of items) {
       const itemResult = await client.query(
-        `INSERT INTO request_items (request_id, workshop_edition_id, priority, requested_students, preferred_date)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        `INSERT INTO request_items (request_id, workshop_edition_id, priority, requested_students)
+         VALUES ($1, $2, $3, $4) RETURNING id`,
         [
           request_id,
           item.workshop_edition_id,
           item.priority || 999,
           item.requested_students,
-          item.preferred_date || null,
         ]
       );
 
@@ -205,7 +206,7 @@ const listRequests = async (req, res) => {
     const { id: userId, role } = req.user;
 
     let query = `
-      SELECT r.id, r.submitted_at, r.status, r.enrollment_period_id,
+      SELECT r.id, r.submitted_at, r.status, r.enrollment_period_id, r.request_teachers,
              s.name as school_name,
              (
                SELECT json_agg(json_build_object(
@@ -213,12 +214,15 @@ const listRequests = async (req, res) => {
                  'day', we.day_of_week,
                  'start_time', we.start_time,
                  'end_time', we.end_time,
-                 'students', (
-                    SELECT json_agg(st.full_name)
+                  'students', (
+                    SELECT json_agg(json_build_object(
+                      'name', st.nombre_completo, 
+                      'absentismo', st.nivel_absentismo
+                    ))
                     FROM request_item_students ris
                     JOIN students st ON st.id = ris.student_id
                     WHERE ris.request_item_id = ri.id
-                 ),
+                  ),
                  'teachers', (
                     SELECT json_agg(u.full_name)
                     FROM request_teacher_preferences rtp
@@ -269,6 +273,7 @@ const updateRequest = async (req, res) => {
     available_for_tuesdays,
     items,
     teacher_preferences,
+    request_teachers,
   } = req.body;
 
   const client = await db.getClient();
@@ -298,9 +303,15 @@ const updateRequest = async (req, res) => {
     await client.query(
       `UPDATE requests SET 
          is_first_time_participation = COALESCE($1, is_first_time_participation),
-         available_for_tuesdays = COALESCE($2, available_for_tuesdays)
-       WHERE id = $3`,
-      [is_first_time_participation, available_for_tuesdays, id]
+         available_for_tuesdays = COALESCE($2, available_for_tuesdays),
+         request_teachers = COALESCE($3, request_teachers)
+       WHERE id = $4`,
+      [
+        is_first_time_participation,
+        available_for_tuesdays,
+        JSON.stringify(request_teachers),
+        id,
+      ]
     );
 
     // Si se envían nuevos items, reemplazar los existentes
@@ -319,14 +330,13 @@ const updateRequest = async (req, res) => {
           });
         }
         await client.query(
-          `INSERT INTO request_items (request_id, workshop_edition_id, priority, requested_students, preferred_date)
-           VALUES ($1, $2, $3, $4, $5)`,
+          `INSERT INTO request_items (request_id, workshop_edition_id, priority, requested_students)
+           VALUES ($1, $2, $3, $4)`,
           [
             id,
             item.workshop_edition_id,
             item.priority || 999,
             item.requested_students,
-            item.preferred_date || null,
           ]
         );
       }
