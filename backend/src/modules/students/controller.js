@@ -162,7 +162,6 @@ const updateStudent = async (req, res) => {
       [
         nombre_completo,
         email,
-        email,
         curso,
         check_acuerdo_pedagogico,
         check_autorizacion_movilidad,
