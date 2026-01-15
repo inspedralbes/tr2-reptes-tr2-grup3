@@ -120,6 +120,7 @@ BEGIN
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 1, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Faisà Eixample'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'ESCOLA TEST'), 4, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Rec Comtal'), 4, 'PUBLISHED');
 
     -- Edición 3r Trimestre (Jueves)
@@ -155,6 +156,7 @@ BEGIN
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Jaume Balmes'), 2, 'PUBLISHED'),
+        (v_edition_id, (SELECT id FROM schools WHERE name = 'ESCOLA TEST'), 2, 'PUBLISHED'),
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 2, 'PUBLISHED');
 
     -- Edición 3r Trimestre (Jueves)
@@ -643,5 +645,50 @@ BEGIN
     ('Jordi López', 'jordi.lopez@baixeras.cat', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
     ('Marta Vidal', 'marta.vidal@baixeras.cat', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
     ('Albert Roca', 'albert.roca@baixeras.cat', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1));
+
+    -- 7. MOCK DATA FOR ESCOLA BAIXERAS (User: coord1@escola1.cat)
+    -- We already have 3 students inserted (Marc, Laia, Pau) for Escola Baixeras in section 5.
+    
+    -- Link 2 students to 'Jardineria' (2n Trimestre) - Escola Baixeras has 2 seats there (see line 115)
+    INSERT INTO allocation_students (allocation_id, student_id, status)
+    SELECT a.id, s.id, 'ACTIVE'
+    FROM allocations a
+    JOIN workshop_editions we ON a.workshop_edition_id = we.id
+    JOIN workshops w ON we.workshop_id = w.id
+    JOIN students s ON s.school_id = a.school_id
+    WHERE w.title = 'Jardineria' 
+    AND we.term = '2N_TRIMESTRE'
+    AND s.nombre_completo IN ('Marc García', 'Laia Martí')
+    AND a.school_id = (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1);
+
+    -- Mock Documents for Visualization (Escola Baixeras)
+    -- Marc García: Complete
+    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
+    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/mock_auth_img.pdf', true
+    FROM students WHERE nombre_completo = 'Marc García';
+
+    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
+    SELECT id, 'AUTORITZACIO_SORTIDA', '/uploads/mock_auth_exit.pdf', true
+    FROM students WHERE nombre_completo = 'Marc García';
+
+    -- Laia Martí: Partial (Image only)
+    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
+    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/mock_auth_img.pdf', false
+    FROM students WHERE nombre_completo = 'Laia Martí';
+
+    -- Mock Documents for Visualization
+    -- Test Student 1: Complete (Both docs)
+    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
+    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/mock_auth_img.pdf', true
+    FROM students WHERE nombre_completo = 'Test Student 1';
+
+    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
+    SELECT id, 'AUTORITZACIO_SORTIDA', '/uploads/mock_auth_exit.pdf', true
+    FROM students WHERE nombre_completo = 'Test Student 1';
+
+    -- Test Student 2: Partial (Only Image)
+    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
+    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/mock_auth_img.pdf', false
+    FROM students WHERE nombre_completo = 'Test Student 2';
 
 END $$;

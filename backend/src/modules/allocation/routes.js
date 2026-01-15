@@ -5,6 +5,8 @@ const {
   getDemandSummaryController,
   listAllocations,
   confirmAllocation,
+  addStudentToAllocation,
+  getAllocationById,
 } = require('./controller');
 
 const router = express.Router();
@@ -40,5 +42,19 @@ router.get('/', authenticate, listAllocations);
  * Solo acceso CENTER_COORD
  */
 router.put('/:id/confirm', authenticate, confirmAllocation);
+
+/**
+ * POST /api/allocations/:id/students
+ * Vincular un alumno existente a una asignación
+ * Body: { student_id: UUID }
+ * Solo acceso CENTER_COORD
+ */
+router.post('/:id/students', authenticate, addStudentToAllocation);
+
+/**
+ * GET /api/allocations/:id
+ * Detalles de una asignación
+ */
+router.get('/:id', authenticate, getAllocationById);
 
 module.exports = router;

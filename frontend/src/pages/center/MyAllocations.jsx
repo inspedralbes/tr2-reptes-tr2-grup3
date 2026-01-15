@@ -18,8 +18,10 @@ const MyAllocations = () => {
 
   // Cargar asignaciones
   useEffect(() => {
-    loadAllocations();
-  }, []);
+    if (user) {
+      loadAllocations();
+    }
+  }, [user]);
 
   const loadAllocations = async () => {
     try {
@@ -92,6 +94,11 @@ const MyAllocations = () => {
     }
   };
 
+  const traverseToConfirmation = (id) => {
+    // Navegar a la página de confirmación nominal
+    window.location.href = `/center/allocations/${id}/confirm`;
+  };
+
   return (
     <div className="space-y-4">
       <Card title="Mis Asignaciones">
@@ -114,7 +121,7 @@ const MyAllocations = () => {
                   <div>
                     <h3 className="font-semibold text-lg">{alloc.workshop_title}</h3>
                     <p className="text-gray-600 text-sm">
-                      {alloc.day_of_week === 'TUESDAY' ? '📅 Martes' : '📅 Jueves'} • 
+                      {alloc.day_of_week === 'TUESDAY' ? '📅 Martes' : '📅 Jueves'} •
                       {alloc.start_time} - {alloc.end_time}
                     </p>
                   </div>
@@ -131,68 +138,25 @@ const MyAllocations = () => {
 
                 {/* Botón de confirmar (solo si está publicada y no confirmada) */}
                 {alloc.status === 'PUBLISHED' && (
-                  <Button onClick={() => startConfirmation(alloc)}>
-                    ✓ Confirmar y añadir alumnos
+                  <Button onClick={() => traverseToConfirmation(alloc.id)}>
+                    ✓ Confirmar Asignación
                   </Button>
                 )}
 
+                {/* Permitir editar aunque esté confirmada si se desea, o ver detalles */}
                 {alloc.status === 'ACCEPTED' && (
-                  <p className="text-green-600 text-sm">✓ Ya has confirmado esta asignación</p>
+                  <div className="flex justify-between items-center">
+                    <p className="text-green-600 text-sm">✓ Ya has confirmado esta asignación</p>
+                    <Button variant="secondary" onClick={() => traverseToConfirmation(alloc.id)}>
+                      Ver Alumnos
+                    </Button>
+                  </div>
                 )}
               </div>
             ))}
           </div>
         )}
       </Card>
-
-      {/* Modal de confirmación */}
-      {confirmingId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Confirmar Asignación</h2>
-            <p className="text-gray-600 mb-4">
-              Introduce los nombres de los alumnos que participarán:
-            </p>
-
-            <div className="space-y-3">
-              {students.map((student, index) => (
-                <div key={index} className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="block text-sm mb-1">Alumno {index + 1}</label>
-                    <input
-                      type="text"
-                      placeholder="Nombre completo"
-                      value={student.name}
-                      onChange={(e) => updateStudent(index, 'name', e.target.value)}
-                      className="w-full border rounded px-3 py-2"
-                    />
-                  </div>
-                  <div className="w-32">
-                    <label className="block text-sm mb-1">ID Alu</label>
-                    <input
-                      type="text"
-                      placeholder="Opcional"
-                      value={student.idalu}
-                      onChange={(e) => updateStudent(index, 'idalu', e.target.value)}
-                      className="w-full border rounded px-3 py-2"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2 mt-6">
-              <Button onClick={handleConfirm}>Confirmar</Button>
-              <Button variant="secondary" onClick={() => {
-                setConfirmingId(null);
-                setStudents([]);
-              }}>
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

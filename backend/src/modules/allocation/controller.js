@@ -130,6 +130,39 @@ const listAllocations = async (req, res) => {
 };
 
 /**
+ * GET /api/allocations/:id
+ * Obtener detalles de una asignación específica
+ */
+const getAllocationById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const query = `
+      SELECT a.id, a.workshop_edition_id, a.school_id, a.assigned_seats, a.status,
+             s.name as school_name,
+             w.title as workshop_title,
+             we.day_of_week, we.start_time, we.end_time
+      FROM allocations a
+      JOIN schools s ON a.school_id = s.id
+      JOIN workshop_editions we ON a.workshop_edition_id = we.id
+      JOIN workshops w ON we.workshop_id = w.id
+      WHERE a.id = $1
+    `;
+
+    const result = await db.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Allocation not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+/**
  * PUT /api/allocations/:id/confirm
  * Centro confirma una asignación e ingresa los nombres de alumnos
  * Body: { students: [ { name, idalu }, ... ] }
@@ -148,14 +181,14 @@ const confirmAllocation = async (req, res) => {
     return res.status(400).json({ error: "students array is required" });
   }
 
-  const client = await db.getClient();
+  const client = await db.pool.connect();
 
   try {
     await client.query("BEGIN");
 
     // Actualizar estado de asignación a ACCEPTED
     const allocResult = await client.query(
-      `UPDATE allocations SET status = 'ACCEPTED' WHERE id = $1 RETURNING id, assigned_seats`,
+      `UPDATE allocations SET status = 'ACCEPTED' WHERE id = $1 RETURNING id, assigned_seats, school_id`,
       [id]
     );
 
@@ -172,26 +205,55 @@ const confirmAllocation = async (req, res) => {
       );
     }
 
-    // Obtener student IDs o crearlos
     const allocation_id = id;
 
     for (const student of students) {
-      // Crear o actualizar estudiante
-      const studentResult = await client.query(
-        `INSERT INTO students (nombre_completo, id_alu, school_id)
-         VALUES ($1, $2, (SELECT school_id FROM allocations WHERE id = $3))
-         RETURNING id`,
-        [student.name, student.idalu || null, allocation_id]
-      );
+      // 1. Check if student already exists (by idalu or name+school)
+      // Since we might get limited info, if we have IDALU use it.
+      let student_id = null;
 
-      const student_id = studentResult.rows[0].id;
+      // Check by IDALU if provided
+      if (student.idalu) {
+        const existIdalu = await client.query(
+          "SELECT id FROM students WHERE idalu = $1 AND school_id = $2",
+          [student.idalu, assignment.school_id]
+        );
+        if (existIdalu.rows.length > 0) student_id = existIdalu.rows[0].id;
+      }
 
-      // Vincular a la asignación
-      await client.query(
-        `INSERT INTO allocation_students (allocation_id, student_id, status)
-         VALUES ($1, $2, 'ACTIVE')`,
+      // Fallback check by name if no IDALU or not found
+      if (!student_id && student.name) {
+        const existName = await client.query(
+          "SELECT id FROM students WHERE nombre_completo = $1 AND school_id = $2",
+          [student.name, assignment.school_id]
+        );
+        if (existName.rows.length > 0) student_id = existName.rows[0].id;
+      }
+
+      // Create if not exists
+      if (!student_id) {
+        const studentResult = await client.query(
+          `INSERT INTO students (nombre_completo, id_alu, school_id)
+           VALUES ($1, $2, $3)
+           RETURNING id`,
+          [student.name, student.idalu || null, assignment.school_id]
+        );
+        student_id = studentResult.rows[0].id;
+      }
+
+      // 2. Link to allocation if not already linked
+      const linkCheck = await client.query(
+        "SELECT id FROM allocation_students WHERE allocation_id = $1 AND student_id = $2",
         [allocation_id, student_id]
       );
+
+      if (linkCheck.rows.length === 0) {
+        await client.query(
+          `INSERT INTO allocation_students (allocation_id, student_id, status)
+           VALUES ($1, $2, 'ACTIVE')`,
+          [allocation_id, student_id]
+        );
+      }
     }
 
     await client.query("COMMIT");
@@ -210,9 +272,97 @@ const confirmAllocation = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/allocations/:id/students
+   * Vincular un alumno existente a una asignación
+   * Body: { student_id: UUID }
+   */
+const addStudentToAllocation = async (req, res) => {
+  if (req.user.role !== "CENTER_COORD") {
+    return res.status(403).json({
+      error: "Only centers can manage allocations",
+    });
+  }
+
+  const { id } = req.params;
+  const { student_id } = req.body;
+
+  if (!student_id) {
+    return res.status(400).json({ error: "student_id is required" });
+  }
+
+  const client = await db.getClient();
+
+  try {
+    await client.query("BEGIN");
+
+    // 1. Verificar asignación y permisos
+    const allocCallback = await client.query(
+      `SELECT id, school_id, assigned_seats, status 
+       FROM allocations WHERE id = $1`,
+      [id]
+    );
+
+    if (allocCallback.rows.length === 0) {
+      throw new Error("Allocation not found");
+    }
+
+    const allocation = allocCallback.rows[0];
+
+    // Verificar que pertenece a la escuela del coordinador
+    // (Necesitamos verificar que req.user.id sea el coordinador de allocation.school_id)
+    const schoolCheck = await client.query(
+      "SELECT id FROM schools WHERE coordinator_user_id = $1 AND id = $2",
+      [req.user.id, allocation.school_id]
+    );
+
+    if (schoolCheck.rows.length === 0) {
+      throw new Error("You are not authorized to manage this allocation");
+    }
+
+    // 2. Verificar cupo
+    const countCheck = await client.query(
+      "SELECT COUNT(*) as count FROM allocation_students WHERE allocation_id = $1 AND status = 'ACTIVE'",
+      [id]
+    );
+
+    if (parseInt(countCheck.rows[0].count) >= allocation.assigned_seats) {
+      throw new Error("No seats available in this allocation");
+    }
+
+    // 3. Vincular estudiante
+    // Verificar si ya está vinculado
+    const existingLink = await client.query(
+      "SELECT id FROM allocation_students WHERE allocation_id = $1 AND student_id = $2",
+      [id, student_id]
+    );
+
+    if (existingLink.rows.length > 0) {
+      throw new Error("Student is already assigned to this allocation");
+    }
+
+    await client.query(
+      `INSERT INTO allocation_students (allocation_id, student_id, status)
+       VALUES ($1, $2, 'ACTIVE')`,
+      [id, student_id]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({ message: "Student assigned successfully" });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   runAllocation,
   getDemandSummaryController,
   listAllocations,
   confirmAllocation,
+  addStudentToAllocation,
+  getAllocationById,
 };

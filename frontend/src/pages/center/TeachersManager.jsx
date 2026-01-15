@@ -1,7 +1,19 @@
-import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, X, Save, Search, User, Mail } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+    Plus,
+    Edit,
+    Trash2,
+    X,
+    Save,
+    Search,
+    User,
+    Mail,
+    Download,
+    Upload,
+} from "lucide-react";
 import client from "../../api/client";
 import { toast } from "react-hot-toast";
+import Button from "../../components/ui/Button.jsx";
 
 const TeachersManager = () => {
     const [teachers, setTeachers] = useState([]);
@@ -15,6 +27,9 @@ const TeachersManager = () => {
         full_name: "",
         email: "",
     });
+
+    // Exportar/Importar
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         loadTeachers();
@@ -76,7 +91,8 @@ const TeachersManager = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Estàs segur que vols eliminar aquest professor?")) return;
+        if (!window.confirm("Estàs segur que vols eliminar aquest professor?"))
+            return;
         try {
             await client.delete(`/teachers/${id}`);
             toast.success("Professor eliminat");
@@ -85,6 +101,108 @@ const TeachersManager = () => {
             console.error("Error deleting teacher:", error);
             toast.error("Error eliminant professor");
         }
+    };
+
+    // --- CSV Import / Export ---
+
+    const handleDownloadTemplate = () => {
+        const csvContent = [
+            ["Nombre Completo", "Email"],
+            ["Juan Pérez García", "juan.perez@profe.edu, EXEMPLE DE PROVA"],
+        ]
+            .map((e) => e.join(","))
+            .join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "plantilla_professors.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleExportCSV = () => {
+        const csvContent = [
+            ["Nombre Completo", "Email"],
+            ...teachers.map((t) => [`"${t.full_name || ""}"`, `"${t.email || ""}"`]),
+        ]
+            .map((e) => e.join(","))
+            .join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "professors_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleImportClick = () => {
+        if (fileInputRef.current) fileInputRef.current.click();
+    };
+
+    const handleImportFile = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const text = event.target.result;
+                // Simple CSV parser
+                const lines = text
+                    .split("\n")
+                    .map((l) => l.trim())
+                    .filter((l) => l);
+                // Skip header if present (heuristic)
+                const startIndex = lines[0].toLowerCase().includes("nombre") ? 1 : 0;
+
+                const newTeachers = [];
+                let errorCount = 0;
+
+                for (let i = startIndex; i < lines.length; i++) {
+                    const line = lines[i];
+                    const parts = line
+                        .split(",")
+                        .map((p) => p.replace(/^"|"$/g, "").trim());
+
+                    if (parts.length < 2) continue;
+
+                    const [full_name, email] = parts;
+
+                    if (!full_name || !email) continue;
+
+                    const teacherData = {
+                        full_name: full_name,
+                        email: email,
+                    };
+
+                    try {
+                        const created = await client.post("/teachers", teacherData);
+                        newTeachers.push(created.data);
+                    } catch (err) {
+                        console.error(`Error importing line ${i + 1}:`, err);
+                        errorCount++;
+                    }
+                }
+
+                toast.success(
+                    `S'han importat ${newTeachers.length} professors.` +
+                    (errorCount > 0 ? ` (${errorCount} fallits)` : "")
+                );
+                loadTeachers();
+            } catch (err) {
+                console.error("Import Error", err);
+                toast.error("Error importando CSV: " + err.message);
+            }
+            // Reset input
+            e.target.value = "";
+        };
+        reader.readAsText(file);
     };
 
     const filteredTeachers = teachers.filter(
@@ -97,23 +215,52 @@ const TeachersManager = () => {
         <div className="p-8 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Gestió de Professors</h1>
-                    <p className="text-gray-500 mt-2">Administra l'equip docent del teu centre</p>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        Gestió de Professors
+                    </h1>
+                    <p className="text-gray-500 mt-2">
+                        Administra l'equip docent del teu centre
+                    </p>
                 </div>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
-                >
-                    <Plus size={20} />
-                    Afegir Professor
-                </button>
+                <div className="flex gap-3">
+                    <input
+                        type="file"
+                        accept=".csv"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleImportFile}
+                    />
+                    <Button variant="secondary" onClick={handleDownloadTemplate}>
+                        <div className="flex items-center gap-2">
+                            <Download size={18} /> Descargar Plantilla
+                        </div>
+                    </Button>
+                    <Button variant="secondary" onClick={handleImportClick}>
+                        <div className="flex items-center gap-2">
+                            <Upload size={18} /> Importar CSV
+                        </div>
+                    </Button>
+                    <Button variant="secondary" onClick={handleExportCSV}>
+                        <div className="flex items-center gap-2">
+                            <Download size={18} /> Exportar CSV
+                        </div>
+                    </Button>
+                    <Button onClick={() => handleOpenModal()}>
+                        <div className="flex items-center gap-2">
+                            <Plus size={18} /> Afegir Professor
+                        </div>
+                    </Button>
+                </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {/* Search Bar */}
                 <div className="p-4 border-b border-gray-100">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                        <Search
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            size={20}
+                        />
                         <input
                             type="text"
                             placeholder="Cercar per nom o correu..."
@@ -150,11 +297,11 @@ const TeachersManager = () => {
                                 </tr>
                             ) : (
                                 filteredTeachers.map((teacher) => (
-                                    <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">
-                                                {teacher.full_name.charAt(0).toUpperCase()}
-                                            </div>
+                                    <tr
+                                        key={teacher.id}
+                                        className="hover:bg-gray-50 transition-colors"
+                                    >
+                                        <td className="px-6 py-4 font-medium text-gray-900">
                                             {teacher.full_name}
                                         </td>
                                         <td className="px-6 py-4 text-gray-600">{teacher.email}</td>
@@ -164,15 +311,13 @@ const TeachersManager = () => {
                                         <td className="px-6 py-4 text-right space-x-2">
                                             <button
                                                 onClick={() => handleOpenModal(teacher)}
-                                                className="text-gray-400 hover:text-blue-600 transition-colors"
-                                                title="Editar"
+                                                className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors"
                                             >
                                                 <Edit size={18} />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(teacher.id)}
-                                                className="text-gray-400 hover:text-red-600 transition-colors"
-                                                title="Eliminar"
+                                                className="text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors"
                                             >
                                                 <Trash2 size={18} />
                                             </button>
@@ -203,36 +348,48 @@ const TeachersManager = () => {
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Nom Complet
+                                </label>
                                 <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    <User
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                        size={18}
+                                    />
                                     <input
                                         type="text"
                                         required
                                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                         placeholder="Ex: Joan Garcia"
                                         value={formData.full_name}
-                                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, full_name: e.target.value })
+                                        }
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Correu Electrònic</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Correu Electrònic
+                                </label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    <Mail
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                        size={18}
+                                    />
                                     <input
                                         type="email"
                                         required
                                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                         placeholder="joan@escola.cat"
                                         value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, email: e.target.value })
+                                        }
                                     />
                                 </div>
                             </div>
-
-
 
                             <div className="pt-4 flex gap-3">
                                 <button
