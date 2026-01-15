@@ -38,6 +38,17 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Health check endpoint para el API (usado por Docker)
+app.get('/api/health', async (req, res) => {
+  try {
+    await db.query('SELECT NOW()');
+    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('API health check failed:', error);
+    res.status(500).json({ status: 'error', database: 'disconnected', error: error.message });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/enrollment', enrollmentRoutes);

@@ -1,0 +1,5 @@
+# Este directorio contiene los certificados SSL
+# Los certificados NO deben subirse al repositorio
+# Coloca aquí:
+# - fullchain.pem
+# - privkey.pem

@@ -1,0 +1,46 @@
+# ================================
+# STAGE 1: Build React App
+# ================================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY package*.json ./
+
+# Instalar todas las dependencias
+RUN npm ci
+
+# Copiar código fuente
+COPY . .
+
+# Argumento para la URL del API (se pasa en build time)
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
+# Build de la aplicación React
+RUN npm run build
+
+# ================================
+# STAGE 2: Serve with Nginx
+# ================================
+FROM nginx:alpine AS production
+
+# Copiar configuración personalizada de Nginx
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copiar los archivos estáticos del build
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Permisos correctos
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
+
+# Exponer puerto 80
+EXPOSE 80
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]
