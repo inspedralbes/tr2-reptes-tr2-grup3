@@ -26,7 +26,7 @@ const StudentManager = () => {
   // Estado del formulario
   const [formData, setFormData] = useState({
     nombre_completo: "",
-    id_alu: "",
+    email: "",
     curso: "3 ESO",
     nivel_absentismo: 1,
     check_acuerdo_pedagogico: false,
@@ -87,7 +87,7 @@ const StudentManager = () => {
     setEditingStudent(null);
     setFormData({
       nombre_completo: "",
-      id_alu: "",
+      email: "",
       curso: "3 ESO",
       nivel_absentismo: 1,
       check_acuerdo_pedagogico: false,
@@ -101,7 +101,7 @@ const StudentManager = () => {
     setEditingStudent(student);
     setFormData({
       nombre_completo: student.nombre_completo,
-      id_alu: student.id_alu || "",
+      email: student.email || "",
       curso: student.curso || "3 ESO",
       nivel_absentismo: student.nivel_absentismo || 1,
       check_acuerdo_pedagogico: !!student.check_acuerdo_pedagogico,
@@ -128,7 +128,7 @@ const StudentManager = () => {
 
       const payload = {
         nombre_completo: formData.nombre_completo,
-        id_alu: formData.id_alu,
+        email: formData.email,
         curso: formData.curso,
         nivel_absentismo: parseInt(formData.nivel_absentismo),
         check_acuerdo_pedagogico: formData.check_acuerdo_pedagogico ? 1 : 0,
@@ -165,11 +165,47 @@ const StudentManager = () => {
 
   // --- CSV Import / Export ---
 
+  const handleDownloadTemplate = () => {
+    const csvContent = [
+      [
+        "Nombre Completo",
+        "Email",
+        "Curso",
+        "Nivel Absentismo (1-5)",
+        "Acuerdo Pedagogico",
+        "Autorizacion Movilidad",
+        "Derechos Imagen",
+      ],
+      // Fila de ejemplo para guiar al coordinador
+      [
+        "Juan Pérez García",
+        "juan.perez@alumno.edu",
+        "3 ESO",
+        "1",
+        "1",
+        "1",
+        "0",
+        "EXEMPLE DE PROVA, ELIMINAR UN COP FACIS LA MODIFICACIÓ",
+      ],
+    ]
+      .map((e) => e.join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "plantilla_alumnos.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleExportCSV = () => {
     const csvContent = [
       [
         "Nombre Completo",
-        "ID ALU",
+        "Email",
         "Curso",
         "Nivel Absentismo (1-5)",
         "Acuerdo Pedagogico",
@@ -178,7 +214,7 @@ const StudentManager = () => {
       ],
       ...students.map((s) => [
         `"${s.nombre_completo || ""}"`,
-        `"${s.id_alu || ""}"`,
+        `"${s.email || ""}"`,
         `"${s.curso || "3 ESO"}"`,
         s.nivel_absentismo || 1,
         s.check_acuerdo_pedagogico ? 1 : 0,
@@ -232,13 +268,13 @@ const StudentManager = () => {
 
           if (parts.length < 1) continue;
 
-          const [nombre, idalu, curso, abs, acuerdo, movil, imagen] = parts;
+          const [nombre, email, curso, abs, acuerdo, movil, imagen] = parts;
 
-          if (!nombre) continue;
+          if (!nombre || !email) continue;
 
           const studentData = {
             nombre_completo: nombre,
-            id_alu: idalu || null,
+            email: email,
             curso: curso || "3 ESO",
             nivel_absentismo: abs ? parseInt(abs) : 1,
             check_acuerdo_pedagogico: acuerdo == "1" ? 1 : 0,
@@ -268,7 +304,7 @@ const StudentManager = () => {
     (s) =>
       (s.nombre_completo &&
         s.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (s.id_alu && s.id_alu.includes(searchTerm))
+      (s.email && s.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -288,6 +324,11 @@ const StudentManager = () => {
             className="hidden"
             onChange={handleImportFile}
           />
+          <Button variant="secondary" onClick={handleDownloadTemplate}>
+            <div className="flex items-center gap-2">
+              <Download size={18} /> Descargar Plantilla
+            </div>
+          </Button>
           <Button variant="secondary" onClick={handleImportClick}>
             <div className="flex items-center gap-2">
               <Upload size={18} /> Importar CSV
@@ -320,7 +361,7 @@ const StudentManager = () => {
         />
         <input
           type="text"
-          placeholder="Buscar por nombre o ID..."
+          placeholder="Buscar por nombre o email..."
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -339,7 +380,7 @@ const StudentManager = () => {
                     Nombre Completo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                    ID ALU
+                    Email
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                     Curso
@@ -378,7 +419,7 @@ const StudentManager = () => {
                         {student.nombre_completo}
                       </td>
                       <td className="px-6 py-4 text-gray-500">
-                        {student.id_alu || "-"}
+                        {student.email || "-"}
                       </td>
                       <td className="px-6 py-4 text-gray-500">
                         {student.curso || "-"}
@@ -474,15 +515,17 @@ const StudentManager = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                ID ALU (Opcional)
+                Email del Alumno
               </label>
               <input
-                type="text"
+                type="email"
                 className="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-                value={formData.id_alu}
+                value={formData.email}
                 onChange={(e) =>
-                  setFormData({ ...formData, id_alu: e.target.value })
+                  setFormData({ ...formData, email: e.target.value })
                 }
+                required
+                placeholder="alumno@ejemplo.com"
               />
             </div>
 
