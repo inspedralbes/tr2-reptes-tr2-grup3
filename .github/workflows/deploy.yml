@@ -1,0 +1,86 @@
+name: CI/CD Pipeline - Enginy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify-build:
+    name: Verify Build (CI)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Images (Dry Run)
+        env:
+          VITE_API_URL: "http://localhost:3000/api"
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+          JWT_SECRET: test
+        run: docker compose -f docker-compose.prod.yml build
+
+  deploy:
+    name: Deploy to Production (CD)
+    needs: verify-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,JWT_SECRET,VITE_API_URL
+          script: |
+            PROJECT_DIR="/var/www/html/enginy"
+            REPO_URL="https://github.com/inspedralbes/tr2-reptes-tr2-grup3.git"
+
+            # 1. Asegurar que el directorio existe y entrar
+            mkdir -p $PROJECT_DIR
+            cd $PROJECT_DIR || exit 1
+
+            # 2. Lógica: Clonar si es nuevo, o Down+Pull si ya existe
+            if [ ! -d ".git" ]; then
+                echo "⚠️ Project not found. Cloning from $REPO_URL..."
+                git clone $REPO_URL .
+            else
+                echo "✅ Project found. Stopping services and updating..."
+                docker compose -f docker-compose.prod.yml down || true
+                git pull origin main
+            fi
+
+            # 3. Generar archivo de entorno
+            echo "Generating .env file from secrets..."
+            cat <<EOF > .env
+            NODE_ENV=production
+            POSTGRES_USER=$POSTGRES_USER
+            POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+            POSTGRES_DB=$POSTGRES_DB
+            POSTGRES_HOST=postgres
+            POSTGRES_PORT=5432
+            JWT_SECRET=$JWT_SECRET
+            VITE_API_URL=$VITE_API_URL
+            EOF
+
+            # 4. Build and start services
+            docker compose -f docker-compose.prod.yml build
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            # 5. Show status
+            echo "✅ Deployment completed!"
+            docker compose -f docker-compose.prod.yml ps
