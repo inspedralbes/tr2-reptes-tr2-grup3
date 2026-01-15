@@ -29,3 +29,4 @@ npm run dev
 ## Variables de Entorno
 
 Copiar los archivos `.env.example` a `.env` y configurar según sea necesario.
+# Test deploy jue 15 ene 2026 09:36:01 CET
