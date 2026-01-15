@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Calendar, Clock, Filter, Info, Star } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Calendar,
+  Clock,
+  Filter,
+  Info,
+  Star,
+} from "lucide-react";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
@@ -21,16 +29,16 @@ const CatalogBrowser = () => {
   const [filterAmbit, setFilterAmbit] = useState("");
   const [filterDay, setFilterDay] = useState("");
 
-  // Cargar talleres
+  // Cargar talleres (solo una vez al montar)
   useEffect(() => {
     loadWorkshops();
-  }, [filterAmbit]);
+  }, []);
 
   const loadWorkshops = async () => {
     try {
       setLoading(true);
-      const filters = filterAmbit ? { ambit: filterAmbit } : {};
-      const data = await listWorkshops(filters);
+      // Cargar TODOS los talleres sin filtros de servidor
+      const data = await listWorkshops({});
       setWorkshops(data);
     } catch (err) {
       console.error("Error loading workshops:", err);
@@ -57,20 +65,16 @@ const CatalogBrowser = () => {
     }
   };
 
-  // Ámbitos disponibles
-  const ambits = [
-    "Tecnològic",
-    "Artístic",
-    "Sostenibilitat",
-    "Oci i benestar",
-    "Comunicació",
-  ];
+  // Ámbitos disponibles (Dinámicos desde la DB)
+  const ambits = [...new Set(workshops.map((w) => w.ambit))].sort();
 
-  // Filtrar por día si está activo
+  // Filtrar por día/ámbito en cliente
   const filteredWorkshops = workshops.filter((w) => {
-    if (!filterDay) return true;
-    // Filtrar si alguna de las ediciones coincide con el día seleccionado
-    return w.editions && w.editions.some((e) => e.day_of_week === filterDay);
+    const matchAmbit = filterAmbit ? w.ambit === filterAmbit : true;
+    const matchDay = filterDay
+      ? w.editions && w.editions.some((e) => e.day_of_week === filterDay)
+      : true;
+    return matchAmbit && matchDay;
   });
 
   // Helper para formatear hora
@@ -80,56 +84,56 @@ const CatalogBrowser = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Cabecera y Filtros */}
-      <div className="bg-white p-6 rounded-xl shadow-xs border border-gray-100">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          <Search className="text-blue-600" /> Explorar Catálogo
-        </h2>
-
-        <div className="flex flex-wrap gap-4 items-end">
-          <div className="w-full md:w-64">
-            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-              <Filter size={16} /> Filtrar por ámbito
-            </label>
-            <select
-              value={filterAmbit}
-              onChange={(e) => setFilterAmbit(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Todos los ámbitos</option>
-              {ambits.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="w-full md:w-64">
-            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-              <Calendar size={16} /> Filtrar por día
-            </label>
-            <select
-              value={filterDay}
-              onChange={(e) => setFilterDay(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Todos los días</option>
-              <option value="TUESDAY">Martes</option>
-              <option value="THURSDAY">Jueves</option>
-            </select>
-          </div>
-
-          <div className="flex-1 text-right">
-            <Button onClick={() => navigate("/center/request")}>
-              📝 Nueva Solicitud
-            </Button>
-          </div>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Cabecera Tipo StudentManager */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <Search className="text-blue-600" /> Explorar Catálogo
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Descubre los talleres disponibles para tus alumnos
+          </p>
         </div>
       </div>
 
-      {/* Grid de talleres */}
+      {/* Filtros */}
+      <div className="flex flex-wrap gap-4 items-end mb-6">
+        <div className="w-full md:w-64">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Filter size={16} className="inline mr-1" /> Filtrar por ámbito
+          </label>
+          <select
+            value={filterAmbit}
+            onChange={(e) => setFilterAmbit(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="">Todos los ámbitos</option>
+            {ambits.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="w-full md:w-64">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Calendar size={16} className="inline mr-1" /> Filtrar por día
+          </label>
+          <select
+            value={filterDay}
+            onChange={(e) => setFilterDay(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="">Todos los días</option>
+            <option value="TUESDAY">Martes</option>
+            <option value="THURSDAY">Jueves</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Grid de talleres (Restored) */}
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -157,7 +161,6 @@ const CatalogBrowser = () => {
                   {workshop.title}
                 </h3>
 
-                {/* Nueva ubicación - Texto plano sin icono */}
                 {workshop.address && (
                   <p className="text-xs text-gray-500 mb-2 font-medium">
                     {workshop.address}
@@ -170,7 +173,6 @@ const CatalogBrowser = () => {
                   </p>
                 )}
 
-                {/* Horarios visibles directamente */}
                 <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-auto">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                     Horarios Disponibles

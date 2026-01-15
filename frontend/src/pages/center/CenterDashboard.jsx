@@ -21,6 +21,7 @@ import {
   BookOpen,
   Calendar,
   User,
+  Users,
 } from "lucide-react";
 import client from "../../api/client";
 
@@ -128,11 +129,10 @@ const CenterDashboard = () => {
       {/* Bienvenida */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <span className="text-4xl">👋</span> Bienvenido/a,{" "}
-          {user?.full_name || "Coordinador/a"}
+          Benvingut/da, {user?.full_name || "Coordinador/a"}
         </h1>
         <p className="text-lg text-gray-500 mt-2">
-          Panel de control del centro educativo
+          Panell de control del centre educatiu
         </p>
       </div>
 
@@ -168,18 +168,18 @@ const CenterDashboard = () => {
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold text-orange-800">
-                Documentos pendientes
+                Documentació pendents
               </h3>
               <p className="text-orange-700">
-                Tienes <strong>{stats.pendingDocuments}</strong> alumno(s) sin
-                documentación completa.
+                Tens <strong>{stats.pendingDocuments}</strong> alumne(s) sense
+                documentació completa.
               </p>
             </div>
             <button
               onClick={() => navigate("/center/allocations")}
               className="ml-auto bg-orange-500 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm hover:bg-orange-600 transition"
             >
-              Revisar ahora
+              Revisar ara
             </button>
           </div>
         </div>
@@ -203,7 +203,7 @@ const CenterDashboard = () => {
             </div>
             <CheckCircle className="text-green-100" size={32} />
           </div>
-          <div className="text-gray-500 font-medium">Talleres asignados</div>
+          <div className="text-gray-500 font-medium">Tallers assignats</div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
@@ -212,7 +212,7 @@ const CenterDashboard = () => {
             </div>
             <Calendar className="text-purple-100" size={32} />
           </div>
-          <div className="text-gray-500 font-medium">Período activo</div>
+          <div className="text-gray-500 font-medium">Període actiu</div>
         </div>
       </div>
 
@@ -224,7 +224,7 @@ const CenterDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <button
             onClick={() => navigate("/center/catalog")}
-            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-blue-100"
+            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 hover:border-blue-100"
           >
             <div className="bg-blue-50 text-blue-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <Search size={32} />
@@ -238,42 +238,38 @@ const CenterDashboard = () => {
           </button>
 
           <button
-            onClick={() => navigate("/center/request")}
-            disabled={
-              !stats.activePeriod || stats.activePeriod.status !== "OPEN"
-            }
-            className={`group bg-white rounded-2xl shadow-sm p-6 text-left transition-all duration-300 border border-transparent 
-                ${!stats.activePeriod || stats.activePeriod.status !== "OPEN"
-                ? "opacity-60 cursor-not-allowed"
-                : "hover:shadow-xl hover:-translate-y-1 hover:border-green-100"
-              }`}
+            onClick={() => navigate("/center/students")}
+            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 hover:border-orange-100"
           >
-            <div
-              className={`bg-green-50 text-green-600 p-4 rounded-xl w-fit mb-4 ${!stats.activePeriod || stats.activePeriod.status !== "OPEN"
-                ? ""
-                : "group-hover:bg-green-600 group-hover:text-white transition-colors"
-                }`}
-            >
-              <PlusCircle size={32} />
+            <div className="bg-orange-50 text-orange-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+              <Users size={32} />
             </div>
-            <h3
-              className={`text-lg font-bold text-gray-900 ${!stats.activePeriod || stats.activePeriod.status !== "OPEN"
-                ? ""
-                : "group-hover:text-green-700 transition-colors"
-                }`}
-            >
-              Nueva Solicitud
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors">
+              Gestió Alumnes
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              {stats.activePeriod?.status === "OPEN"
-                ? "Solicitar talleres"
-                : "No hay convocatoria abierta"}
+              Administrar llistat d'alumnes
+            </p>
+          </button>
+
+          <button
+            onClick={() => navigate("/center/teachers")}
+            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 hover:border-indigo-100"
+          >
+            <div className="bg-indigo-50 text-indigo-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <User size={32} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">
+              Gestió Professors
+            </h3>
+            <p className="text-sm text-gray-500 mt-2">
+              Administrar equip docent
             </p>
           </button>
 
           <button
             onClick={() => navigate("/center/requests")}
-            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-purple-100"
+            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 hover:border-purple-100"
           >
             <div className="bg-purple-50 text-purple-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
               <FileStack size={32} />
@@ -288,7 +284,7 @@ const CenterDashboard = () => {
 
           <button
             onClick={() => navigate("/center/allocations")}
-            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-teal-100"
+            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 hover:border-teal-100"
           >
             <div className="bg-teal-50 text-teal-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-teal-600 group-hover:text-white transition-colors">
               <CheckCircle size={32} />
@@ -298,21 +294,6 @@ const CenterDashboard = () => {
             </h3>
             <p className="text-sm text-gray-500 mt-2">
               Talleres asignados y checklist
-            </p>
-          </button>
-
-          <button
-            onClick={() => navigate("/center/teachers")}
-            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-indigo-100"
-          >
-            <div className="bg-indigo-50 text-indigo-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-              <User size={32} />
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">
-              Gestió Professors
-            </h3>
-            <p className="text-sm text-gray-500 mt-2">
-              Administrar equip docent
             </p>
           </button>
         </div>

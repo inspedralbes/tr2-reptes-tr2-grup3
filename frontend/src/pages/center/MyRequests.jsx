@@ -76,7 +76,7 @@ const MyRequests = () => {
       {/* Cabecera */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <FileText className="text-blue-600 w-8 h-8" /> Les Meves
             Sol·licituds
           </h1>
@@ -150,12 +150,11 @@ const MyRequests = () => {
                 {/* Left Column: Workshops */}
                 <div className="lg:col-span-2 space-y-4">
                   <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-4 border-b pb-2">
-                    <Star className="text-yellow-500 w-5 h-5" /> Talleres
-                    Solicitados
+                    Tallers Solicitats
                   </h3>
                   {!req.items_summary || req.items_summary.length === 0 ? (
                     <p className="text-gray-400 italic">
-                      No hi ha tallers seleccionats.
+                      No hi ha cap taller seleccionat.
                     </p>
                   ) : (
                     req.items_summary

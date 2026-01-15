@@ -312,9 +312,11 @@ const StudentManager = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Users className="text-blue-600" /> Mis Alumnos
+            <Users className="text-blue-600" /> Els meus alumnes
           </h1>
-          <p className="text-gray-500 mt-1">Gestiona tu listado de alumnos</p>
+          <p className="text-gray-500 mt-1">
+            Gestiona el teu llistat d'alumnes
+          </p>
         </div>
         <div className="flex gap-3">
           <input
@@ -326,7 +328,7 @@ const StudentManager = () => {
           />
           <Button variant="secondary" onClick={handleDownloadTemplate}>
             <div className="flex items-center gap-2">
-              <Download size={18} /> Descargar Plantilla
+              <Download size={18} /> Descarregar Plantilla
             </div>
           </Button>
           <Button variant="secondary" onClick={handleImportClick}>
@@ -341,7 +343,7 @@ const StudentManager = () => {
           </Button>
           <Button onClick={handleCreate}>
             <div className="flex items-center gap-2">
-              <Plus size={18} /> Nuevo Alumno
+              <Plus size={18} /> Nou alumne
             </div>
           </Button>
         </div>
@@ -370,35 +372,35 @@ const StudentManager = () => {
 
       <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Cargando...</div>
+          <div className="p-8 text-center text-gray-500">Carregant...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                    Nombre Completo
+                    Nom complet
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                     Email
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                    Curso
+                    Curs
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
-                    Absentismo
+                    Absentisme
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
-                    Acuerdo P.
+                    Acord Pedagògic
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
-                    Aut. Movilidad
+                    Autorització Movilitat
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
-                    Der. Imagen
+                    Dret d'Imatge
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-                    Acciones
+                    Accions
                   </th>
                 </tr>
               </thead>
@@ -409,7 +411,7 @@ const StudentManager = () => {
                       colSpan="8"
                       className="px-6 py-8 text-center text-gray-500"
                     >
-                      No se encontraron alumnos.
+                      No s'han trobat alumnes.
                     </td>
                   </tr>
                 ) : (
@@ -486,7 +488,7 @@ const StudentManager = () => {
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingStudent ? "Editar Alumno" : "Nuevo Alumno"}
+        title={editingStudent ? "Editar Alumne" : "Nou Alumne"}
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowModal(false)}>
@@ -500,7 +502,7 @@ const StudentManager = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700">
-                Nombre Completo
+                Nom Complet
               </label>
               <input
                 type="text"
@@ -515,7 +517,7 @@ const StudentManager = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Email del Alumno
+                Email de l'alumne
               </label>
               <input
                 type="email"
@@ -531,7 +533,7 @@ const StudentManager = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Curso
+                Curs
               </label>
               <select
                 className="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
@@ -547,7 +549,7 @@ const StudentManager = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Nivel de Absentismo (1-5)
+                Nivell d'Absentisme (1-5)
               </label>
               <input
                 type="number"
@@ -564,7 +566,7 @@ const StudentManager = () => {
 
           <div className="border-t pt-4">
             <h3 className="font-medium text-gray-900 mb-4">
-              Documentación y Permisos
+              Documentació i Permisos
             </h3>
             <div className="space-y-3">
               <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
@@ -579,9 +581,7 @@ const StudentManager = () => {
                     })
                   }
                 />
-                <span className="text-gray-700">
-                  Acuerdo Pedagógico Firmado
-                </span>
+                <span className="text-gray-700">Acord Pedagògic Firmat</span>
               </label>
 
               <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
@@ -596,7 +596,7 @@ const StudentManager = () => {
                     })
                   }
                 />
-                <span className="text-gray-700">Autorización de Movilidad</span>
+                <span className="text-gray-700">Autorització de Movilitat</span>
               </label>
 
               <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
@@ -611,7 +611,7 @@ const StudentManager = () => {
                     })
                   }
                 />
-                <span className="text-gray-700">Derechos de Imagen</span>
+                <span className="text-gray-700">Drets d'Imatge</span>
               </label>
             </div>
           </div>

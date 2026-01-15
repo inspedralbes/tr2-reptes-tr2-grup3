@@ -327,6 +327,74 @@ const RequestWizard = () => {
     }
   }, [step, selectedTeachers, editingRequest]);
 
+  // Sanitize preferences when selected items change
+  useEffect(() => {
+    // 1. Get Set of valid edition IDs
+    const validEditionIds = new Set(
+      selectedItems.map((i) => i.workshop_edition_id).filter((id) => id) // Only truthy IDs
+    );
+
+    let hasChanges = false;
+    const newMap = { ...teacherPreferencesMap };
+
+    Object.keys(newMap).forEach((teacherId) => {
+      const prefs = newMap[teacherId];
+      if (prefs) {
+        const newPrefs = prefs.map((p) => {
+          // If preference has an ID but that ID is no longer valid, clear it
+          if (
+            p.workshop_edition_id &&
+            !validEditionIds.has(p.workshop_edition_id)
+          ) {
+            hasChanges = true;
+            return { ...p, workshop_edition_id: "" };
+          }
+          return p;
+        });
+
+        // Also ensure NO DUPLICATES in the same teacher's list (just only keep first occurrence?)
+        // Or simply rely on the validity check.
+        // Let's just stick to validity for now.
+
+        if (hasChanges) {
+          newMap[teacherId] = newPrefs;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      setTeacherPreferencesMap(newMap);
+    }
+  }, [selectedItems, teacherPreferencesMap]);
+
+  const validateStep2 = () => {
+    if (selectedItems.length === 0) {
+      setError("Debes seleccionar al menos un taller.");
+      toast.error("Faltan datos por cubrir");
+      return;
+    }
+
+    let missingData = false;
+    selectedItems.forEach((item, index) => {
+      if (!item.workshop_id || !item.workshop_edition_id) missingData = true;
+      if (!item.selected_students || item.selected_students.length === 0)
+        missingData = true;
+      if (item.selected_students && item.selected_students.includes(""))
+        missingData = true;
+    });
+
+    if (missingData) {
+      setError(
+        "Faltan datos por cubrir: revisa que todos los talleres tengan edición y alumnos asignados."
+      );
+      toast.error("Faltan datos por cubrir");
+      return;
+    }
+
+    setError(null);
+    setStep(3);
+  };
+
   const handleSubmit = async () => {
     if (selectedItems.length === 0) {
       setError("Debes seleccionar al menos un taller");
@@ -339,6 +407,41 @@ const RequestWizard = () => {
     }
     if (selectedTeachers[0] === selectedTeachers[1]) {
       setError("Els dos professors han de ser diferents");
+      return;
+    }
+
+    // Validate Preferences Completeness
+    const validWorkshopCount = selectedItems.filter(
+      (i) => i.workshop_edition_id
+    ).length;
+    const requiredPrefs = Math.min(3, validWorkshopCount);
+
+    let preferencesIncomplete = false;
+    selectedTeachers.forEach((tid) => {
+      if (!tid) return;
+      const prefs = teacherPreferencesMap[tid] || [];
+      // Check first 'requiredPrefs' slots
+      for (let i = 0; i < requiredPrefs; i++) {
+        if (!prefs[i] || !prefs[i].workshop_edition_id) {
+          preferencesIncomplete = true;
+        }
+      }
+    });
+
+    if (preferencesIncomplete) {
+      setError(
+        "Faltan datos por cubrir: Debes asignar todas las preferencias requeridas para ambos profesores."
+      );
+      toast.error("Faltan datos por cubrir");
+      return;
+    }
+
+    // Validate Global Priorities
+    if (selectedItems.some((item) => !item.priority)) {
+      setError(
+        "Faltan datos por cubrir: Debes asignar una prioridad a todos los talleres."
+      );
+      toast.error("Faltan datos por cubrir");
       return;
     }
 
@@ -397,11 +500,17 @@ const RequestWizard = () => {
         if (prefs) {
           prefs.forEach((pref) => {
             if (pref.workshop_edition_id) {
-              flatPreferences.push({
-                teacher_id: teacherId,
-                workshop_edition_id: pref.workshop_edition_id,
-                preference_order: pref.preference_order,
-              });
+              // Ensure the referenced workshop edition is currently selected
+              const isActive = selectedItems.some(
+                (item) => item.workshop_edition_id === pref.workshop_edition_id
+              );
+              if (isActive) {
+                flatPreferences.push({
+                  teacher_id: teacherId,
+                  workshop_edition_id: pref.workshop_edition_id,
+                  preference_order: pref.preference_order,
+                });
+              }
             }
           });
         }
@@ -789,7 +898,7 @@ const RequestWizard = () => {
               ← Anterior
             </Button>
             <Button
-              onClick={() => setStep(3)}
+              onClick={validateStep2}
               disabled={selectedItems.length === 0}
             >
               Siguiente →
@@ -955,7 +1064,13 @@ const RequestWizard = () => {
                         Preferencias para: {teacher?.full_name}
                       </h4>
                       <div className="space-y-3">
-                        {[0, 1, 2].map((prefIdx) => (
+                        {Array.from({
+                          length: Math.min(
+                            3,
+                            selectedItems.filter((i) => i.workshop_edition_id)
+                              .length
+                          ),
+                        }).map((_, prefIdx) => (
                           <div
                             key={prefIdx}
                             className="flex gap-3 items-center"
@@ -1000,8 +1115,18 @@ const RequestWizard = () => {
                                     dayStr === "TUESDAY" ? "Martes" : "Jueves";
 
                                   // Exclusivity: Check if selected in other priority slot
+                                  // ONLY check against slots that are actually visible/valid
+                                  // e.g. if we have 2 valid workshops, we shouldn't care what is in slot 3 (index 2)
+                                  const maxSlots = Math.min(
+                                    3,
+                                    selectedItems.filter(
+                                      (i) => i.workshop_edition_id
+                                    ).length
+                                  );
+
                                   const isSelectedElsewhere = prefs.some(
                                     (p, pIdx) =>
+                                      pIdx < maxSlots && // Only check valid visible slots
                                       pIdx !== prefIdx &&
                                       p.workshop_edition_id ===
                                         item.workshop_edition_id
