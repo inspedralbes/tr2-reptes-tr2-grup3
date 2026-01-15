@@ -231,11 +231,8 @@ const NominalConfirmation = () => {
             <thead className="bg-gray-50 text-gray-600 font-medium text-sm">
               <tr>
                 <th className="px-6 py-3 text-left">Alumne</th>
-                <th className="px-6 py-3 text-left">IDALU</th>
-                <th className="px-6 py-3 text-center">Aut. Imatge</th>
-                <th className="px-6 py-3 text-center">Aut. Sortida</th>
+                <th className="px-6 py-3 text-left">Email</th>
                 <th className="px-6 py-3 text-center">Estat</th>
-                <th className="px-6 py-3 text-right">Accions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -245,69 +242,7 @@ const NominalConfirmation = () => {
                     {student.full_name || student.nombre_completo}
                   </td>
                   <td className="px-6 py-4 text-gray-500">
-                    {student.idalu || "-"}
-                  </td>
-
-                  {/* Autorització Imatge */}
-                  <td className="px-6 py-4 text-center">
-                    {hasDocument(student, "AUTORITZACIO_IMATGE") ? (
-                      <span className="text-green-600 text-xl" title="Pujat">✅</span>
-                    ) : (
-                      <div className="flex justify-center">
-                        <label className="cursor-pointer group relative">
-                          <input
-                            type="file"
-                            accept=".pdf"
-                            className="hidden"
-                            onChange={(e) =>
-                              handleUploadDocument(
-                                student.id,
-                                e.target.files[0],
-                                "AUTORITZACIO_IMATGE"
-                              )
-                            }
-                            disabled={uploadingFor === student.id || allocation?.status === 'ACCEPTED'}
-                          />
-                          <span className={`text-sm font-medium flex items-center gap-1 ${allocation?.status === 'ACCEPTED'
-                            ? 'text-gray-400 cursor-not-allowed'
-                            : 'text-blue-600 hover:text-blue-800'
-                            }`}>
-                            {uploadingFor === student.id ? "..." : "📤 Pujar"}
-                          </span>
-                        </label>
-                      </div>
-                    )}
-                  </td>
-
-                  {/* Autorització Sortida */}
-                  <td className="px-6 py-4 text-center">
-                    {hasDocument(student, "AUTORITZACIO_SORTIDA") ? (
-                      <span className="text-green-600 text-xl" title="Pujat">✅</span>
-                    ) : (
-                      <div className="flex justify-center">
-                        <label className="cursor-pointer">
-                          <input
-                            type="file"
-                            accept=".pdf"
-                            className="hidden"
-                            onChange={(e) =>
-                              handleUploadDocument(
-                                student.id,
-                                e.target.files[0],
-                                "AUTORITZACIO_SORTIDA"
-                              )
-                            }
-                            disabled={uploadingFor === student.id || allocation?.status === 'ACCEPTED'}
-                          />
-                          <span className={`text-sm font-medium flex items-center gap-1 ${allocation?.status === 'ACCEPTED'
-                            ? 'text-gray-400 cursor-not-allowed'
-                            : 'text-blue-600 hover:text-blue-800'
-                            }`}>
-                            {uploadingFor === student.id ? "..." : "📤 Pujar"}
-                          </span>
-                        </label>
-                      </div>
-                    )}
+                    {student.email || "-"}
                   </td>
 
                   {/* Estat complet */}
@@ -321,9 +256,6 @@ const NominalConfirmation = () => {
                         Pendent
                       </span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-
                   </td>
                 </tr>
               ))}
