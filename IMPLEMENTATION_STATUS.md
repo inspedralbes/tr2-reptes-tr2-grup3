@@ -4,7 +4,7 @@
 
 ---
 
-## 🌐 THREE-ZONE ARCHITECTURE
+## 🌐 THREE-ZONE ARCHITECTURE:
 
 La aplicación ahora tiene **3 zonas diferenciadas** según el rol del usuario:
 
