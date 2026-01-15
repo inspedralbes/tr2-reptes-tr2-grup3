@@ -67,7 +67,7 @@ const StudentManager = () => {
           const data = await studentsService.getAll();
           setStudents(data);
         } else {
-          setError("No se encontró escuela asociada a este usuario.");
+          setError("No s'ha trobat escola associada a aquest usuari.");
         }
       }
     } catch (err) {
@@ -76,7 +76,7 @@ const StudentManager = () => {
         const data = await studentsService.getAll();
         setStudents(data);
       } catch (e) {
-        setError("Error cargando alumnos: " + e.message);
+        setError("Error carregant alumnes: " + e.message);
       }
     } finally {
       setLoading(false);
@@ -112,12 +112,12 @@ const StudentManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Seguro que quieres eliminar este alumno?")) return;
+    if (!window.confirm("Segur que vols eliminar aquest alumne?")) return;
     try {
       await studentsService.delete(id);
       setStudents(students.filter((s) => s.id !== id));
     } catch (err) {
-      alert("Error al eliminar: " + (err.response?.data?.error || err.message));
+      alert("Error en eliminar: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -158,7 +158,7 @@ const StudentManager = () => {
     } catch (err) {
       console.error(err);
       setError(
-        "Error al guardar: " + (err.response?.data?.error || err.message)
+        "Error en guardar: " + (err.response?.data?.error || err.message)
       );
     }
   };
@@ -168,18 +168,18 @@ const StudentManager = () => {
   const handleDownloadTemplate = () => {
     const csvContent = [
       [
-        "Nombre Completo",
+        "Nom Complet",
         "Email",
-        "Curso",
-        "Nivel Absentismo (1-5)",
-        "Acuerdo Pedagogico",
-        "Autorizacion Movilidad",
-        "Derechos Imagen",
+        "Curs",
+        "Nivell Absentisme (1-5)",
+        "Acord Pedagogic",
+        "Autoritzacio Movilitat",
+        "Drets Imatge",
       ],
       // Fila de ejemplo para guiar al coordinador
       [
-        "Juan Pérez García",
-        "juan.perez@alumno.edu",
+        "Joan Perez Garcia",
+        "joan.perez@alumne.edu",
         "3 ESO",
         "1",
         "1",
@@ -195,7 +195,7 @@ const StudentManager = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "plantilla_alumnos.csv");
+    link.setAttribute("download", "plantilla_alumnes.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -204,13 +204,13 @@ const StudentManager = () => {
   const handleExportCSV = () => {
     const csvContent = [
       [
-        "Nombre Completo",
+        "Nom Complet",
         "Email",
-        "Curso",
-        "Nivel Absentismo (1-5)",
-        "Acuerdo Pedagogico",
-        "Autorizacion Movilidad",
-        "Derechos Imagen",
+        "Curs",
+        "Nivell Absentisme (1-5)",
+        "Acord Pedagogic",
+        "Autoritzacio Movilitat",
+        "Drets Imatge",
       ],
       ...students.map((s) => [
         `"${s.nombre_completo || ""}"`,
@@ -229,7 +229,7 @@ const StudentManager = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "alumnos_export.csv");
+    link.setAttribute("download", "alumnes_export.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -253,7 +253,7 @@ const StudentManager = () => {
           .map((l) => l.trim())
           .filter((l) => l);
         // Skip header if present (heuristic)
-        const startIndex = lines[0].toLowerCase().includes("nombre") ? 1 : 0;
+        const startIndex = lines[0].toLowerCase().includes("nom") ? 1 : 0;
 
         // Process sequentially to avoid Backend overload or use a bulk endpoint if available
         // For now, client-side loop is safer without backend changes
@@ -289,10 +289,10 @@ const StudentManager = () => {
         }
 
         setStudents([...students, ...newStudents]);
-        alert(`Se han importado ${newStudents.length} alumnos correctamente.`);
+        alert(`S'han importat ${newStudents.length} alumnes correctament.`);
       } catch (err) {
         console.error("Import Error", err);
-        alert("Error importando CSV: " + err.message);
+        alert("Error important CSV: " + err.message);
       }
       // Reset input
       e.target.value = "";

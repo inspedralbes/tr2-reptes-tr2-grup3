@@ -82,7 +82,7 @@ const CenterDashboard = () => {
     if (!stats.activePeriod) {
       return {
         color: "bg-gray-100 text-gray-600 border-gray-200",
-        text: "Sin convocatoria activa",
+        text: "Sense convocatòria activa",
         icon: <PauseCircle size={40} />,
       };
     }
@@ -90,25 +90,25 @@ const CenterDashboard = () => {
       case "OPEN":
         return {
           color: "bg-green-50 text-green-800 border-green-200",
-          text: "Convocatoria Abierta",
+          text: "Convocatòria Oberta",
           icon: <CheckCircle size={40} />,
         };
       case "PROCESSING":
         return {
           color: "bg-yellow-50 text-yellow-800 border-yellow-200",
-          text: "En Proceso",
+          text: "En Procés",
           icon: <Clock size={40} />,
         };
       case "PUBLISHED":
         return {
           color: "bg-blue-50 text-blue-800 border-blue-200",
-          text: "Resultados Publicados",
+          text: "Resultats Publicats",
           icon: <Megaphone size={40} />,
         };
       default:
         return {
           color: "bg-gray-100 text-gray-600 border-gray-200",
-          text: "Cerrada",
+          text: "Tancada",
           icon: <Lock size={40} />,
         };
     }
@@ -149,7 +149,7 @@ const CenterDashboard = () => {
             {stats.activePeriod && (
               <p className="opacity-80 font-medium flex items-center gap-2">
                 <Calendar size={18} />
-                {stats.activePeriod.name} — Hasta:{" "}
+                {stats.activePeriod.name} — Fins al:{" "}
                 {new Date(
                   stats.activePeriod.end_date_requests
                 ).toLocaleDateString("es-ES")}
@@ -194,7 +194,7 @@ const CenterDashboard = () => {
             </div>
             <FileStack className="text-blue-100" size={32} />
           </div>
-          <div className="text-gray-500 font-medium">Solicitudes enviadas</div>
+          <div className="text-gray-500 font-medium">Sol·licituds enviades</div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
@@ -219,7 +219,7 @@ const CenterDashboard = () => {
       {/* Accesos rápidos */}
       <div>
         <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          Accesos rápidos
+          Accessos ràpids
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <button
@@ -230,10 +230,10 @@ const CenterDashboard = () => {
               <Search size={32} />
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
-              Ver Catálogo
+              Veure Catàleg
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Explora los talleres disponibles
+              Explora els tallers disponibles
             </p>
           </button>
 
@@ -275,10 +275,10 @@ const CenterDashboard = () => {
               <FileStack size={32} />
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-700 transition-colors">
-              Mis Solicitudes
+              Les Meves Sol·licituds
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Ver historial de solicitudes
+              Veure historial de sol·licituds
             </p>
           </button>
 
@@ -290,10 +290,10 @@ const CenterDashboard = () => {
               <CheckCircle size={32} />
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
-              Mis Asignaciones
+              Les Meves Assignacions
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Talleres asignados y checklist
+              Tallers assignats i checklist
             </p>
           </button>
         </div>

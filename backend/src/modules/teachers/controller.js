@@ -225,12 +225,10 @@ const updateAssignment = async (req, res) => {
  * DEPRECATED - Els professors no tenen usuari per veure els seus tallers
  */
 const getMyWorkshops = async (req, res) => {
-  return res
-    .status(410)
-    .json({
-      error:
-        "This feature is no longer supported as teachers do not have accounts.",
-    });
+  return res.status(410).json({
+    error:
+      "This feature is no longer supported as teachers do not have accounts.",
+  });
 };
 
 /**
@@ -281,6 +279,8 @@ const create = async (req, res) => {
       return res.status(404).json({ error: "Escola no trobada" });
     }
     const schoolId = teacherResult.rows[0].id;
+
+    const { full_name, email } = req.body;
 
     if (!full_name) {
       return res.status(400).json({ error: "Faltan camps obligatoris (Nom)" });

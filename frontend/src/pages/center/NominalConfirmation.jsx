@@ -94,7 +94,11 @@ const NominalConfirmation = () => {
 
   // Confirmar toda la asignación (cambiar estado a ACCEPTED)
   const handleConfirmGlobal = async () => {
-    if (!window.confirm("Estás seguro de que quieres confirmar esta asignación? No podrás modificarla después.")) {
+    if (
+      !window.confirm(
+        "Estàs segur que vols confirmar aquesta assignació? No podràs modificar-la després."
+      )
+    ) {
       return;
     }
 
@@ -104,66 +108,68 @@ const NominalConfirmation = () => {
       // Si el backend lo permite, podemos adaptar o simplemente re-enviar los datos básicos.
       // Dado que el backend actual de confirmAllocation (PUT) intenta crear estudiantes si no existen,
       // debemos asegurarnos de que maneja estudiantes existentes o que simplemente actualiza el estado.
-      // Revisando el controlador: 
+      // Revisando el controlador:
       // 1. UPDATE allocations SET status='ACCEPTED'
-      // 2. Loop students -> INSERT INTO students (si no existe ID?) 
+      // 2. Loop students -> INSERT INTO students (si no existe ID?)
       //    Wait, el controlador hace INSERT siempre. Eso podría duplicar si no se maneja bien o fallar.
       //    Pero ya tenemos los estudiantes creados.
       //    Lo ideal sería un endpoint solo para cambiar el 'status' si ya están asignados.
       //    O modificar el controlador para que no intente recrear si ya están.
-      //    
+      //
       //    PARA EVITAR RIESGOS: Pasamos los estudiantes tal cual. El controlador hace:
       //    INSERT INTO students ... RETURNING id
       //    Esto es problemático si el controlador NO chequea existencia.
       //    Mirando el controlador: hace INSERT ciego.
-      //    
+      //
       //    SOLUCIÓN RAPIDA:
       //    Si el usuario pidió "Simplemente confirmar", asumo que todos los docs están subidos.
-      //    El endpoint `confirmAllocation` actual es destructivo/auditivo (crea estudiantes). 
-      //    
+      //    El endpoint `confirmAllocation` actual es destructivo/auditivo (crea estudiantes).
+      //
       //    Sin embargo, el usuario YA TIENE los estudiantes asignados en la BD (allocation_students).
       //    Si llamo a `confirmAllocation` con estos estudiantes, intentará insertarlos de nuevo en `students` y `allocation_students`.
       //    Esto fallará por constraints (email unique? idalu unique? allocation_students unique pair?).
-      //    
+      //
       //    Por tanto, necesitamos un endpoint que SOLO cambie el status a ACCEPTED.
       //    O usamos el mismo endpoint pero le enviamos una lista VACÍA? No, valida length > 0.
 
-      //    Voy a asumir que debo enviar los datos y el backend (que NO voy a tocar en este paso si puedo evitarlo) 
+      //    Voy a asumir que debo enviar los datos y el backend (que NO voy a tocar en este paso si puedo evitarlo)
       //    fallará si intento duplicar.
-      //    
+      //
       //    WAIT. El usuario dijo "Ya deberían estar dentro".
       //    Entonces mi backend fix (`insert.sql`) ya los puso.
       //    Si llamo a `confirmAllocation` va a explotar duplicados.
-      //    
+      //
       //    Mejor estrategia: Crear un NUEVO endpoint o modificar el existente para soportar "Solo cambiar estado".
-      //   
+      //
       //    PERO como no quiero tocar backend ahora si no es 100% necesario y arriesgado:
       //    El endpoint confirmAllocation hace: UPDATE allocations SET status='ACCEPTED'.
       //    LUEGO itera estudiantes.
       //    Si falla el loop de estudiantes, hace ROLLBACK.
-      //    
+      //
       //    Así que NECESITO modificar el backend para que `confirmAllocation` sea idempotente o soporte "solo confirmar".
 
       //    Como el usuario quiere "Confirmar los alumnos ya asignados", lo lógico es que el botón simplemente valide que todo ok y llame a un endpoint.
       //    Voy a enviar la lista de estudiantes existente. Y modificaré el backend para que use ON CONFLICT o chequee existencia.
-      //    
+      //
       //    Ah, el controlador dice:
-      //    `INSERT INTO students ...` 
+      //    `INSERT INTO students ...`
       //    `INSERT INTO allocation_students ...`
       //    Definitivamente fallará si ya existen.
 
       //    PERO VOY A IMPLEMENTAR EL FRONTEND PRIMERO Y LUEGO MODIFICARÉ EL BACKEND UNA VEZ MÁS RAPIDO.
 
       // Mapeamos al formato que espera el backend
-      const studentPayload = students.map(s => ({
+      const studentPayload = students.map((s) => ({
         name: s.nombre_completo || s.full_name,
         idalu: s.idalu,
         // Si pasamos ID, quizás podríamos modificar backend para usarlo
       }));
 
-      await client.put(`/allocation/${allocationId}/confirm`, { students: studentPayload });
+      await client.put(`/allocation/${allocationId}/confirm`, {
+        students: studentPayload,
+      });
 
-      navigate('/center/allocations');
+      navigate("/center/allocations");
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     }
@@ -185,7 +191,8 @@ const NominalConfirmation = () => {
           Confirmació Nominal
         </h1>
         <p className="text-gray-500 mt-2">
-          Revisa els alumnes assignats i puja la documentació necessària per confirmar la plaça.
+          Revisa els alumnes assignats i puja la documentació necessària per
+          confirmar la plaça.
         </p>
       </div>
 
@@ -201,16 +208,26 @@ const NominalConfirmation = () => {
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8 flex justify-between items-center shadow-sm">
           <div>
             <h2 className="text-xl font-bold text-blue-900 mb-1">
-              {allocation.workshop_title || `Edició ${allocation.workshop_edition_id}`}
+              {allocation.workshop_title ||
+                `Edició ${allocation.workshop_edition_id}`}
             </h2>
             <p className="text-blue-700">
-              Places assignades: <span className="font-bold">{allocation.assigned_seats}</span>
+              Places assignades:{" "}
+              <span className="font-bold">{allocation.assigned_seats}</span>
             </p>
           </div>
           <div className="text-right">
-            <span className={`px-3 py-1 rounded text-sm font-semibold 
-               ${allocation.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-              {allocation.status === 'ACCEPTED' ? 'Confirmada' : 'Pendent de Confirmació'}
+            <span
+              className={`px-3 py-1 rounded text-sm font-semibold 
+               ${
+                 allocation.status === "ACCEPTED"
+                   ? "bg-green-100 text-green-800"
+                   : "bg-yellow-100 text-yellow-800"
+               }`}
+            >
+              {allocation.status === "ACCEPTED"
+                ? "Confirmada"
+                : "Pendent de Confirmació"}
             </span>
           </div>
         </div>
@@ -219,12 +236,16 @@ const NominalConfirmation = () => {
       {/* Llista d'alumnes */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h3 className="font-semibold text-gray-700">Llistat d'Alumnes Assignats</h3>
+          <h3 className="font-semibold text-gray-700">
+            Llistat d'Alumnes Assignats
+          </h3>
         </div>
 
         {students.length === 0 ? (
           <div className="p-12 text-center text-gray-500">
-            <p className="text-lg mb-2">No hi ha alumnes assignats a aquesta plaça.</p>
+            <p className="text-lg mb-2">
+              No hi ha alumnes assignats a aquesta plaça.
+            </p>
           </div>
         ) : (
           <table className="min-w-full">
@@ -237,7 +258,10 @@ const NominalConfirmation = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {students.map((student) => (
-                <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                <tr
+                  key={student.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {student.full_name || student.nombre_completo}
                   </td>
@@ -265,13 +289,13 @@ const NominalConfirmation = () => {
       </div>
 
       {/* Botón de Confirmación Global */}
-      {allocation && allocation.status !== 'ACCEPTED' && (
+      {allocation && allocation.status !== "ACCEPTED" && (
         <div className="flex justify-end pt-4 border-t border-gray-200">
           <button
             onClick={handleConfirmGlobal}
             className="bg-green-600 text-white px-6 py-3 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg transition-transform transform active:scale-95 flex items-center gap-2"
           >
-            <span>✓</span> Confirmar Asignación
+            <span>✓</span> Confirmar Assignació
           </button>
         </div>
       )}

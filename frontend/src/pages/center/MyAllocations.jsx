@@ -31,7 +31,7 @@ const MyAllocations = () => {
       const data = await listAllocations(filters);
       setAllocations(data);
     } catch (err) {
-      setError('Error al cargar asignaciones: ' + err.message);
+      setError("Error en carregar les assignacions: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -41,10 +41,12 @@ const MyAllocations = () => {
   const startConfirmation = (allocation) => {
     setConfirmingId(allocation.id);
     // Crear array de estudiantes vacíos según asignación
-    const studentList = Array(allocation.assigned_seats).fill(null).map((_, i) => ({
-      name: '',
-      idalu: '',
-    }));
+    const studentList = Array(allocation.assigned_seats)
+      .fill(null)
+      .map((_, i) => ({
+        name: "",
+        idalu: "",
+      }));
     setStudents(studentList);
   };
 
@@ -58,9 +60,9 @@ const MyAllocations = () => {
   // Confirmar asignación
   const handleConfirm = async () => {
     // Validar que todos los estudiantes tengan nombre
-    const validStudents = students.filter(s => s.name.trim());
+    const validStudents = students.filter((s) => s.name.trim());
     if (validStudents.length === 0) {
-      setError('Debes añadir al menos un alumno');
+      setError("Has d'afegir almenys un alumne");
       return;
     }
 
@@ -70,27 +72,35 @@ const MyAllocations = () => {
       setStudents([]);
       loadAllocations();
     } catch (err) {
-      setError('Error al confirmar: ' + err.message);
+      setError("Error en confirmar: " + err.message);
     }
   };
 
   // Obtener color según estado
   const getStatusColor = (status) => {
     switch (status) {
-      case 'PUBLISHED': return 'bg-green-100 text-green-800';
-      case 'ACCEPTED': return 'bg-blue-100 text-blue-800';
-      case 'PROVISIONAL': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "PUBLISHED":
+        return "bg-green-100 text-green-800";
+      case "ACCEPTED":
+        return "bg-blue-100 text-blue-800";
+      case "PROVISIONAL":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   // Traducir estado
   const translateStatus = (status) => {
     switch (status) {
-      case 'PUBLISHED': return 'Publicada';
-      case 'ACCEPTED': return 'Confirmada';
-      case 'PROVISIONAL': return 'Provisional';
-      default: return status;
+      case "PUBLISHED":
+        return "Publicada";
+      case "ACCEPTED":
+        return "Confirmada";
+      case "PROVISIONAL":
+        return "Provisional";
+      default:
+        return status;
     }
   };
 
@@ -101,17 +111,22 @@ const MyAllocations = () => {
 
   return (
     <div className="space-y-4">
-      <Card title="Mis Asignaciones">
+      <Card title="Les Meves Assignacions">
         {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>
+          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+            {error}
+          </div>
         )}
 
         {loading ? (
-          <p className="text-center py-8">Cargando asignaciones...</p>
+          <p className="text-center py-8">Carregant assignacions...</p>
         ) : allocations.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p>No tienes asignaciones todavía.</p>
-            <p className="text-sm mt-2">Las asignaciones aparecerán aquí cuando el administrador las publique.</p>
+            <p>Encara no tens assignacions.</p>
+            <p className="text-sm mt-2">
+              Les assignaciones apareixeran aquí quan l'administrador les
+              publiqui.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -119,36 +134,49 @@ const MyAllocations = () => {
               <div key={alloc.id} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-semibold text-lg">{alloc.workshop_title}</h3>
+                    <h3 className="font-semibold text-lg">
+                      {alloc.workshop_title}
+                    </h3>
                     <p className="text-gray-600 text-sm">
-                      {alloc.day_of_week === 'TUESDAY' ? '📅 Martes' : '📅 Jueves'} •
-                      {alloc.start_time} - {alloc.end_time}
+                      {alloc.day_of_week === "TUESDAY"
+                        ? "📅 Dimarts"
+                        : "📅 Dijous"}{" "}
+                      •{alloc.start_time} - {alloc.end_time}
                     </p>
                   </div>
-                  <span className={`px-3 py-1 rounded text-sm ${getStatusColor(alloc.status)}`}>
+                  <span
+                    className={`px-3 py-1 rounded text-sm ${getStatusColor(
+                      alloc.status
+                    )}`}
+                  >
                     {translateStatus(alloc.status)}
                   </span>
                 </div>
 
                 <div className="bg-gray-50 rounded p-3 mb-3">
                   <p className="text-sm">
-                    <strong>Plazas asignadas:</strong> {alloc.assigned_seats}
+                    <strong>Places assignades:</strong> {alloc.assigned_seats}
                   </p>
                 </div>
 
                 {/* Botón de confirmar (solo si está publicada y no confirmada) */}
-                {alloc.status === 'PUBLISHED' && (
+                {alloc.status === "PUBLISHED" && (
                   <Button onClick={() => traverseToConfirmation(alloc.id)}>
-                    ✓ Confirmar Asignación
+                    ✓ Confirmar Assignació
                   </Button>
                 )}
 
                 {/* Permitir editar aunque esté confirmada si se desea, o ver detalles */}
-                {alloc.status === 'ACCEPTED' && (
+                {alloc.status === "ACCEPTED" && (
                   <div className="flex justify-between items-center">
-                    <p className="text-green-600 text-sm">✓ Ya has confirmado esta asignación</p>
-                    <Button variant="secondary" onClick={() => traverseToConfirmation(alloc.id)}>
-                      Ver Alumnos
+                    <p className="text-green-600 text-sm">
+                      ✓ Ja has confirmat aquesta assignació
+                    </p>
+                    <Button
+                      variant="secondary"
+                      onClick={() => traverseToConfirmation(alloc.id)}
+                    >
+                      Veure Alumnes
                     </Button>
                   </div>
                 )}
@@ -160,5 +188,4 @@ const MyAllocations = () => {
     </div>
   );
 };
-
 export default MyAllocations;

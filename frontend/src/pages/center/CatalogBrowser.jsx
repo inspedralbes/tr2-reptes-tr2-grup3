@@ -89,10 +89,10 @@ const CatalogBrowser = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Search className="text-blue-600" /> Explorar Catálogo
+            <Search className="text-blue-600" /> Explorar Catàleg
           </h1>
           <p className="text-gray-500 mt-1">
-            Descubre los talleres disponibles para tus alumnos
+            Descobreix els tallers disponibles per als teus alumnes
           </p>
         </div>
       </div>
@@ -101,14 +101,14 @@ const CatalogBrowser = () => {
       <div className="flex flex-wrap gap-4 items-end mb-6">
         <div className="w-full md:w-64">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            <Filter size={16} className="inline mr-1" /> Filtrar por ámbito
+            <Filter size={16} className="inline mr-1" /> Filtrar per àmbit
           </label>
           <select
             value={filterAmbit}
             onChange={(e) => setFilterAmbit(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white"
           >
-            <option value="">Todos los ámbitos</option>
+            <option value="">Tots els àmbits</option>
             {ambits.map((a) => (
               <option key={a} value={a}>
                 {a}
@@ -119,16 +119,16 @@ const CatalogBrowser = () => {
 
         <div className="w-full md:w-64">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            <Calendar size={16} className="inline mr-1" /> Filtrar por día
+            <Calendar size={16} className="inline mr-1" /> Filtrar per dia
           </label>
           <select
             value={filterDay}
             onChange={(e) => setFilterDay(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white"
           >
-            <option value="">Todos los días</option>
-            <option value="TUESDAY">Martes</option>
-            <option value="THURSDAY">Jueves</option>
+            <option value="">Tots els dies</option>
+            <option value="TUESDAY">Dimarts</option>
+            <option value="THURSDAY">Dijous</option>
           </select>
         </div>
       </div>
@@ -152,7 +152,7 @@ const CatalogBrowser = () => {
                   </span>
                   {workshop.is_new && (
                     <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold shadow-xs">
-                      <Star size={10} className="fill-current" /> NUEVO
+                      <Star size={10} className="fill-current" /> NOU
                     </span>
                   )}
                 </div>
@@ -175,7 +175,7 @@ const CatalogBrowser = () => {
 
                 <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-auto">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                    Horarios Disponibles
+                    Horaris Disponibles
                   </p>
                   {workshop.editions && workshop.editions.length > 0 ? (
                     workshop.editions.map((ed, idx) => (
@@ -185,11 +185,11 @@ const CatalogBrowser = () => {
                       >
                         {ed.day_of_week === "TUESDAY" ? (
                           <span className="w-20 text-xs font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-center">
-                            Martes
+                            Dimarts
                           </span>
                         ) : (
                           <span className="w-20 text-xs font-medium bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-center">
-                            Jueves
+                            Dijous
                           </span>
                         )}
                         <span className="flex items-center gap-1 text-gray-600">
@@ -201,7 +201,7 @@ const CatalogBrowser = () => {
                     ))
                   ) : (
                     <span className="text-sm text-gray-400 italic">
-                      Sin ediciones programadas
+                      Sense edicions programades
                     </span>
                   )}
                 </div>
@@ -212,7 +212,7 @@ const CatalogBrowser = () => {
                   onClick={() => handleViewDetails(workshop)}
                   className="text-blue-600 font-medium hover:text-blue-800 flex items-center gap-1 transition-colors"
                 >
-                  <Info size={16} /> Ver detalles completos
+                  <Info size={16} /> Veure detalls complets
                 </button>
               </div>
             </div>
@@ -223,7 +223,7 @@ const CatalogBrowser = () => {
       {/* Helper text */}
       {!loading && (
         <div className="text-center text-sm text-gray-500 mt-8">
-          Mostrando {filteredWorkshops.length} de {workshops.length} talleres
+          Mostrant {filteredWorkshops.length} de {workshops.length} tallers
           disponibles
         </div>
       )}
@@ -232,14 +232,14 @@ const CatalogBrowser = () => {
       <Modal
         isOpen={!!selectedWorkshop}
         onClose={() => setSelectedWorkshop(null)}
-        title={selectedWorkshop?.title || "Detalle del Taller"}
+        title={selectedWorkshop?.title || "Detall del Taller"}
         footer={
           <>
             <Button
               variant="secondary"
               onClick={() => setSelectedWorkshop(null)}
             >
-              Cerrar
+              Tancar
             </Button>
             <Button
               onClick={() => {
@@ -247,7 +247,7 @@ const CatalogBrowser = () => {
                 navigate("/center/request");
               }}
             >
-              Solicitar Taller
+              Sol·licitar Taller
             </Button>
           </>
         }
@@ -259,14 +259,14 @@ const CatalogBrowser = () => {
                 {selectedWorkshop.ambit}
               </span>
               <p className="text-gray-700 leading-relaxed text-base">
-                {selectedWorkshop.description || "Sin descripción disponible."}
+                {selectedWorkshop.description || "Sense descripció disponible."}
               </p>
             </div>
 
             <div>
               <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Calendar size={18} className="text-gray-500" />
-                Sesiones y Capacidad
+                Sessions i Capacitat
               </h4>
               {selectedWorkshop.editions &&
               selectedWorkshop.editions.length > 0 ? (
@@ -286,8 +286,8 @@ const CatalogBrowser = () => {
                             }`}
                           >
                             {edition.day_of_week === "TUESDAY"
-                              ? "Martes"
-                              : "Jueves"}
+                              ? "Dimarts"
+                              : "Dijous"}
                           </span>
                           <span className="flex items-center gap-1 text-sm font-medium text-gray-700">
                             <Clock size={16} />
@@ -299,18 +299,18 @@ const CatalogBrowser = () => {
                       <div className="flex gap-4 text-sm text-gray-600">
                         <div className="flex flex-col">
                           <span className="text-xs text-gray-400 uppercase">
-                            Capacidad Total
+                            Capacitat Total
                           </span>
                           <span className="font-semibold">
-                            {edition.capacity_total} alumnos
+                            {edition.capacity_total} alumnes
                           </span>
                         </div>
                         <div className="flex flex-col">
                           <span className="text-xs text-gray-400 uppercase">
-                            Máx. por Centro
+                            Màx. per Centre
                           </span>
                           <span className="font-semibold">
-                            {edition.max_per_school} alumnos
+                            {edition.max_per_school} alumnes
                           </span>
                         </div>
                       </div>
@@ -319,7 +319,7 @@ const CatalogBrowser = () => {
                 </div>
               ) : (
                 <p className="text-gray-500 italic">
-                  No hay sesiones definidas para este taller.
+                  No hi ha sessions definides per a aquest taller.
                 </p>
               )}
             </div>

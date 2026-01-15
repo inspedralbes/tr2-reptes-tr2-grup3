@@ -28,7 +28,7 @@ const MyRequests = () => {
       const data = await requestService.getRequests();
       setRequests(data);
     } catch (err) {
-      toast.error("Error al cargar solicitudes: " + err.message);
+      toast.error("Error en carregar les sol·licituds: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,7 @@ const MyRequests = () => {
       toast.success("Sol·licitud cancel·lada");
       loadRequests();
     } catch (err) {
-      toast.error("Error al cancelar: " + err.message);
+      toast.error("Error en cancel·lar: " + err.message);
     }
   };
 
@@ -150,7 +150,7 @@ const MyRequests = () => {
                 {/* Left Column: Workshops */}
                 <div className="lg:col-span-2 space-y-4">
                   <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-4 border-b pb-2">
-                    Tallers Solicitats
+                    Tallers Sol·licitats
                   </h3>
                   {!req.items_summary || req.items_summary.length === 0 ? (
                     <p className="text-gray-400 italic">

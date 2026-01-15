@@ -178,7 +178,7 @@ const Sidebar = () => {
             {isCenter && (
               <div>
                 <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">
-                  Centro Educativo
+                  Centre Educatiu
                 </h3>
 
                 <NavLink to="/center" end className={getLinkClass}>
@@ -186,7 +186,7 @@ const Sidebar = () => {
                     <>
                       <div className="flex items-center gap-5">
                         <Home size={28} className={getIconClass(isActive)} />
-                        <span className="text-lg">Inicio</span>
+                        <span className="text-lg">Inici</span>
                       </div>
                     </>
                   )}
@@ -197,7 +197,7 @@ const Sidebar = () => {
                     <>
                       <div className="flex items-center gap-5">
                         <Search size={28} className={getIconClass(isActive)} />
-                        <span className="text-lg">Catálogo de Talleres</span>
+                        <span className="text-lg">Catàleg de Tallers</span>
                       </div>
                     </>
                   )}
@@ -211,7 +211,7 @@ const Sidebar = () => {
                           size={28}
                           className={getIconClass(isActive)}
                         />
-                        <span className="text-lg">Realizar Solicitud</span>
+                        <span className="text-lg">Realitzar Sol·licitud</span>
                       </div>
                     </>
                   )}
@@ -225,7 +225,7 @@ const Sidebar = () => {
                           size={28}
                           className={getIconClass(isActive)}
                         />
-                        <span className="text-lg">Historial Solicitudes</span>
+                        <span className="text-lg">Historial Sol·licituds</span>
                       </div>
                     </>
                   )}
@@ -239,7 +239,7 @@ const Sidebar = () => {
                           size={28}
                           className={getIconClass(isActive)}
                         />
-                        <span className="text-lg">Plazas Asignadas</span>
+                        <span className="text-lg">Places Assignades</span>
                       </div>
                     </>
                   )}
@@ -250,7 +250,7 @@ const Sidebar = () => {
                     <>
                       <div className="flex items-center gap-5">
                         <Users size={28} className={getIconClass(isActive)} />
-                        <span className="text-lg">Mis Alumnos</span>
+                        <span className="text-lg">Els Meus Alumnes</span>
                       </div>
                     </>
                   )}
@@ -260,8 +260,11 @@ const Sidebar = () => {
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <GraduationCap size={28} className={getIconClass(isActive)} />
-                        <span className="text-lg">Profesores</span>
+                        <GraduationCap
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
+                        <span className="text-lg">Professors</span>
                       </div>
                     </>
                   )}

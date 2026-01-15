@@ -369,8 +369,8 @@ const RequestWizard = () => {
 
   const validateStep2 = () => {
     if (selectedItems.length === 0) {
-      setError("Debes seleccionar al menos un taller.");
-      toast.error("Faltan datos por cubrir");
+      setError("Has de seleccionar almenys un taller.");
+      toast.error("Falten dades per omplir");
       return;
     }
 
@@ -385,9 +385,9 @@ const RequestWizard = () => {
 
     if (missingData) {
       setError(
-        "Faltan datos por cubrir: revisa que todos los talleres tengan edición y alumnos asignados."
+        "Falten dades per omplir: revisa que tots els tallers tinguin edició i alumnes assignats."
       );
-      toast.error("Faltan datos por cubrir");
+      toast.error("Falten dades per omplir");
       return;
     }
 
@@ -397,12 +397,12 @@ const RequestWizard = () => {
 
   const handleSubmit = async () => {
     if (selectedItems.length === 0) {
-      setError("Debes seleccionar al menos un taller");
+      setError("Has de seleccionar almenys un taller");
       return;
     }
 
     if (!selectedTeachers[0] || !selectedTeachers[1]) {
-      setError("Debes seleccionar dos profesores acompañantes");
+      setError("Has de seleccionar dos professors acompanyants");
       return;
     }
     if (selectedTeachers[0] === selectedTeachers[1]) {
@@ -430,18 +430,18 @@ const RequestWizard = () => {
 
     if (preferencesIncomplete) {
       setError(
-        "Faltan datos por cubrir: Debes asignar todas las preferencias requeridas para ambos profesores."
+        "Falten dades per omplir: Has d'assignar totes les preferències requerides per als dos professors."
       );
-      toast.error("Faltan datos por cubrir");
+      toast.error("Falten dades per omplir");
       return;
     }
 
     // Validate Global Priorities
     if (selectedItems.some((item) => !item.priority)) {
       setError(
-        "Faltan datos por cubrir: Debes asignar una prioridad a todos los talleres."
+        "Falten dades per omplir: Has d'assignar una prioritat a tots els tallers."
       );
-      toast.error("Faltan datos por cubrir");
+      toast.error("Falten dades per omplir");
       return;
     }
 
@@ -453,7 +453,7 @@ const RequestWizard = () => {
     );
     if (invalidItems.length > 0) {
       setError(
-        "Todos los talleres deben tener edición seleccionada y entre 1-4 alumnos"
+        "Tots els tallers han de tenir edició seleccionada i entre 1-4 alumnes"
       );
       return;
     }
@@ -461,12 +461,12 @@ const RequestWizard = () => {
     // Verify slots are filled
     for (const [index, item] of selectedItems.entries()) {
       if (!item.selected_students || item.selected_students.length === 0) {
-        setError(`El taller #${index + 1} no tiene alumnos asignados.`);
+        setError(`El taller #${index + 1} no té alumnes assignats.`);
         return;
       }
       const emptySlots = item.selected_students.some((s) => !s || s === "");
       if (emptySlots) {
-        setError(`El taller #${index + 1} tiene alumnos sin seleccionar.`);
+        setError(`El taller #${index + 1} té alumnes sense seleccionar.`);
         return;
       }
     }
@@ -540,7 +540,7 @@ const RequestWizard = () => {
       setSuccess(true);
     } catch (err) {
       const errMsg = err.response?.data?.error || err.message;
-      setError("Error al enviar solicitud: " + errMsg);
+      setError("Error en enviar la sol·licitud: " + errMsg);
       toast.error(errMsg);
     } finally {
       setLoading(false);
@@ -551,21 +551,22 @@ const RequestWizard = () => {
     return (
       <Card
         title={
-          editingRequest ? "✅ Solicitud Actualizada" : "✅ Solicitud Enviada"
+          editingRequest
+            ? "✅ Sol·licitud Actualitzada"
+            : "✅ Sol·licitud Enviada"
         }
       >
         <div className="text-center py-8">
           <p className="text-lg mb-4">
             {editingRequest
-              ? "Tu solicitud se ha actualizado correctamente."
-              : "Tu solicitud ha sido enviada correctamente."}
+              ? "La teva sol·licitud s'ha actualitzat correctament."
+              : "La teva sol·licitud s'ha enviat correctament."}
           </p>
           <p className="text-gray-600 mb-6">
-            Recibirás las asignaciones cuando el administrador publique los
-            resultados.
+            Rebràs les assignacions quan l'administrador publiqui els resultats.
           </p>
           <Button onClick={() => navigate("/center/requests")}>
-            Ver mis solicitudes
+            Veure les meves sol·licituds
           </Button>
         </div>
       </Card>
@@ -581,7 +582,7 @@ const RequestWizard = () => {
               step >= 1 ? "bg-blue-500 text-white" : "bg-gray-200"
             }`}
           >
-            1. Datos Centro
+            1. Dades Centre
           </span>
           <div className="flex-1 h-1 bg-gray-200 mx-2">
             <div
@@ -595,7 +596,7 @@ const RequestWizard = () => {
               step >= 2 ? "bg-blue-500 text-white" : "bg-gray-200"
             }`}
           >
-            2. Talleres ({totalStudents}/12)
+            2. Tallers ({totalStudents}/12)
           </span>
           <div className="flex-1 h-1 bg-gray-200 mx-2">
             <div
@@ -609,7 +610,7 @@ const RequestWizard = () => {
               step >= 3 ? "bg-blue-500 text-white" : "bg-gray-200"
             }`}
           >
-            3. Preferencias
+            3. Preferències
           </span>
         </div>
         {editingRequest && (
@@ -624,7 +625,7 @@ const RequestWizard = () => {
       )}
 
       {step === 1 && (
-        <Card title="Paso 1: Datos del Centro">
+        <Card title="Pas 1: Dades del Centre">
           <div className="space-y-4">
             {hasExistingRequest && !editingRequest && (
               <div className="p-4 bg-yellow-50 text-yellow-800 rounded border border-yellow-200">
@@ -634,7 +635,7 @@ const RequestWizard = () => {
             )}
             <div>
               <label className="block text-sm font-medium mb-1">
-                Período de inscripción *
+                Període d'inscripció *
               </label>
               <select
                 value={formData.enrollment_period_id}
@@ -664,7 +665,7 @@ const RequestWizard = () => {
                   (hasExistingRequest && !editingRequest)
                 }
               >
-                Siguiente →
+                Següent →
               </Button>
             </div>
           </div>
@@ -672,11 +673,11 @@ const RequestWizard = () => {
       )}
 
       {step === 2 && (
-        <Card title="Paso 2: Selección de Talleres">
+        <Card title="Pas 2: Selecció de Tallers">
           <div className="flex justify-between items-center mb-4">
             <div>
               <p className="text-gray-600">
-                Selecciona los talleres y los alumnos.
+                Selecciona els tallers i els alumnes.
               </p>
               <p
                 className={`text-sm font-bold mt-1 ${
@@ -743,7 +744,7 @@ const RequestWizard = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm mb-1">Edición (día)</label>
+                    <label className="block text-sm mb-1">Edició (dia)</label>
                     <select
                       value={item.workshop_edition_id}
                       onChange={(e) =>
@@ -763,8 +764,8 @@ const RequestWizard = () => {
                               disabled={isOccupied}
                             >
                               {ed.day_of_week === "TUESDAY"
-                                ? "Martes"
-                                : "Jueves"}{" "}
+                                ? "Dimarts"
+                                : "Dijous"}{" "}
                               {ed.start_time}-{ed.end_time}
                               {isOccupied ? " (Solapat)" : ""}
                             </option>
@@ -777,7 +778,7 @@ const RequestWizard = () => {
 
                 <div className="bg-white p-3 rounded border">
                   <label className="block text-sm font-medium mb-2">
-                    Alumnos ({item.selected_students?.length || 0}/4)
+                    Alumnes ({item.selected_students?.length || 0}/4)
                   </label>
                   {item.selected_students &&
                     item.selected_students.map((studentId, sIndex) => {
@@ -813,7 +814,7 @@ const RequestWizard = () => {
                             }}
                             className="flex-1 border rounded px-2 py-1 text-sm"
                           >
-                            <option value="">Seleccionar alumno...</option>
+                            <option value="">Seleccionar alumne...</option>
                             {availableStudents.map((s) => {
                               const isReserved =
                                 reservedStudentIds.has(s.id) &&
@@ -826,7 +827,7 @@ const RequestWizard = () => {
                               let labelInfo = "";
                               if (isReserved) labelInfo = " (Seleccionat)";
                               else if (!hasAllChecks)
-                                labelInfo = " (Faltan acuerdos)";
+                                labelInfo = " (Falten acords)";
 
                               return (
                                 <option
@@ -878,7 +879,7 @@ const RequestWizard = () => {
                       }}
                       className="text-sm text-blue-600 hover:underline"
                     >
-                      + Añadir alumno
+                      + Afegir alumne
                     </button>
                   )}
                 </div>
@@ -889,8 +890,8 @@ const RequestWizard = () => {
               onClick={addWorkshopItem}
               disabled={totalStudents >= 12}
             >
-              + Añadir otro taller{" "}
-              {totalStudents >= 12 ? "(Límit alumnes assolit)" : ""}
+              + Afegir un altre taller{" "}
+              {totalStudents >= 12 ? "(Límit d'alumnes assolit)" : ""}
             </Button>
           </div>
           <div className="flex justify-between mt-6">
@@ -901,21 +902,21 @@ const RequestWizard = () => {
               onClick={validateStep2}
               disabled={selectedItems.length === 0}
             >
-              Siguiente →
+              Següent →
             </Button>
           </div>
         </Card>
       )}
 
       {step === 3 && (
-        <Card title="Paso 3: Profesores Acompañantes y Preferencias">
+        <Card title="Pas 3: Professors Acompanyants i Preferències">
           <div className="mb-6">
             <h3 className="font-semibold text-lg mb-2">
-              1. Prioridad Global de los Talleres (Orden de importancia)
+              1. Prioritat Global dels Tallers (Ordre d'importància)
             </h3>
             <p className="text-sm text-gray-600 mb-3">
-              Asigna un orden de prioridad único a cada taller solicitado (1 =
-              Más importante).
+              Assigna un ordre de prioritat únic a cada taller sol·licitat (1 =
+              Més important).
             </p>
             <div className="space-y-2 bg-gray-50 p-4 rounded border">
               {selectedItems
@@ -945,12 +946,12 @@ const RequestWizard = () => {
 
                   const day =
                     ed?.day_of_week === "TUESDAY"
-                      ? "Martes"
+                      ? "Dimarts"
                       : ed?.day_of_week === "THURSDAY"
-                      ? "Jueves"
+                      ? "Dijous"
                       : item.day === "TUESDAY"
-                      ? "Martes"
-                      : "Jueves";
+                      ? "Dimarts"
+                      : "Dijous";
                   const time = ed?.start_time || item.start_time;
 
                   return (
@@ -963,7 +964,7 @@ const RequestWizard = () => {
                       </span>
                       <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">
-                          Prioridad:
+                          Prioritat:
                         </label>
                         <select
                           className="border rounded px-2 py-1"
@@ -988,7 +989,7 @@ const RequestWizard = () => {
                             );
                             return (
                               <option key={val} value={val} disabled={isTaken}>
-                                {val} {isTaken ? "(Asignado)" : ""}
+                                {val} {isTaken ? "(Assignat)" : ""}
                               </option>
                             );
                           })}
@@ -1003,13 +1004,13 @@ const RequestWizard = () => {
 
           <div className="mb-6">
             <h3 className="font-semibold text-lg mb-2">
-              2. Profesores Acompañantes (2)
+              2. Professors Acompanyants (2)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[0, 1].map((idx) => (
                 <div key={idx} className="border p-3 rounded bg-gray-50">
                   <label className="block text-sm font-medium mb-1">
-                    Profesor #{idx + 1}
+                    Professor #{idx + 1}
                   </label>
                   <select
                     value={selectedTeachers[idx]}
@@ -1034,7 +1035,7 @@ const RequestWizard = () => {
               selectedTeachers[1] &&
               selectedTeachers[0] === selectedTeachers[1] && (
                 <p className="text-red-500 text-sm mt-1">
-                  Has seleccionado el mismo profesor dos veces.
+                  Has seleccionat el mateix professor dues vegades.
                 </p>
               )}
           </div>
@@ -1045,10 +1046,10 @@ const RequestWizard = () => {
               <div className="space-y-6">
                 <hr />
                 <h3 className="font-semibold text-lg">
-                  3. Preferencias de Talleres por Profesor
+                  3. Preferències de Tallers per Professor
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
-                  Indica el orden de preferencia (Top 3) para CADA profesor.
+                  Indica l'ordre de preferència (Top 3) per a CADA professor.
                 </p>
                 {selectedTeachers.map((teacherId, tIdx) => {
                   const teacher = availableTeachers.find(
@@ -1061,7 +1062,7 @@ const RequestWizard = () => {
                       className="bg-blue-50 p-4 rounded-lg border border-blue-100"
                     >
                       <h4 className="font-bold text-blue-800 mb-3">
-                        Preferencias para: {teacher?.full_name}
+                        Preferències per a: {teacher?.full_name}
                       </h4>
                       <div className="space-y-3">
                         {Array.from({
@@ -1076,7 +1077,7 @@ const RequestWizard = () => {
                             className="flex gap-3 items-center"
                           >
                             <span className="font-medium w-16 text-sm text-gray-600">
-                              Opción {prefIdx + 1}
+                              Opció {prefIdx + 1}
                             </span>
                             <select
                               value={prefs[prefIdx]?.workshop_edition_id || ""}
@@ -1091,7 +1092,7 @@ const RequestWizard = () => {
                               }}
                               className="flex-1 border rounded px-2 py-1 bg-white"
                             >
-                              <option value="">-- Sin selección --</option>
+                              <option value="">-- Sense selecció --</option>
                               {selectedItems
                                 .filter((item) => item.workshop_edition_id)
                                 .map((item, i) => {
@@ -1112,7 +1113,7 @@ const RequestWizard = () => {
                                     ed?.start_time || item.start_time;
 
                                   const day =
-                                    dayStr === "TUESDAY" ? "Martes" : "Jueves";
+                                    dayStr === "TUESDAY" ? "Dimarts" : "Dijous";
 
                                   // Exclusivity: Check if selected in other priority slot
                                   // ONLY check against slots that are actually visible/valid
@@ -1141,7 +1142,7 @@ const RequestWizard = () => {
                                       {w?.title || item.workshop_name} ({day}{" "}
                                       {timeStr}){" "}
                                       {isSelectedElsewhere
-                                        ? "(Ya seleccionado)"
+                                        ? "(Ja seleccionat)"
                                         : ""}
                                     </option>
                                   );
@@ -1164,10 +1165,10 @@ const RequestWizard = () => {
               disabled={loading || (hasExistingRequest && !editingRequest)}
             >
               {loading
-                ? "Enviando..."
+                ? "Enviant..."
                 : editingRequest
-                ? "✓ Actualizar Solicitud"
-                : "✓ Enviar Solicitud"}
+                ? "✓ Actualitzar Sol·licitud"
+                : "✓ Enviar Sol·licitud"}
             </Button>
           </div>
         </Card>

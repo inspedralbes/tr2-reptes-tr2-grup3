@@ -28,18 +28,20 @@ const RequestDetail = () => {
   };
 
   const handleCancel = async () => {
-    if (!window.confirm("¿Estás seguro de cancelar esta solicitud?")) return;
+    if (!window.confirm("Estàs segur de voler cancel·lar aquesta sol·licitud?"))
+      return;
     try {
       await requestService.cancelRequest(id);
       navigate("/center/requests");
     } catch (err) {
-      alert("Error al cancelar: " + err.message);
+      alert("Error en cancel·lar: " + err.message);
     }
   };
 
-  if (loading) return <div className="p-6">Cargando detalles...</div>;
+  if (loading) return <div className="p-6">Carregant detalls...</div>;
   if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
-  if (!request) return <div className="p-6">No se encontró la solicitud.</div>;
+  if (!request)
+    return <div className="p-6">No s'ha trobat la sol·licitud.</div>;
 
   // Parse teachers if strictly json string (though backend returns object usually if pg handles it, but let's be safe)
   // Actually pg returns JSON type as object usually.
@@ -49,20 +51,20 @@ const RequestDetail = () => {
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">
-          Detalle de Solicitud #{request.id}
+          Detall de Sol·licitud #{request.id}
         </h1>
         <Button
           variant="secondary"
           onClick={() => navigate("/center/requests")}
         >
-          ← Volver
+          ← Tornar
         </Button>
       </div>
 
       <Card className="p-4">
         <div className="flex justify-between mb-4">
           <div>
-            <p className="text-sm text-gray-500">Estado</p>
+            <p className="text-sm text-gray-500">Estat</p>
             <span
               className={`font-bold ${
                 request.status === "SUBMITTED"
@@ -74,7 +76,7 @@ const RequestDetail = () => {
             </span>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Fecha Envío</p>
+            <p className="text-sm text-gray-500">Data Enviament</p>
             <p className="font-medium">
               {new Date(request.submitted_at).toLocaleString()}
             </p>
@@ -83,7 +85,7 @@ const RequestDetail = () => {
       </Card>
 
       {/* Profesores Acompañantes */}
-      <Card title="Profesores Acompañantes del Centro">
+      <Card title="Professors Acompanyants del Centre">
         {teachers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {teachers.map((t, idx) => (
@@ -92,7 +94,7 @@ const RequestDetail = () => {
                 className="p-3 bg-blue-50 rounded border border-blue-100"
               >
                 <span className="font-bold text-blue-900">
-                  Profesor #{idx + 1}:
+                  Professor #{idx + 1}:
                 </span>{" "}
                 {t.full_name}
               </div>
@@ -100,13 +102,13 @@ const RequestDetail = () => {
           </div>
         ) : (
           <p className="text-gray-500 italic">
-            No se han especificado profesores acompañantes.
+            No s'han especificat professors acompanyants.
           </p>
         )}
       </Card>
 
       {/* Preferencias (Prioridades) */}
-      <Card title="Prioridades de Talleres (Preferencias)">
+      <Card title="Prioritats de Tallers (Preferències)">
         <div className="space-y-2">
           {request.teacher_preferences?.map((pref) => (
             <div
@@ -119,7 +121,7 @@ const RequestDetail = () => {
               <div>
                 <p className="font-bold text-gray-800">{pref.workshop_title}</p>
                 <p className="text-sm text-gray-600">
-                  {pref.day_of_week === "TUESDAY" ? "Martes" : "Jueves"} (
+                  {pref.day_of_week === "TUESDAY" ? "Dimarts" : "Dijous"} (
                   {pref.start_time?.slice(0, 5)} - {pref.end_time?.slice(0, 5)})
                 </p>
               </div>
@@ -128,14 +130,14 @@ const RequestDetail = () => {
           {(!request.teacher_preferences ||
             request.teacher_preferences.length === 0) && (
             <p className="text-gray-500 italic">
-              Sin preferencias registradas.
+              Sense preferències registrades.
             </p>
           )}
         </div>
       </Card>
 
       {/* Talleres Solicitados */}
-      <Card title="Talleres Solicitados y Alumnos">
+      <Card title="Tallers Sol·licitats i Alumnes">
         <div className="space-y-4">
           {request.items?.map((item, idx) => (
             <div key={idx} className="border rounded p-4 shadow-sm bg-white">
@@ -144,14 +146,14 @@ const RequestDetail = () => {
                   {item.workshop_title}
                 </h3>
                 <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  {item.day_of_week === "TUESDAY" ? "Martes" : "Jueves"}{" "}
+                  {item.day_of_week === "TUESDAY" ? "Dimarts" : "Dijous"}{" "}
                   {item.start_time?.slice(0, 5)}
                 </span>
               </div>
 
               <div className="mt-2">
                 <h4 className="font-semibold text-sm text-gray-700 mb-1">
-                  Alumnos ({item.students?.length || 0}):
+                  Alumnes ({item.students?.length || 0}):
                 </h4>
                 {item.students && item.students.length > 0 ? (
                   <ul className="list-disc list-inside text-sm text-gray-600 ml-2">
@@ -161,7 +163,7 @@ const RequestDetail = () => {
                   </ul>
                 ) : (
                   <p className="text-sm text-gray-400 italic">
-                    Sin alumnos asignados.
+                    Sense alumnes assignats.
                   </p>
                 )}
               </div>
@@ -173,7 +175,7 @@ const RequestDetail = () => {
       {request.status === "SUBMITTED" && (
         <div className="flex justify-end">
           <Button variant="danger" onClick={handleCancel}>
-            Cancelar Solicitud
+            Cancel·lar Sol·licitud
           </Button>
         </div>
       )}
