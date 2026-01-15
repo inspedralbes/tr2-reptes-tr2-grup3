@@ -93,7 +93,7 @@ const RequestWizard = () => {
           listEnrollmentPeriods(),
           listWorkshops(),
           studentsService.getAll({ school_id: user.school_id }),
-          client.get("/users?role=TEACHER"),
+          client.get("/teachers"),
         ]);
       setPeriods(
         periodsData.filter(
