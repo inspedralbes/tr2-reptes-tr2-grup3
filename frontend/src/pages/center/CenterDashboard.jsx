@@ -20,6 +20,7 @@ import {
   Megaphone,
   BookOpen,
   Calendar,
+  User,
 } from "lucide-react";
 import client from "../../api/client";
 
@@ -242,27 +243,24 @@ const CenterDashboard = () => {
               !stats.activePeriod || stats.activePeriod.status !== "OPEN"
             }
             className={`group bg-white rounded-2xl shadow-sm p-6 text-left transition-all duration-300 border border-transparent 
-                ${
-                  !stats.activePeriod || stats.activePeriod.status !== "OPEN"
-                    ? "opacity-60 cursor-not-allowed"
-                    : "hover:shadow-xl hover:-translate-y-1 hover:border-green-100"
-                }`}
+                ${!stats.activePeriod || stats.activePeriod.status !== "OPEN"
+                ? "opacity-60 cursor-not-allowed"
+                : "hover:shadow-xl hover:-translate-y-1 hover:border-green-100"
+              }`}
           >
             <div
-              className={`bg-green-50 text-green-600 p-4 rounded-xl w-fit mb-4 ${
-                !stats.activePeriod || stats.activePeriod.status !== "OPEN"
-                  ? ""
-                  : "group-hover:bg-green-600 group-hover:text-white transition-colors"
-              }`}
+              className={`bg-green-50 text-green-600 p-4 rounded-xl w-fit mb-4 ${!stats.activePeriod || stats.activePeriod.status !== "OPEN"
+                ? ""
+                : "group-hover:bg-green-600 group-hover:text-white transition-colors"
+                }`}
             >
               <PlusCircle size={32} />
             </div>
             <h3
-              className={`text-lg font-bold text-gray-900 ${
-                !stats.activePeriod || stats.activePeriod.status !== "OPEN"
-                  ? ""
-                  : "group-hover:text-green-700 transition-colors"
-              }`}
+              className={`text-lg font-bold text-gray-900 ${!stats.activePeriod || stats.activePeriod.status !== "OPEN"
+                ? ""
+                : "group-hover:text-green-700 transition-colors"
+                }`}
             >
               Nueva Solicitud
             </h3>
@@ -300,6 +298,21 @@ const CenterDashboard = () => {
             </h3>
             <p className="text-sm text-gray-500 mt-2">
               Talleres asignados y checklist
+            </p>
+          </button>
+
+          <button
+            onClick={() => navigate("/center/teachers")}
+            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-indigo-100"
+          >
+            <div className="bg-indigo-50 text-indigo-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <User size={32} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">
+              Gestió Professors
+            </h3>
+            <p className="text-sm text-gray-500 mt-2">
+              Administrar equip docent
             </p>
           </button>
         </div>

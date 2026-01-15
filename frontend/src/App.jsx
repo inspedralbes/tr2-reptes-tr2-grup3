@@ -27,6 +27,7 @@ import MyRequests from "./pages/center/MyRequests.jsx";
 import RequestDetail from "./pages/center/RequestDetail.jsx";
 import NominalConfirmation from "./pages/center/NominalConfirmation.jsx";
 import StudentManager from "./pages/center/StudentManager.jsx";
+import TeachersManager from "./pages/center/TeachersManager.jsx";
 
 // ZONA PROFESOR
 import TeacherDashboard from "./pages/teacher/TeacherDashboard.jsx";
@@ -151,6 +152,15 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/center/teachers"
+              element={
+                <ProtectedRoute>
+                  <TeachersManager />
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/center/students"
               element={

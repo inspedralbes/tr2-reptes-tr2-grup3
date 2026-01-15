@@ -7,8 +7,7 @@
 INSERT INTO users (email, password_hash, full_name, role) VALUES 
     ('admin@enginy.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Admin Enginy', 'ADMIN'),
     ('coord1@escola1.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Coordinador Escola 1', 'CENTER_COORD'),
-    ('coord2@escola2.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Coordinador Escola 2', 'CENTER_COORD'),
-    ('teacher@enginy.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Professor Referent', 'TEACHER')
+    ('coord2@escola2.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Coordinador Escola 2', 'CENTER_COORD')
 ON CONFLICT (email) DO NOTHING;
 
 DO $$
@@ -89,6 +88,15 @@ BEGIN
     -- VINCULAR COORDINADOR A ESCUELA (Manual seeding fix)
     UPDATE schools SET coordinator_user_id = (SELECT id FROM users WHERE email = 'coord1@escola1.cat') 
     WHERE name = 'Escola Baixeras';
+
+    -- UPDATE: Create TEST school and user
+    INSERT INTO users (email, password_hash, full_name, role) VALUES 
+        ('coord_test@test.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Coordinador Test', 'CENTER_COORD')
+    ON CONFLICT (email) DO NOTHING;
+
+    INSERT INTO schools (name, code, coordinator_user_id) 
+    VALUES ('ESCOLA TEST', '00000000', (SELECT id FROM users WHERE email = 'coord_test@test.cat'))
+    ON CONFLICT (code) DO NOTHING;
 
     -- =======================================================================
     -- 4. INSERTAR TALLERES (WORKSHOPS) Y EDICIONES

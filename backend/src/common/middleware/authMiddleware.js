@@ -16,9 +16,22 @@ const authenticate = (req, res, next) => {
   }
 
   req.user = user;
+  req.user = user;
   next();
+};
+
+const isAuthenticated = authenticate;
+
+const isCenterCoord = (req, res, next) => {
+  if (req.user && req.user.role === 'CENTER_COORD') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Forbidden: Requereix ser Coordinador de Centre' });
+  }
 };
 
 module.exports = {
   authenticate,
+  isAuthenticated,
+  isCenterCoord,
 };

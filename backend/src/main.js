@@ -50,6 +50,6 @@ app.use('/api/teachers', teachersRoutes);
 app.use('/api/sessions', sessionsRoutes);
 app.use('/api/providers', providersRoutes);
 app.use('/api/centers', centersRoutes);
-console.log('Providers and Centers routes registered');
+
 
 module.exports = app;

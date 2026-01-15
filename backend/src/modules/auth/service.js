@@ -29,15 +29,7 @@ const login = async ({ email, password }) => {
       throw new Error("Invalid email or password");
     }
 
-    // Generar token JWT con los datos del usuario
-    const token = signToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      name: user.full_name,
-    });
-
-    // Si es coordinador, buscar su escuela
+    // Si es coordinador, buscar su escuela en la tabla schools
     let school_id = null;
     if (user.role === "CENTER_COORD") {
       const schoolRes = await db.query(
@@ -48,6 +40,15 @@ const login = async ({ email, password }) => {
         school_id = schoolRes.rows[0].id;
       }
     }
+
+    // Generar token JWT con los datos del usuario INCLUYENDO school_id
+    const token = signToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.full_name,
+      school_id, // Añadimos school_id al token
+    });
 
     return {
       user: {
@@ -82,7 +83,7 @@ const getProfile = async (userId) => {
 
     const user = result.rows[0];
 
-    // Si es coordinador, buscar su escuela
+    // Si es coordinador, buscar su escuela en la tabla schools
     let school_id = null;
     if (user.role === "CENTER_COORD") {
       const schoolRes = await db.query(

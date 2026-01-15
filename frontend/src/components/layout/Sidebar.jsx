@@ -255,6 +255,17 @@ const Sidebar = () => {
                     </>
                   )}
                 </NavLink>
+
+                <NavLink to="/center/teachers" className={getLinkClass}>
+                  {({ isActive }) => (
+                    <>
+                      <div className="flex items-center gap-5">
+                        <GraduationCap size={28} className={getIconClass(isActive)} />
+                        <span className="text-lg">Profesores</span>
+                      </div>
+                    </>
+                  )}
+                </NavLink>
               </div>
             )}
 

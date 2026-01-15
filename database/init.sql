@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ==========================================
 -- ENUMS (Tipos de datos fijos)
 -- ==========================================
-CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CENTER_COORD', 'TEACHER');
+CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CENTER_COORD');
 CREATE TYPE period_status_enum AS ENUM ('OPEN', 'PROCESSING', 'PUBLISHED', 'CLOSED');
 CREATE TYPE workshop_term_enum AS ENUM ('2N_TRIMESTRE', '3R_TRIMESTRE');
 CREATE TYPE day_of_week_enum AS ENUM ('TUESDAY', 'THURSDAY');
@@ -37,6 +37,7 @@ CREATE TABLE users (
     role user_role_enum NOT NULL,
     password_hash VARCHAR(255),
     created_at TIMESTAMP DEFAULT NOW()
+    -- school_id Eliminado de users, ya no es necesario aquí para usuarios logueables
 );
 
 CREATE TABLE schools (
@@ -52,6 +53,15 @@ CREATE TABLE schools (
     email VARCHAR(255),
     phone VARCHAR(50),
     ownership_type VARCHAR(100)
+);
+
+-- Nueva tabla para Profesores (Sin login)
+CREATE TABLE teachers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE students (
@@ -131,6 +141,7 @@ CREATE TABLE request_teacher_preferences (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     request_id UUID REFERENCES requests(id) ON DELETE CASCADE,
     workshop_edition_id UUID REFERENCES workshop_editions(id), -- Taller que el profe quiere vigilar
+    teacher_id UUID REFERENCES teachers(id), -- Profesores de la tabla teachers
     preference_order INT -- 1, 2, 3
 );
 
@@ -192,12 +203,12 @@ CREATE TABLE student_documents (
 CREATE TABLE workshop_assigned_teachers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     workshop_edition_id UUID REFERENCES workshop_editions(id) ON DELETE CASCADE,
-    teacher_user_id UUID REFERENCES users(id), -- El professor assignat
+    teacher_id UUID REFERENCES teachers(id), -- El professor assignat (de taula teachers)
     is_main_referent BOOLEAN DEFAULT TRUE, -- Si és el principal o suport
     assigned_at TIMESTAMP DEFAULT NOW(),
     
     -- Constraint: Un profe no pot estar 2 cops al mateix taller
-    UNIQUE(workshop_edition_id, teacher_user_id) 
+    UNIQUE(workshop_edition_id, teacher_id) 
 );
 
 -- ==========================================
@@ -285,7 +296,7 @@ CREATE TABLE survey_responses (
 -- ÍNDEXS PER MILLORAR RENDIMENT
 -- ==========================================
 CREATE INDEX idx_students_school ON students(school_id);
-CREATE INDEX idx_students_tutor_email ON students(tutor_email);
+
 CREATE INDEX idx_allocations_edition ON allocations(workshop_edition_id);
 CREATE INDEX idx_allocations_school ON allocations(school_id);
 CREATE INDEX idx_attendance_session ON attendance_logs(session_id);

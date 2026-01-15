@@ -100,13 +100,13 @@ const createRequest = async (req, res) => {
     if (teacher_preferences && teacher_preferences.length > 0) {
       for (const pref of teacher_preferences) {
         await client.query(
-          `INSERT INTO request_teacher_preferences (request_id, workshop_edition_id, preference_order, teacher_user_id)
-           VALUES ($1, $2, $3, $4)`,
+          `INSERT INTO request_teacher_preferences (request_id, workshop_edition_id, preference_order, teacher_id)
+             VALUES ($1, $2, $3, $4)`,
           [
             request_id,
             pref.workshop_edition_id,
             pref.preference_order,
-            pref.teacher_user_id || null,
+            pref.teacher_id || null, // Updated to teacher_id
           ]
         );
       }
@@ -220,9 +220,9 @@ const listRequests = async (req, res) => {
                     WHERE ris.request_item_id = ri.id
                  ),
                  'teachers', (
-                    SELECT json_agg(u.full_name)
+                    SELECT json_agg(t.full_name)
                     FROM request_teacher_preferences rtp
-                    JOIN users u ON u.id = rtp.teacher_user_id
+                    JOIN teachers t ON t.id = rtp.teacher_id
                     WHERE rtp.request_id = r.id AND rtp.workshop_edition_id = ri.workshop_edition_id
                  )
                ))
@@ -348,9 +348,9 @@ const updateRequest = async (req, res) => {
 
       for (const pref of teacher_preferences) {
         await client.query(
-          `INSERT INTO request_teacher_preferences (request_id, workshop_edition_id, preference_order)
-           VALUES ($1, $2, $3)`,
-          [id, pref.workshop_edition_id, pref.preference_order]
+          `INSERT INTO request_teacher_preferences (request_id, workshop_edition_id, preference_order, teacher_id)
+           VALUES ($1, $2, $3, $4)`,
+          [id, pref.workshop_edition_id, pref.preference_order, pref.teacher_id]
         );
       }
     }
