@@ -18,7 +18,7 @@ const listStudents = async (req, res) => {
 
   try {
     let query = `
-      SELECT s.id, s.id_alu, s.nombre_completo, s.curso, s.check_acuerdo_pedagogico, s.check_autorizacion_movilidad, s.check_derechos_imagen, s.nivel_absentismo, s.school_id, s.created_at,
+      SELECT s.id, s.email, s.nombre_completo, s.curso, s.check_acuerdo_pedagogico, s.check_autorizacion_movilidad, s.check_derechos_imagen, s.nivel_absentismo, s.school_id, s.created_at,
              sc.name as school_name
       FROM students s
       LEFT JOIN schools sc ON s.school_id = sc.id
@@ -91,7 +91,7 @@ const getStudentById = async (req, res) => {
  * Crear nou alumne (quan el centre confirma nominalment)
  */
 const createStudent = async (req, res) => {
-  let { nombre_completo, id_alu, curso, school_id } = req.body;
+  let { nombre_completo, email, curso, school_id } = req.body;
   const user = req.user;
 
   if (!nombre_completo) {
@@ -119,10 +119,10 @@ const createStudent = async (req, res) => {
     }
 
     const result = await db.query(
-      `INSERT INTO students (nombre_completo, id_alu, curso, school_id)
+      `INSERT INTO students (nombre_completo, email, curso, school_id)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, nombre_completo, id_alu, curso, school_id, created_at`,
-      [nombre_completo, id_alu || null, curso || null, school_id]
+       RETURNING id, nombre_completo, email, curso, school_id, created_at`,
+      [nombre_completo, email || null, curso || null, school_id]
     );
 
     res.status(201).json(result.rows[0]);
@@ -139,7 +139,7 @@ const updateStudent = async (req, res) => {
   const { id } = req.params;
   const {
     nombre_completo,
-    id_alu,
+    email,
     curso,
     check_acuerdo_pedagogico,
     check_autorizacion_movilidad,
@@ -151,7 +151,7 @@ const updateStudent = async (req, res) => {
     const result = await db.query(
       `UPDATE students
        SET nombre_completo = COALESCE($1, nombre_completo),
-           id_alu = COALESCE($2, id_alu),
+           email = COALESCE($2, email),
            curso = COALESCE($3, curso),
            check_acuerdo_pedagogico = COALESCE($4, check_acuerdo_pedagogico),
            check_autorizacion_movilidad = COALESCE($5, check_autorizacion_movilidad),
@@ -161,7 +161,8 @@ const updateStudent = async (req, res) => {
        RETURNING *`,
       [
         nombre_completo,
-        id_alu,
+        email,
+        email,
         curso,
         check_acuerdo_pedagogico,
         check_autorizacion_movilidad,

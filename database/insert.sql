@@ -625,9 +625,9 @@ BEGIN
         (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Vila de Gràcia'), 4, 'PUBLISHED');
 
     -- 5. INSERTAR ALUMNOS MOCK (Para pruebas)
-    INSERT INTO students (nombre_completo, id_alu, curso, check_acuerdo_pedagogico, check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo, school_id) VALUES
-    ('Marc García', 'ALU001', '3 ESO', 1, 1, 1, 1, (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
-    ('Laia Martí', 'ALU002', '4 ESO', 0, 1, 0, 2, (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
-    ('Pau López', 'ALU003', '3 ESO', 1, 0, 1, 5, (SELECT id FROM schools WHERE name = 'Escola Parc de la Ciutadella' LIMIT 1));
+    INSERT INTO students (nombre_completo, email, curso, check_acuerdo_pedagogico, check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo, school_id) VALUES
+    ('Marc García', 'marc.garcia@exemple.cat', '3 ESO', 1, 1, 1, 1, (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
+    ('Laia Martí', 'laia.marti@exemple.cat', '4 ESO', 0, 1, 0, 2, (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
+    ('Pau López', 'pau.lopez@exemple.cat', '3 ESO', 1, 0, 1, 5, (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1));
 
 END $$;

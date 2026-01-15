@@ -56,7 +56,7 @@ CREATE TABLE schools (
 
 CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    id_alu VARCHAR(50) UNIQUE, -- El oficial para el CEB
+    email VARCHAR(255) UNIQUE, -- Email del alumno
     nombre_completo VARCHAR(255) NOT NULL,
     curso VARCHAR(20) CHECK (curso IN ('3 ESO', '4 ESO')),
     
@@ -295,6 +295,7 @@ CREATE TABLE survey_responses (
 -- ÍNDEXS PER MILLORAR RENDIMENT
 -- ==========================================
 CREATE INDEX idx_students_school ON students(school_id);
+CREATE INDEX idx_students_email ON students(email);
 
 CREATE INDEX idx_allocations_edition ON allocations(workshop_edition_id);
 CREATE INDEX idx_allocations_school ON allocations(school_id);

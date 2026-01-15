@@ -481,17 +481,29 @@ const RequestWizard = () => {
                               const isReserved =
                                 reservedStudentIds.has(s.id) &&
                                 s.id !== studentId;
+
+                              // Verificar que tenga los 3 checks marcados (1 = Sí)
+                              const hasAllChecks =
+                                s.check_acuerdo_pedagogico === 1 &&
+                                s.check_autorizacion_movilidad === 1 &&
+                                s.check_derechos_imagen === 1;
+
+                              const isDisabled = isReserved || !hasAllChecks;
+
+                              let labelInfo = "";
+                              if (isReserved)
+                                labelInfo = " (Ocupado en este horario)";
+                              else if (!hasAllChecks)
+                                labelInfo = " (Faltan acuerdos por aprobar)";
+
                               return (
                                 <option
                                   key={s.id}
                                   value={s.id}
-                                  disabled={isReserved}
+                                  disabled={isDisabled}
                                 >
                                   {s.nombre_completo || s.full_name} (
-                                  {s.id_alu || s.idalu || "Sin ID"}){" "}
-                                  {isReserved
-                                    ? "(Ocupado en este horario)"
-                                    : ""}
+                                  {s.email || "Sin Email"}){labelInfo}
                                 </option>
                               );
                             })}
