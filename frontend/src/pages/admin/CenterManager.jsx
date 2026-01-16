@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Upload, Download } from "lucide-react";
+import { Plus, Edit, Trash2, Upload, Download, Building2, Search, MapPin, Mail, Phone, School } from "lucide-react";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
@@ -26,6 +26,21 @@ const CenterManager = () => {
     phone: "",
     ownership_type: ""
   });
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredCenters = centers.filter(c =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.code.includes(searchTerm) ||
+    c.municipality?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const stats = {
+    total: centers.length,
+    public: centers.filter(c => c.ownership_type?.includes('Públic') || c.ownership_type?.includes('Educació') || c.ownership_type?.includes('Locals')).length,
+    private: centers.filter(c => c.ownership_type?.includes('Privat') || c.ownership_type?.includes('Fundacions') || c.ownership_type?.includes('Religioso')).length,
+    municipalities: new Set(centers.map(c => c.municipality)).size
+  };
 
   useEffect(() => {
     loadCenters();
@@ -118,6 +133,43 @@ const CenterManager = () => {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = [
+      "Código",
+      "Nombre",
+      "Dirección",
+      "Teléfono",
+      "Email",
+      "Titularidad"
+    ];
+
+    // Example data based on a real school
+    const exampleRow = [
+      "08013275",
+      "Institut Pedralbes",
+      "Av. Esplugues, 36-42",
+      "932033332",
+      "a8013275@xtec.cat",
+      "Departament d'Educació i Formació Professional"
+    ];
+
+    const csvContent = [
+      headers.join(";"),
+      exampleRow.join(";")
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", "plantilla_centros.csv");
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleImport = async (file) => {
     try {
       setImporting(true);
@@ -161,142 +213,191 @@ const CenterManager = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <Card title="Gestión de Centros">
-        <div className="flex justify-between items-center mb-6">
-          <div></div>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => setShowImportModal(true)}
-            >
-              <div className="flex items-center gap-2">
-                <Upload size={18} /> Importar CSV
-              </div>
-            </Button>
-            <Button variant="secondary" onClick={handleExport}>
-              <div className="flex items-center gap-2">
-                <Download size={18} /> Exportar CSV
-              </div>
-            </Button>
-            <Button onClick={handleCreate}>
-              <div className="flex items-center gap-2">
-                <Plus size={18} /> Nuevo Centro
-              </div>
-            </Button>
-          </div>
+    <div className="p-8 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <School className="text-blue-600" size={28} /> Gestión de Centros
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Administra los centros educativos, sus datos de contacto y detalles de facturación.
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
+          <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+          <div className="text-xs font-semibold uppercase text-blue-800 tracking-wide mt-1">Total Centros</div>
         </div>
+        <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
+          <div className="text-2xl font-bold text-green-600">{stats.public}</div>
+          <div className="text-xs font-semibold uppercase text-green-800 tracking-wide mt-1">Públicos</div>
+        </div>
+        <div className="bg-purple-50 rounded-xl p-4 text-center border border-purple-100">
+          <div className="text-2xl font-bold text-purple-600">{stats.private}</div>
+          <div className="text-xs font-semibold uppercase text-purple-800 tracking-wide mt-1">Priv/Conc</div>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-200">
+          <div className="text-2xl font-bold text-gray-600">{stats.municipalities}</div>
+          <div className="text-xs font-semibold uppercase text-gray-500 tracking-wide mt-1">Municipios</div>
+        </div>
+      </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 mb-4 flex items-center justify-between">
-            <span>{error}</span>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-500 hover:text-red-700"
-            >
-              ×
-            </button>
-          </div>
-        )}
+      {/* Toolbar */}
+      <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="w-full md:w-96 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, código o municipio..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
+          <Button
+            variant="secondary"
+            onClick={handleDownloadTemplate}
+          >
+            <div className="flex items-center gap-2">
+              <Download size={18} /> <span className="hidden sm:inline">Plantilla</span>
+            </div>
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setShowImportModal(true)}
+          >
+            <div className="flex items-center gap-2">
+              <Upload size={18} /> <span className="hidden sm:inline">Importar</span>
+            </div>
+          </Button>
+          <Button variant="secondary" onClick={handleExport}>
+            <div className="flex items-center gap-2">
+              <Download size={18} /> <span className="hidden sm:inline">Exportar</span>
+            </div>
+          </Button>
+          <Button onClick={handleCreate}>
+            <div className="flex items-center gap-2">
+              <Plus size={18} /> Nuevo Centro
+            </div>
+          </Button>
+        </div>
+      </div>
 
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-500 hover:text-red-700"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Table */}
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="w-full border-collapse bg-white text-left text-sm text-gray-500">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 font-medium text-gray-900">
-                    Código
-                  </th>
-                  <th className="px-6 py-4 font-medium text-gray-900">
-                    Nombre
-                  </th>
-                  <th className="px-6 py-4 font-medium text-gray-900">
-                    Dirección
-                  </th>
-                  <th className="px-6 py-4 font-medium text-gray-900">
-                    Teléfono
-                  </th>
-                  <th className="px-6 py-4 font-medium text-gray-900">
-                    Email
-                  </th>
-                  <th className="px-6 py-4 font-medium text-gray-900">
-                    Titularidad
-                  </th>
-                  <th className="px-6 py-4 font-medium text-gray-900 text-right">
-                    Acciones
-                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Código</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ubicación</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contacto</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Titularidad</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 border-t border-gray-100">
-                {centers.map((c) => (
+                {filteredCenters.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-mono text-xs">{c.code}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900">
-                      {c.name}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      <div>{c.address}</div>
-                      <div className="text-xs text-gray-400">
-                        {c.postal_code} {c.municipality}
+                    <td className="px-6 py-4 font-mono text-xs text-gray-900 bg-gray-50/50 w-24 text-center">{c.code}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">{c.name}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-start gap-2">
+                        <MapPin size={14} className="mt-0.5 text-gray-400 shrink-0" />
+                        <div>
+                          <div className="text-gray-900">{c.municipality}</div>
+                          <div className="text-xs text-gray-500 truncate max-w-[180px]" title={c.address}>
+                            {c.address}
+                          </div>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 font-mono text-xs">
-                      {c.phone}
+                    <td className="px-6 py-4">
+                      <div className="space-y-1">
+                        {c.email && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <Mail size={12} className="text-gray-400" />
+                            <a href={`mailto:${c.email}`} className="text-blue-600 hover:underline truncate max-w-[150px]" title={c.email}>
+                              {c.email}
+                            </a>
+                          </div>
+                        )}
+                        {c.phone && (
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <Phone size={12} className="text-gray-400" />
+                            {c.phone}
+                          </div>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {c.email && (
-                        <a href={`mailto:${c.email}`} className="text-blue-600 hover:underline truncate max-w-[150px] block" title={c.email}>
-                          {c.email}
-                        </a>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4">
                       {c.ownership_type && (
-                        <span className={`px-2 py-1 rounded text-xs ${c.ownership_type.includes('Públic') || c.ownership_type.includes('Educació')
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${c.ownership_type.includes('Públic') || c.ownership_type.includes('Educació')
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : 'bg-orange-50 text-orange-700 border-orange-200'
                           }`}>
-                          {c.ownership_type}
+                          {c.ownership_type.includes('Educació') ? 'Generalitat' : c.ownership_type.split(' ')[0]}
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 flex justify-end gap-3">
-                      <button
-                        onClick={() => handleEdit(c)}
-                        className="text-gray-400 hover:text-blue-600 transition-colors"
-                        title="Editar"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(c.id)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(c)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="Editar"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(c.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
-                {centers.length === 0 && (
+                {filteredCenters.length === 0 && (
                   <tr>
-                    <td
-                      colSpan="7"
-                      className="px-6 py-8 text-center text-gray-500"
-                    >
-                      No hay centros registrados.
+                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                      <p className="text-lg font-medium text-gray-900 mb-1">No se encontraron centros</p>
+                      <p>Prueba a ajustar los filtros de búsqueda</p>
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        )}
-      </Card>
+          <div className="bg-gray-50 border-t border-gray-100 px-6 py-3 text-xs text-gray-500 flex justify-between">
+            <span>Mostrando {filteredCenters.length} de {centers.length} centros</span>
+          </div>
+        </div>
+      )}
 
       <Modal
         isOpen={showModal}
@@ -467,11 +568,25 @@ const CenterManager = () => {
         }
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Arrastra un archivo CSV o haz clic para seleccionar. El archivo debe
-            contener las columnas: <strong>code</strong> y <strong>name</strong>
-            .
-          </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div className="text-sm text-gray-600">
+              <p className="mb-2">
+                Arrastra un archivo CSV o haz clic para seleccionar.
+              </p>
+              <p>
+                El archivo debe contener las cabeceras: <code>Código</code>, <code>Nombre</code>, <code>Dirección</code>, <code>Teléfono</code>, <code>Email</code>, <code>Titularidad</code>.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={handleDownloadTemplate}
+              className="whitespace-nowrap shrink-0"
+            >
+              <div className="flex items-center gap-2">
+                <Download size={16} /> Descargar Plantilla
+              </div>
+            </Button>
+          </div>
 
           <div
             onDragEnter={handleDrag}
