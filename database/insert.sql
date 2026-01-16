@@ -641,10 +641,10 @@ BEGIN
     ('Pau López', 'pau.lopez@exemple.cat', '3 ESO', 1, 0, 1, 5, (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1));
 
     -- 6. INSERTAR PROFESORES MOCK (Escola Baixeras)
-    INSERT INTO teachers (full_name, email, school_id) VALUES
-    ('Jordi López', 'jordi.lopez@baixeras.cat', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
-    ('Marta Vidal', 'marta.vidal@baixeras.cat', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
-    ('Albert Roca', 'albert.roca@baixeras.cat', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1));
+    INSERT INTO teachers (full_name, email, phone_number, school_id) VALUES
+    ('Jordi López', 'jordi.lopez@baixeras.cat', '611223344', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
+    ('Marta Vidal', 'marta.vidal@baixeras.cat', '622334455', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
+    ('Albert Roca', 'albert.roca@baixeras.cat', '633445566', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1));
 
     -- 7. MOCK DATA FOR ESCOLA BAIXERAS (User: coord1@escola1.cat)
     -- We already have 3 students inserted (Marc, Laia, Pau) for Escola Baixeras in section 5.

@@ -25,6 +25,7 @@ const TeachersManager = () => {
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
+    phone_number: "",
   });
 
   // Exportar/Importar
@@ -55,12 +56,14 @@ const TeachersManager = () => {
       setFormData({
         full_name: teacher.full_name,
         email: teacher.email,
+        phone_number: teacher.phone_number || "",
       });
     } else {
       setEditingTeacher(null);
       setFormData({
         full_name: "",
         email: "",
+        phone_number: "",
       });
     }
     setIsModalOpen(true);
@@ -110,8 +113,8 @@ const TeachersManager = () => {
 
   const handleDownloadTemplate = () => {
     const csvContent = [
-      ["Nom Complet", "Email"],
-      ["Joan Garcia Perez", "joan.garcia@profe.edu, EXEMPLE DE PROVA"],
+      ["Nom Complet", "Email", "Telèfon"],
+      ["Joan Garcia Perez", "joan.garcia@profe.edu", "666777888"],
     ]
       .map((e) => e.join(","))
       .join("\n");
@@ -128,8 +131,12 @@ const TeachersManager = () => {
 
   const handleExportCSV = () => {
     const csvContent = [
-      ["Nom Complet", "Email"],
-      ...teachers.map((t) => [`"${t.full_name || ""}"`, `"${t.email || ""}"`]),
+      ["Nom Complet", "Email", "Telèfon"],
+      ...teachers.map((t) => [
+        `"${t.full_name || ""}"`,
+        `"${t.email || ""}"`,
+        `"${t.phone_number || ""}"`,
+      ]),
     ]
       .map((e) => e.join(","))
       .join("\n");
@@ -175,13 +182,17 @@ const TeachersManager = () => {
 
           if (parts.length < 2) continue;
 
-          const [full_name, email] = parts;
+          // Assumes order: Name, Email, Phone (optional)
+          const full_name = parts[0];
+          const email = parts[1];
+          const phone_number = parts[2] || "";
 
           if (!full_name || !email) continue;
 
           const teacherData = {
             full_name: full_name,
             email: email,
+            phone_number: phone_number,
           };
 
           try {
@@ -211,7 +222,8 @@ const TeachersManager = () => {
   const filteredTeachers = teachers.filter(
     (t) =>
       t.full_name.toLowerCase().includes(filter.toLowerCase()) ||
-      t.email.toLowerCase().includes(filter.toLowerCase())
+      t.email.toLowerCase().includes(filter.toLowerCase()) ||
+      (t.phone_number && t.phone_number.includes(filter))
   );
 
   return (
@@ -270,7 +282,7 @@ const TeachersManager = () => {
         />
         <input
           type="text"
-          placeholder="Cercar per nom o correu..."
+          placeholder="Cercar per nom, correu o telèfon..."
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -289,6 +301,9 @@ const TeachersManager = () => {
                   Correu Electrònic
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                  Telèfon
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                   Data Alta
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
@@ -299,14 +314,14 @@ const TeachersManager = () => {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan="4" className="text-center py-8 text-gray-500">
+                  <td colSpan="5" className="text-center py-8 text-gray-500">
                     Carregant...
                   </td>
                 </tr>
               ) : filteredTeachers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="4"
+                    colSpan="5"
                     className="px-6 py-8 text-center text-gray-500"
                   >
                     No s'han trobat professors.
@@ -322,6 +337,9 @@ const TeachersManager = () => {
                       {teacher.full_name}
                     </td>
                     <td className="px-6 py-4 text-gray-600">{teacher.email}</td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {teacher.phone_number || "-"}
+                    </td>
                     <td className="px-6 py-4 text-gray-500 text-sm">
                       {new Date(teacher.created_at).toLocaleDateString()}
                     </td>
@@ -391,6 +409,21 @@ const TeachersManager = () => {
               value={formData.email}
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Telèfon
+            </label>
+            <input
+              type="tel"
+              className="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Ex: 666777888"
+              value={formData.phone_number || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, phone_number: e.target.value })
               }
             />
           </div>

@@ -235,6 +235,10 @@ const getMyWorkshops = async (req, res) => {
  * GET /api/teachers
  * Llista els professors del centre del coordinador actual
  */
+/**
+ * GET /api/teachers
+ * Llista els professors del centre del coordinador actual
+ */
 const getByCenter = async (req, res) => {
   try {
     // Modificación: Buscar el School ID basado en el usuario coordinador logueado
@@ -251,7 +255,7 @@ const getByCenter = async (req, res) => {
     const schoolId = teacherResult.rows[0].id;
 
     const result = await db.query(
-      `SELECT id, full_name, email, created_at 
+      `SELECT id, full_name, email, phone_number, created_at 
        FROM teachers 
        WHERE school_id = $1
        ORDER BY full_name`,
@@ -280,17 +284,17 @@ const create = async (req, res) => {
     }
     const schoolId = teacherResult.rows[0].id;
 
-    const { full_name, email } = req.body;
+    const { full_name, email, phone_number } = req.body;
 
     if (!full_name) {
       return res.status(400).json({ error: "Faltan camps obligatoris (Nom)" });
     }
 
     const result = await db.query(
-      `INSERT INTO teachers (full_name, email, school_id)
-       VALUES ($1, $2, $3)
-       RETURNING id, full_name, email, created_at`,
-      [full_name, email, schoolId]
+      `INSERT INTO teachers (full_name, email, phone_number, school_id)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, full_name, email, phone_number, created_at`,
+      [full_name, email, phone_number, schoolId]
     );
 
     res.status(201).json(result.rows[0]);
@@ -299,10 +303,6 @@ const create = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/teachers/:id
- * Actualitza dades d'un professor
- */
 const update = async (req, res) => {
   try {
     const { id } = req.params;
@@ -317,7 +317,7 @@ const update = async (req, res) => {
     }
     const schoolId = teacherResult.rows[0].id;
 
-    const { full_name, email } = req.body;
+    const { full_name, email, phone_number } = req.body;
 
     // Verificar que el profe pertany al centre (ara taula teachers)
     const check = await db.query(
@@ -332,10 +332,10 @@ const update = async (req, res) => {
 
     const result = await db.query(
       `UPDATE teachers 
-       SET full_name = $1, email = $2
-       WHERE id = $3 
-       RETURNING id, full_name, email`,
-      [full_name, email, id]
+       SET full_name = $1, email = $2, phone_number = $3
+       WHERE id = $4 
+       RETURNING id, full_name, email, phone_number`,
+      [full_name, email, phone_number, id]
     );
 
     res.json(result.rows[0]);
@@ -343,6 +343,12 @@ const update = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * PUT /api/teachers/:id
+ * Actualitza dades d'un professor
+ */
+
 
 /**
  * DELETE /api/teachers/:id

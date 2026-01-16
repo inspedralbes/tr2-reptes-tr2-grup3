@@ -61,6 +61,7 @@ CREATE TABLE teachers (
     school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
     full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
+    phone_number VARCHAR(50),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
