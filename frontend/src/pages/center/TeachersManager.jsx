@@ -9,7 +9,7 @@ import {
   Upload,
 } from "lucide-react";
 import client from "../../api/client";
-import { toast } from "react-hot-toast";
+import toast from "react-hot-toast";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
 
@@ -195,7 +195,7 @@ const TeachersManager = () => {
 
         toast.success(
           `S'han importat ${newTeachers.length} professors.` +
-            (errorCount > 0 ? ` (${errorCount} fallits)` : "")
+          (errorCount > 0 ? ` (${errorCount} fallits)` : "")
         );
         loadTeachers();
       } catch (err) {
