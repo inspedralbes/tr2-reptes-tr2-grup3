@@ -106,8 +106,10 @@ const importCentersFromCSV = async (req, res) => {
       records = parse(fileContent, {
         columns: true,
         skip_empty_lines: true,
-        delimiter: ";",
+        delimiter: [";", ",", "\t"],
         trim: true,
+        bom: true,
+        relax_column_count: true,
       });
     } catch (parseError) {
       return res.status(400).json({
@@ -125,11 +127,12 @@ const importCentersFromCSV = async (req, res) => {
     const firstRecord = records[0];
     if (
       !firstRecord.hasOwnProperty("Codi_centre") &&
-      !firstRecord.hasOwnProperty("code")
+      !firstRecord.hasOwnProperty("code") &&
+      !firstRecord.hasOwnProperty("Código")
     ) {
       return res.status(400).json({
         message:
-          'El CSV debe contener las columnas "Codi_centre" o "code" y "Denominació_completa" o "name". Se recomiendan también: Adreça, Codi_postal, Nom_municipi, E-mail_centre, Telèfon, Nom_titularitat',
+          'El CSV debe contener las columnas "Código" (o "code", "Codi_centre") y "Nombre" (o "name", "Denominació_completa").',
       });
     }
 
@@ -139,16 +142,16 @@ const importCentersFromCSV = async (req, res) => {
 
     // Procesar cada registro
     for (const record of records) {
-      const code = record.Codi_centre || record.code || "";
-      const name = record["Denominació_completa"] || record.name || "";
+      const code = record["Código"] || record.Codi_centre || record.code || "";
+      const name = record["Nombre"] || record["Denominació_completa"] || record.name || "";
 
       // Mapeo de campos nuevos
-      const address = record["Adreça"] || record.address || null;
-      const postal_code = record["Codi_postal"] || record.postal_code || null;
-      const municipality = record["Nom_municipi"] || record.municipality || null;
-      const email = record["E-mail_centre"] || record.email || null;
-      const phone = record["Telèfon"] || record.phone || null;
-      const ownership_type = record["Nom_titularitat"] || record.ownership_type || null;
+      const address = record["Dirección"] || record["Adreça"] || record.address || null;
+      const postal_code = record["Código Postal"] || record["Codi_postal"] || record.postal_code || null;
+      const municipality = record["Municipio"] || record["Nom_municipi"] || record.municipality || null;
+      const email = record["Email"] || record["E-mail_centre"] || record.email || null;
+      const phone = record["Teléfono"] || record["Telèfon"] || record.phone || null;
+      const ownership_type = record["Titularidad"] || record["Nom_titularitat"] || record.ownership_type || null;
 
       if (!name || !code) {
         skipped++;
@@ -217,7 +220,14 @@ const exportCentersToCSV = async (req, res) => {
 
     // Obtener todos los centros
     const result = await db.query(
-      "SELECT code, name, address, postal_code, municipality, email, phone, ownership_type FROM schools ORDER BY name ASC"
+      `SELECT 
+        code as "Código", 
+        name as "Nombre", 
+        address as "Dirección", 
+        phone as "Teléfono", 
+        email as "Email", 
+        ownership_type as "Titularidad" 
+       FROM schools ORDER BY name ASC`
     );
 
     if (result.rows.length === 0) {
@@ -227,7 +237,6 @@ const exportCentersToCSV = async (req, res) => {
     // Generar CSV
     const csv = stringify(result.rows, {
       header: true,
-      columns: ["code", "name", "address", "postal_code", "municipality", "email", "phone", "ownership_type"],
       delimiter: ";",
     });
 
