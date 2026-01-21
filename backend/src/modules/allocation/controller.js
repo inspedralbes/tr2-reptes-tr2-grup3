@@ -52,9 +52,9 @@ const runAllocation = async (req, res) => {
   }
 
   try {
-    // Verificar que el período existe y está en estado OPEN
+    // Verificar que el período existe y está en fase ASIGNACION
     const periodResult = await db.query(
-      "SELECT id, status FROM enrollment_periods WHERE id = $1",
+      "SELECT id, status, current_phase FROM enrollment_periods WHERE id = $1",
       [period_id]
     );
 
@@ -62,10 +62,44 @@ const runAllocation = async (req, res) => {
       return res.status(404).json({ error: "Period not found" });
     }
 
-    if (periodResult.rows[0].status !== "OPEN") {
+    const period = periodResult.rows[0];
+    if (period.status !== "ACTIVE") {
       return res.status(400).json({
-        error: "Period must be in OPEN status to run allocation",
+        error: "Period must be in ACTIVE status to run allocation",
       });
+    }
+    
+    if (period.current_phase !== "ASIGNACION") {
+      return res.status(400).json({
+        error: "Period must be in ASIGNACION phase to run allocation. Current phase: " + period.current_phase,
+      });
+    }
+
+    // Verificar si ya hay asignaciones para este período (protección contra re-ejecución)
+    const existingAllocations = await db.query(
+      `SELECT COUNT(*) as count FROM allocations a
+       JOIN workshop_editions we ON a.workshop_edition_id = we.id
+       WHERE we.enrollment_period_id = $1 AND a.status IN ('PROVISIONAL', 'PUBLISHED', 'ACCEPTED')`,
+      [period_id]
+    );
+
+    if (parseInt(existingAllocations.rows[0].count) > 0) {
+      const force = req.body.force === true;
+      if (!force) {
+        return res.status(409).json({
+          error: "Ya existen asignaciones para este período. Use force=true para eliminar las existentes y re-ejecutar.",
+          existing_count: parseInt(existingAllocations.rows[0].count)
+        });
+      }
+      
+      // Si force=true, eliminar asignaciones existentes
+      await db.query(
+        `DELETE FROM allocations WHERE workshop_edition_id IN (
+           SELECT id FROM workshop_editions WHERE enrollment_period_id = $1
+         )`,
+        [period_id]
+      );
+      console.log(`⚠️ Force mode: Eliminadas ${existingAllocations.rows[0].count} asignaciones previas`);
     }
 
     // Ejecutar algoritmo
@@ -358,6 +392,90 @@ const addStudentToAllocation = async (req, res) => {
   }
 };
 
+/**
+ * PUT /api/allocations/:id
+ * ADMIN puede editar una asignación (cambiar plazas asignadas)
+ * Body: { assigned_seats: number }
+ */
+const updateAllocation = async (req, res) => {
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({
+      error: "Only admins can edit allocations",
+    });
+  }
+
+  const { id } = req.params;
+  const { assigned_seats } = req.body;
+
+  if (!assigned_seats || assigned_seats < 1 || assigned_seats > 4) {
+    return res.status(400).json({ 
+      error: "assigned_seats must be between 1 and 4" 
+    });
+  }
+
+  try {
+    const result = await db.query(
+      `UPDATE allocations 
+       SET assigned_seats = $1
+       WHERE id = $2
+       RETURNING *`,
+      [assigned_seats, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Allocation not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Allocation updated",
+      allocation: result.rows[0]
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * POST /api/allocations/publish-all
+ * ADMIN publica todas las asignaciones PROVISIONALES → PUBLISHED
+ * Body: { period_id: UUID }
+ */
+const publishAllAllocations = async (req, res) => {
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({
+      error: "Only admins can publish allocations",
+    });
+  }
+
+  const { period_id } = req.body;
+
+  if (!period_id) {
+    return res.status(400).json({ error: "period_id is required" });
+  }
+
+  try {
+    const result = await db.query(
+      `UPDATE allocations a
+       SET status = 'PUBLISHED'
+       FROM workshop_editions we
+       WHERE a.workshop_edition_id = we.id
+         AND we.enrollment_period_id = $1
+         AND a.status = 'PROVISIONAL'
+       RETURNING a.id`,
+      [period_id]
+    );
+
+    res.json({
+      success: true,
+      message: `${result.rowCount} allocations published`,
+      published_count: result.rowCount
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   runAllocation,
   getDemandSummaryController,
@@ -365,4 +483,6 @@ module.exports = {
   confirmAllocation,
   addStudentToAllocation,
   getAllocationById,
+  updateAllocation,
+  publishAllAllocations,
 };

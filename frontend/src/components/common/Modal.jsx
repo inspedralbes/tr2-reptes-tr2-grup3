@@ -1,13 +1,23 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, children, footer }) => {
+const SIZE_CLASSES = {
+    sm: 'max-w-sm',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
+    full: 'max-w-6xl'
+};
+
+const Modal = ({ isOpen, onClose, title, children, footer, size = 'md' }) => {
     if (!isOpen) return null;
+
+    const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.md;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div
-                className="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-all animate-in fade-in zoom-in-95 duration-200"
+                className={`bg-white rounded-xl shadow-2xl w-full ${sizeClass} transform transition-all animate-in fade-in zoom-in-95 duration-200`}
                 role="dialog"
                 aria-modal="true"
             >

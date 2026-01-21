@@ -26,12 +26,20 @@ const MyAllocations = () => {
   const loadAllocations = async () => {
     try {
       setLoading(true);
+      setError(null);
       // Filtrar por school_id si está disponible
       const filters = user?.school_id ? { school_id: user.school_id } : {};
       const data = await listAllocations(filters);
       setAllocations(data);
     } catch (err) {
-      setError("Error en carregar les assignacions: " + err.message);
+      // Manejar error de fase incorrecta
+      if (err.response?.status === 403 && err.response?.data?.code === 'INVALID_PHASE') {
+        setError(`Les assignacions no estan disponibles en la fase actual. Estaràn visibles quan es publiquin els resultats.`);
+      } else if (err.response?.status === 400 && err.response?.data?.code === 'NO_ACTIVE_PERIOD') {
+        setError("No hi ha cap període actiu en aquest moment.");
+      } else {
+        setError("Error en carregar les assignacions: " + err.message);
+      }
     } finally {
       setLoading(false);
     }

@@ -5,7 +5,13 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ENUMS (Tipos de datos fijos)
 -- ==========================================
 CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CENTER_COORD');
-CREATE TYPE period_status_enum AS ENUM ('OPEN', 'PROCESSING', 'PUBLISHED', 'CLOSED');
+CREATE TYPE period_status_enum AS ENUM ('DRAFT', 'ACTIVE', 'CLOSED');
+CREATE TYPE period_phase_enum AS ENUM (
+    'SOLICITUDES',      -- Centros pueden enviar solicitudes
+    'ASIGNACION',       -- Admin ejecuta algoritmo (sistema cerrado)
+    'PUBLICACION',      -- Resultados visibles, centros ven asignaciones
+    'EJECUCION'         -- Talleres en marcha
+);
 CREATE TYPE workshop_term_enum AS ENUM ('2N_TRIMESTRE', '3R_TRIMESTRE');
 CREATE TYPE day_of_week_enum AS ENUM ('TUESDAY', 'THURSDAY');
 CREATE TYPE request_status_enum AS ENUM ('DRAFT', 'SUBMITTED');
@@ -20,11 +26,26 @@ CREATE TYPE waiting_list_status_enum AS ENUM ('PENDING', 'NOTIFIED', 'EXPIRED');
 CREATE TABLE enrollment_periods (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
-    start_date_requests TIMESTAMP WITH TIME ZONE NOT NULL,
-    end_date_requests TIMESTAMP WITH TIME ZONE NOT NULL,
-    publication_date TIMESTAMP WITH TIME ZONE,
-    status period_status_enum DEFAULT 'OPEN',
-    created_at TIMESTAMP DEFAULT NOW()
+    status period_status_enum DEFAULT 'DRAFT',
+    current_phase period_phase_enum DEFAULT 'SOLICITUDES',
+    
+    -- Fase 1: Solicitudes (Centros envían peticiones)
+    phase_solicitudes_start TIMESTAMP WITH TIME ZONE,
+    phase_solicitudes_end TIMESTAMP WITH TIME ZONE,
+    
+    -- Fase 2: Asignación (Admin ejecuta algoritmo - no tiene fechas visibles, es interno)
+    
+    -- Fase 3: Publicación (Resultados visibles)
+    phase_publicacion_start TIMESTAMP WITH TIME ZONE,
+    phase_publicacion_end TIMESTAMP WITH TIME ZONE,
+    
+    -- Fase 4: Ejecución (Talleres en marcha)
+    phase_ejecucion_start TIMESTAMP WITH TIME ZONE,
+    phase_ejecucion_end TIMESTAMP WITH TIME ZONE,
+    
+    -- Metadatos
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 -- ==========================================

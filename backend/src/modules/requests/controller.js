@@ -57,6 +57,29 @@ const createRequest = async (req, res) => {
     });
   }
 
+  // Verificar que el período esté en fase SOLICITUDES
+  const periodCheck = await db.query(
+    "SELECT status, current_phase FROM enrollment_periods WHERE id = $1",
+    [enrollment_period_id]
+  );
+
+  if (periodCheck.rows.length === 0) {
+    return res.status(404).json({ error: "Enrollment period not found" });
+  }
+
+  const period = periodCheck.rows[0];
+  if (period.status !== "ACTIVE") {
+    return res.status(400).json({
+      error: "El període d'inscripció no està actiu",
+    });
+  }
+
+  if (period.current_phase !== "SOLICITUDES") {
+    return res.status(400).json({
+      error: `No es poden enviar sol·licituds durant la fase ${period.current_phase}. Només durant la fase SOLICITUDES.`,
+    });
+  }
+
   // Usar transacción para insertar request + items + preferences atómicamente
   const client = await db.pool.connect();
 

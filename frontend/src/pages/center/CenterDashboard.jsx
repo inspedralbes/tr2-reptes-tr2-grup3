@@ -22,8 +22,13 @@ import {
   Calendar,
   User,
   Users,
+  Send,
+  Cog,
+  Eye,
+  Rocket,
 } from "lucide-react";
 import client from "../../api/client";
+import { PHASE_LABELS } from "../../services/enrollment.service";
 
 // const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
@@ -47,27 +52,42 @@ const CenterDashboard = () => {
     try {
       setLoading(true);
 
-      // Usar Promise.all para cargar en paralelo
-      const [periodsRes, requestsRes, allocationsRes] = await Promise.all([
-        client.get("/enrollment/periods?status=OPEN"),
-        client.get("/requests"),
-        client.get("/allocation"),
-      ]);
-
-      // Procesar periodos
+      // Cargar periodos primero para saber en qué fase estamos
+      const periodsRes = await client.get("/enrollment/periods?status=ACTIVE");
       const periods = periodsRes.data;
+      
+      let activePeriod = null;
       if (periods.length > 0) {
-        setStats((prev) => ({ ...prev, activePeriod: periods[0] }));
+        activePeriod = periods[0];
+      }
+      
+      // Cargar solicitudes siempre (historial)
+      let requestsCount = 0;
+      try {
+        const requestsRes = await client.get("/requests");
+        requestsCount = requestsRes.data.length;
+      } catch (err) {
+        console.log("No se pudieron cargar solicitudes:", err);
+      }
+      
+      // Cargar asignaciones solo si estamos en PUBLICACION o EJECUCION
+      let allocationsCount = 0;
+      if (activePeriod && (activePeriod.current_phase === 'PUBLICACION' || activePeriod.current_phase === 'EJECUCION')) {
+        try {
+          const allocationsRes = await client.get("/allocation");
+          allocationsCount = allocationsRes.data.length;
+        } catch (err) {
+          console.log("No se pudieron cargar asignaciones (fase incorrecta):", err);
+        }
       }
 
-      // Procesar mis solicitudes
-      setStats((prev) => ({ ...prev, myRequests: requestsRes.data.length }));
+      setStats({
+        activePeriod,
+        myRequests: requestsCount,
+        myAllocations: allocationsCount,
+        pendingDocuments: 0,
+      });
 
-      // Procesar mis asignaciones
-      setStats((prev) => ({
-        ...prev,
-        myAllocations: allocationsRes.data.length,
-      }));
     } catch (err) {
       console.error("Error cargando dashboard:", err);
     } finally {
@@ -76,7 +96,7 @@ const CenterDashboard = () => {
   };
 
   /**
-   * Obtiene el color y texto según el estado del período
+   * Obtiene el color, texto e icono según la fase actual del período
    */
   const getPeriodStatus = () => {
     if (!stats.activePeriod) {
@@ -84,37 +104,85 @@ const CenterDashboard = () => {
         color: "bg-gray-100 text-gray-600 border-gray-200",
         text: "Sense convocatòria activa",
         icon: <PauseCircle size={40} />,
+        description: null,
       };
     }
-    switch (stats.activePeriod.status) {
-      case "OPEN":
-        return {
-          color: "bg-green-50 text-green-800 border-green-200",
-          text: "Convocatòria Oberta",
-          icon: <CheckCircle size={40} />,
-        };
-      case "PROCESSING":
-        return {
-          color: "bg-yellow-50 text-yellow-800 border-yellow-200",
-          text: "En Procés",
-          icon: <Clock size={40} />,
-        };
-      case "PUBLISHED":
-        return {
-          color: "bg-blue-50 text-blue-800 border-blue-200",
-          text: "Resultats Publicats",
-          icon: <Megaphone size={40} />,
-        };
-      default:
-        return {
-          color: "bg-gray-100 text-gray-600 border-gray-200",
-          text: "Tancada",
-          icon: <Lock size={40} />,
-        };
+    
+    const { status, current_phase } = stats.activePeriod;
+    
+    // Si el período está cerrado o en borrador
+    if (status === "CLOSED") {
+      return {
+        color: "bg-gray-100 text-gray-600 border-gray-200",
+        text: "Convocatòria Tancada",
+        icon: <Lock size={40} />,
+        description: null,
+      };
     }
+    
+    if (status === "DRAFT") {
+      return {
+        color: "bg-gray-100 text-gray-600 border-gray-200",
+        text: "Convocatòria en Preparació",
+        icon: <Clock size={40} />,
+        description: null,
+      };
+    }
+    
+    // Período activo - mostrar según la fase actual
+    const phaseConfig = {
+      SOLICITUDES: {
+        color: "bg-green-50 text-green-800 border-green-200",
+        text: "Convocatòria Oberta - Sol·licituds",
+        icon: <Send size={40} />,
+        description: "Podeu enviar les vostres sol·licituds de tallers",
+      },
+      ASIGNACION: {
+        color: "bg-yellow-50 text-yellow-800 border-yellow-200",
+        text: "En Procés d'Assignació",
+        icon: <Cog size={40} />,
+        description: "Estem processant les sol·licituds rebudes",
+      },
+      PUBLICACION: {
+        color: "bg-blue-50 text-blue-800 border-blue-200",
+        text: "Resultats Publicats",
+        icon: <Eye size={40} />,
+        description: "Ja podeu consultar els resultats de l'assignació",
+      },
+      EJECUCION: {
+        color: "bg-teal-50 text-teal-800 border-teal-200",
+        text: "Tallers en Execució",
+        icon: <Rocket size={40} />,
+        description: "Els tallers s'estan realitzant",
+      },
+    };
+    
+    return phaseConfig[current_phase] || {
+      color: "bg-gray-100 text-gray-600 border-gray-200",
+      text: "Convocatòria Activa",
+      icon: <CheckCircle size={40} />,
+      description: null,
+    };
+  };
+  
+  /**
+   * Obtiene la fecha de fin de la fase actual
+   */
+  const getCurrentPhaseEndDate = () => {
+    if (!stats.activePeriod || !stats.activePeriod.current_phase) return null;
+    
+    const phaseEndFields = {
+      SOLICITUDES: 'phase_solicitudes_end',
+      PUBLICACION: 'phase_publicacion_end',
+      EJECUCION: 'phase_ejecucion_end',
+    };
+    
+    const field = phaseEndFields[stats.activePeriod.current_phase];
+    return field ? stats.activePeriod[field] : null;
   };
 
   const periodStatus = getPeriodStatus();
+  const currentPhaseEndDate = getCurrentPhaseEndDate();
 
   if (loading) {
     return (
@@ -147,13 +215,25 @@ const CenterDashboard = () => {
           <div>
             <h2 className="text-2xl font-bold mb-1">{periodStatus.text}</h2>
             {stats.activePeriod && (
-              <p className="opacity-80 font-medium flex items-center gap-2">
-                <Calendar size={18} />
-                {stats.activePeriod.name} — Fins al:{" "}
-                {new Date(
-                  stats.activePeriod.end_date_requests
-                ).toLocaleDateString("es-ES")}
-              </p>
+              <div className="opacity-80 font-medium">
+                <p className="flex items-center gap-2">
+                  <Calendar size={18} />
+                  {stats.activePeriod.name}
+                  {currentPhaseEndDate && (
+                    <span>
+                      {" "}— Fins al:{" "}
+                      {new Date(currentPhaseEndDate).toLocaleDateString("ca-ES", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                  )}
+                </p>
+                {periodStatus.description && (
+                  <p className="text-sm mt-1 opacity-75">{periodStatus.description}</p>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -237,18 +317,39 @@ const CenterDashboard = () => {
             </p>
           </button>
 
+          {/* Gestió Alumnes - Solo disponible en PUBLICACION o EJECUCION */}
           <button
-            onClick={() => navigate("/center/students")}
-            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 hover:border-orange-100"
+            onClick={() => {
+              if (stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION') {
+                navigate("/center/students");
+              }
+            }}
+            disabled={stats.activePeriod?.current_phase !== 'PUBLICACION' && stats.activePeriod?.current_phase !== 'EJECUCION'}
+            className={`group bg-white rounded-2xl shadow-sm p-6 text-left transition-all duration-300 border border-gray-100 ${
+              stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
+                ? 'hover:shadow-xl hover:-translate-y-1 hover:border-orange-100'
+                : 'opacity-60 cursor-not-allowed'
+            }`}
           >
-            <div className="bg-orange-50 text-orange-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+            <div className={`p-4 rounded-xl w-fit mb-4 transition-colors ${
+              stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
+                ? 'bg-orange-50 text-orange-600 group-hover:bg-orange-600 group-hover:text-white'
+                : 'bg-gray-100 text-gray-400'
+            }`}>
               <Users size={32} />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors">
+            <h3 className={`text-lg font-bold transition-colors ${
+              stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
+                ? 'text-gray-900 group-hover:text-orange-700'
+                : 'text-gray-500'
+            }`}>
               Gestió Alumnes
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Administrar llistat d'alumnes
+              {stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
+                ? 'Administrar llistat d\'alumnes'
+                : 'Disponible després de la publicació'
+              }
             </p>
           </button>
 
@@ -282,18 +383,39 @@ const CenterDashboard = () => {
             </p>
           </button>
 
+          {/* Assignacions - Solo disponible en PUBLICACION o EJECUCION */}
           <button
-            onClick={() => navigate("/center/allocations")}
-            className="group bg-white rounded-2xl shadow-sm p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 hover:border-teal-100"
+            onClick={() => {
+              if (stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION') {
+                navigate("/center/allocations");
+              }
+            }}
+            disabled={stats.activePeriod?.current_phase !== 'PUBLICACION' && stats.activePeriod?.current_phase !== 'EJECUCION'}
+            className={`group bg-white rounded-2xl shadow-sm p-6 text-left transition-all duration-300 border border-gray-100 ${
+              stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
+                ? 'hover:shadow-xl hover:-translate-y-1 hover:border-teal-100'
+                : 'opacity-60 cursor-not-allowed'
+            }`}
           >
-            <div className="bg-teal-50 text-teal-600 p-4 rounded-xl w-fit mb-4 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+            <div className={`p-4 rounded-xl w-fit mb-4 transition-colors ${
+              stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
+                ? 'bg-teal-50 text-teal-600 group-hover:bg-teal-600 group-hover:text-white'
+                : 'bg-gray-100 text-gray-400'
+            }`}>
               <CheckCircle size={32} />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
+            <h3 className={`text-lg font-bold transition-colors ${
+              stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
+                ? 'text-gray-900 group-hover:text-teal-700'
+                : 'text-gray-500'
+            }`}>
               Les Meves Assignacions
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Tallers assignats i checklist
+              {stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
+                ? 'Tallers assignats i checklist'
+                : 'Disponible després de la publicació'
+              }
             </p>
           </button>
         </div>
