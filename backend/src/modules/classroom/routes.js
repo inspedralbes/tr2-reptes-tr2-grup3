@@ -3,9 +3,12 @@
  * 
  * Rutas para el módulo de aula virtual.
  * Endpoints para sesiones, alumnos, asistencia y evaluaciones.
+ * 
+ * RESTRICCIÓN DE FASE: Solo disponible en EJECUCION
  */
 const express = require('express');
 const { authenticate } = require('../../common/middleware/authMiddleware');
+const { canManageAttendance } = require('../../common/middleware/phaseMiddleware');
 const { 
   listSessions, 
   getStudentsForEdition,
@@ -17,19 +20,19 @@ const {
 
 const router = express.Router();
 
-// Sesiones
-router.get('/sessions', authenticate, listSessions);
-router.get('/sessions/:editionId', authenticate, listSessions);
+// Sesiones - Solo en EJECUCION
+router.get('/sessions', authenticate, canManageAttendance, listSessions);
+router.get('/sessions/:editionId', authenticate, canManageAttendance, listSessions);
 
-// Alumnos de una edición
-router.get('/students/:editionId', authenticate, getStudentsForEdition);
+// Alumnos de una edición - Solo en EJECUCION
+router.get('/students/:editionId', authenticate, canManageAttendance, getStudentsForEdition);
 
-// Asistencia
-router.post('/attendance/:sessionId', authenticate, saveAttendance);
-router.get('/attendance/:sessionId', authenticate, getAttendance);
+// Asistencia - Solo en EJECUCION
+router.post('/attendance/:sessionId', authenticate, canManageAttendance, saveAttendance);
+router.get('/attendance/:sessionId', authenticate, canManageAttendance, getAttendance);
 
-// Evaluaciones
-router.post('/evaluations/:editionId', authenticate, saveEvaluations);
-router.get('/evaluations/:editionId', authenticate, getEvaluations);
+// Evaluaciones - Solo en EJECUCION
+router.post('/evaluations/:editionId', authenticate, canManageAttendance, saveEvaluations);
+router.get('/evaluations/:editionId', authenticate, canManageAttendance, getEvaluations);
 
 module.exports = router;

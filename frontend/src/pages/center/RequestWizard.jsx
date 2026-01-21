@@ -237,7 +237,7 @@ const RequestWizard = () => {
         ]);
       setPeriods(
         periodsData.filter(
-          (p) => p.status === "OPEN" || p.status === "PUBLISHED"
+          (p) => p.status === "ACTIVE" && p.current_phase === "SOLICITUDES"
         )
       );
       setWorkshops(workshopsData);

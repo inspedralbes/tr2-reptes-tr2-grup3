@@ -72,11 +72,25 @@ const StudentManager = () => {
       }
     } catch (err) {
       console.error(err);
+      // Manejar error de fase incorrecta
+      if (err.response?.status === 403 && err.response?.data?.code === 'INVALID_PHASE') {
+        setError(`La gestió d'alumnes no està disponible en la fase actual. Estarà disponible quan es publiquin els resultats.`);
+        return;
+      } else if (err.response?.status === 400 && err.response?.data?.code === 'NO_ACTIVE_PERIOD') {
+        setError("No hi ha cap període actiu en aquest moment.");
+        return;
+      }
+      
       try {
         const data = await studentsService.getAll();
         setStudents(data);
       } catch (e) {
-        setError("Error carregant alumnes: " + e.message);
+        // También manejar error de fase en el fallback
+        if (e.response?.status === 403 && e.response?.data?.code === 'INVALID_PHASE') {
+          setError(`La gestió d'alumnes no està disponible en la fase actual. Estarà disponible quan es publiquin els resultats.`);
+        } else {
+          setError("Error carregant alumnes: " + e.message);
+        }
       }
     } finally {
       setLoading(false);

@@ -59,8 +59,18 @@ export const getDemandSummary = async (periodId) => {
   return data;
 };
 
-export const runAllocation = async (periodId) => {
-  const { data } = await client.post('/allocation/run', { period_id: periodId });
+export const runAllocation = async (periodId, force = false) => {
+  const { data } = await client.post('/allocation/run', { period_id: periodId, force });
+  return data;
+};
+
+export const updateAllocation = async (allocationId, payload) => {
+  const { data } = await client.put(`/allocation/${allocationId}`, payload);
+  return data;
+};
+
+export const publishAllocations = async (periodId) => {
+  const { data } = await client.post('/allocation/publish-all', { period_id: periodId });
   return data;
 };
 

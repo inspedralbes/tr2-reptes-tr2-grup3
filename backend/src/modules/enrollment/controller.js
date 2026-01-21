@@ -2,15 +2,40 @@ const db = require('../../config/db');
 const sessionsService = require('../sessions/service');
 
 /**
+ * Constantes de fases disponibles
+ */
+const PHASES = {
+  SOLICITUDES: 'SOLICITUDES',
+  ASIGNACION: 'ASIGNACION',
+  PUBLICACION: 'PUBLICACION',
+  EJECUCION: 'EJECUCION'
+};
+
+const PHASE_ORDER = [
+  PHASES.SOLICITUDES,
+  PHASES.ASIGNACION,
+  PHASES.PUBLICACION,
+  PHASES.EJECUCION
+];
+
+/**
  * GET /api/enrollment/periods
  * Lista todos los períodos de matrícula disponibles
- * Filtra por estado si se proporciona query param ?status=OPEN
+ * Filtra por estado si se proporciona query param ?status=ACTIVE
  */
 const listEnrollmentPeriods = async (req, res) => {
   const { status } = req.query;
 
   try {
-    let query = 'SELECT id, name, start_date_requests, end_date_requests, publication_date, status, created_at FROM enrollment_periods';
+    let query = `
+      SELECT 
+        id, name, status, current_phase,
+        phase_solicitudes_start, phase_solicitudes_end,
+        phase_publicacion_start, phase_publicacion_end,
+        phase_ejecucion_start, phase_ejecucion_end,
+        created_at, updated_at
+      FROM enrollment_periods
+    `;
     const params = [];
 
     if (status) {
@@ -36,7 +61,15 @@ const getPeriodById = async (req, res) => {
 
   try {
     const result = await db.query(
-      'SELECT id, name, start_date_requests, end_date_requests, publication_date, status, created_at FROM enrollment_periods WHERE id = $1',
+      `SELECT 
+        id, name, status, current_phase,
+        phase_solicitudes_start, phase_solicitudes_end,
+        phase_publicacion_start, phase_publicacion_end,
+        phase_reclamaciones_start, phase_reclamaciones_end,
+        phase_confirmacion_start, phase_confirmacion_end,
+        phase_ejecucion_start, phase_ejecucion_end,
+        created_at, updated_at
+      FROM enrollment_periods WHERE id = $1`,
       [id]
     );
 
@@ -51,31 +84,116 @@ const getPeriodById = async (req, res) => {
 };
 
 /**
+ * GET /api/enrollment/periods/active/current-phase
+ * Obtiene la fase actual del período activo
+ * Útil para que el frontend sepa qué mostrar/ocultar
+ */
+const getCurrentPhase = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT 
+        id, name, status, current_phase,
+        phase_solicitudes_start, phase_solicitudes_end,
+        phase_publicacion_start, phase_publicacion_end,
+        phase_reclamaciones_start, phase_reclamaciones_end,
+        phase_confirmacion_start, phase_confirmacion_end,
+        phase_ejecucion_start, phase_ejecucion_end
+      FROM enrollment_periods 
+      WHERE status = 'ACTIVE' 
+      ORDER BY created_at DESC 
+      LIMIT 1`
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ 
+        active: false, 
+        message: 'No hay período activo actualmente',
+        phase: null 
+      });
+    }
+
+    const period = result.rows[0];
+    const now = new Date();
+
+    // Determinar fase actual basándose en fechas
+    let computedPhase = period.current_phase;
+    
+    // Verificar cada fase según fechas
+    if (period.phase_ejecucion_start && now >= new Date(period.phase_ejecucion_start)) {
+      computedPhase = PHASES.EJECUCION;
+    } else if (period.phase_confirmacion_start && now >= new Date(period.phase_confirmacion_start)) {
+      computedPhase = PHASES.CONFIRMACION;
+    } else if (period.phase_reclamaciones_start && now >= new Date(period.phase_reclamaciones_start)) {
+      computedPhase = PHASES.RECLAMACIONES;
+    } else if (period.phase_publicacion_start && now >= new Date(period.phase_publicacion_start)) {
+      computedPhase = PHASES.PUBLICACION;
+    } else if (period.phase_solicitudes_start && now >= new Date(period.phase_solicitudes_start)) {
+      computedPhase = PHASES.SOLICITUDES;
+    }
+
+    res.json({
+      active: true,
+      period_id: period.id,
+      period_name: period.name,
+      phase: computedPhase,
+      phases: {
+        solicitudes: {
+          start: period.phase_solicitudes_start,
+          end: period.phase_solicitudes_end,
+          active: computedPhase === PHASES.SOLICITUDES
+        },
+        publicacion: {
+          start: period.phase_publicacion_start,
+          end: period.phase_publicacion_end,
+          active: computedPhase === PHASES.PUBLICACION
+        },
+        ejecucion: {
+          start: period.phase_ejecucion_start,
+          end: period.phase_ejecucion_end,
+          active: computedPhase === PHASES.EJECUCION
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to get current phase: ${error.message}` });
+  }
+};
+
+/**
  * POST /api/enrollment/periods
  * Crea un nuevo período de matrícula (solo ADMIN)
- * Body: { name, start_date_requests, end_date_requests }
+ * Body: { name, phases: { solicitudes: { start, end }, ... } }
  */
 const createPeriod = async (req, res) => {
-  // Verificar que el usuario es admin
   if (req.user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Only admins can create periods' });
   }
 
-  const { name, start_date_requests, end_date_requests } = req.body;
+  const { name, phases } = req.body;
 
-  // Validación
-  if (!name || !start_date_requests || !end_date_requests) {
-    return res.status(400).json({ 
-      error: 'name, start_date_requests, and end_date_requests are required' 
-    });
+  if (!name) {
+    return res.status(400).json({ error: 'name is required' });
   }
 
   try {
     const result = await db.query(
-      `INSERT INTO enrollment_periods (name, start_date_requests, end_date_requests, status)
-       VALUES ($1, $2, $3, 'OPEN')
-       RETURNING id, name, start_date_requests, end_date_requests, status, created_at`,
-      [name, start_date_requests, end_date_requests]
+      `INSERT INTO enrollment_periods (
+        name, status, current_phase,
+        phase_solicitudes_start, phase_solicitudes_end,
+        phase_publicacion_start, phase_publicacion_end,
+        phase_ejecucion_start, phase_ejecucion_end
+      )
+      VALUES ($1, 'DRAFT', 'SOLICITUDES', $2, $3, $4, $5, $6, $7)
+      RETURNING *`,
+      [
+        name,
+        phases?.solicitudes?.start || null,
+        phases?.solicitudes?.end || null,
+        phases?.publicacion?.start || null,
+        phases?.publicacion?.end || null,
+        phases?.ejecucion?.start || null,
+        phases?.ejecucion?.end || null
+      ]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -86,7 +204,7 @@ const createPeriod = async (req, res) => {
 /**
  * PUT /api/enrollment/periods/:id
  * Actualiza un período (solo ADMIN)
- * Permite cambiar: name, start_date_requests, end_date_requests, status
+ * Permite cambiar: name, status, current_phase, fechas de fases
  */
 const updatePeriod = async (req, res) => {
   if (req.user.role !== 'ADMIN') {
@@ -94,19 +212,67 @@ const updatePeriod = async (req, res) => {
   }
 
   const { id } = req.params;
-  const { name, start_date_requests, end_date_requests, status } = req.body;
+  const { name, status, current_phase, phases } = req.body;
 
   try {
-    const result = await db.query(
-      `UPDATE enrollment_periods 
-       SET name = COALESCE($1, name),
-           start_date_requests = COALESCE($2, start_date_requests),
-           end_date_requests = COALESCE($3, end_date_requests),
-           status = COALESCE($4, status)
-       WHERE id = $5
-       RETURNING id, name, start_date_requests, end_date_requests, status, created_at`,
-      [name, start_date_requests, end_date_requests, status, id]
-    );
+    // Construir query dinámicamente
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+
+    if (name !== undefined) {
+      updates.push(`name = $${paramIndex++}`);
+      values.push(name);
+    }
+    if (status !== undefined) {
+      updates.push(`status = $${paramIndex++}`);
+      values.push(status);
+    }
+    if (current_phase !== undefined) {
+      updates.push(`current_phase = $${paramIndex++}`);
+      values.push(current_phase);
+    }
+    if (phases?.solicitudes?.start !== undefined) {
+      updates.push(`phase_solicitudes_start = $${paramIndex++}`);
+      values.push(phases.solicitudes.start);
+    }
+    if (phases?.solicitudes?.end !== undefined) {
+      updates.push(`phase_solicitudes_end = $${paramIndex++}`);
+      values.push(phases.solicitudes.end);
+    }
+    if (phases?.publicacion?.start !== undefined) {
+      updates.push(`phase_publicacion_start = $${paramIndex++}`);
+      values.push(phases.publicacion.start);
+    }
+    if (phases?.publicacion?.end !== undefined) {
+      updates.push(`phase_publicacion_end = $${paramIndex++}`);
+      values.push(phases.publicacion.end);
+    }
+    if (phases?.ejecucion?.start !== undefined) {
+      updates.push(`phase_ejecucion_start = $${paramIndex++}`);
+      values.push(phases.ejecucion.start);
+    }
+    if (phases?.ejecucion?.end !== undefined) {
+      updates.push(`phase_ejecucion_end = $${paramIndex++}`);
+      values.push(phases.ejecucion.end);
+    }
+
+    // Siempre actualizar updated_at
+    updates.push(`updated_at = NOW()`);
+
+    if (updates.length === 1) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    values.push(id);
+    const query = `
+      UPDATE enrollment_periods 
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `;
+
+    const result = await db.query(query, values);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Period not found' });
@@ -115,6 +281,116 @@ const updatePeriod = async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: `Failed to update period: ${error.message}` });
+  }
+};
+
+/**
+ * PUT /api/enrollment/periods/:id/activate
+ * Activa un período (solo ADMIN)
+ * Solo puede haber un período activo a la vez
+ */
+const activatePeriod = async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Only admins can activate periods' });
+  }
+
+  const { id } = req.params;
+
+  try {
+    // Desactivar otros períodos activos
+    await db.query(
+      `UPDATE enrollment_periods SET status = 'CLOSED', updated_at = NOW() WHERE status = 'ACTIVE'`
+    );
+
+    // Activar el período seleccionado
+    const result = await db.query(
+      `UPDATE enrollment_periods 
+       SET status = 'ACTIVE', updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Period not found' });
+    }
+
+    res.json({ 
+      message: 'Período activado correctamente',
+      period: result.rows[0]
+    });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to activate period: ${error.message}` });
+  }
+};
+
+/**
+ * PUT /api/enrollment/periods/:id/advance-phase
+ * Avanza el período a la siguiente fase (solo ADMIN)
+ */
+const advancePhase = async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Only admins can advance phases' });
+  }
+
+  const { id } = req.params;
+  const { target_phase } = req.body; // Opcional: saltar a una fase específica
+
+  try {
+    // Obtener período actual
+    const current = await db.query(
+      'SELECT id, current_phase, status FROM enrollment_periods WHERE id = $1',
+      [id]
+    );
+
+    if (current.rows.length === 0) {
+      return res.status(404).json({ error: 'Period not found' });
+    }
+
+    const period = current.rows[0];
+    let newPhase;
+
+    if (target_phase) {
+      // Validar que la fase objetivo es válida
+      if (!PHASE_ORDER.includes(target_phase)) {
+        return res.status(400).json({ error: `Invalid phase: ${target_phase}` });
+      }
+      newPhase = target_phase;
+    } else {
+      // Avanzar a la siguiente fase
+      const currentIndex = PHASE_ORDER.indexOf(period.current_phase);
+      if (currentIndex === PHASE_ORDER.length - 1) {
+        return res.status(400).json({ error: 'Already at final phase (EJECUCION)' });
+      }
+      newPhase = PHASE_ORDER[currentIndex + 1];
+    }
+
+    // Actualizar fase
+    const result = await db.query(
+      `UPDATE enrollment_periods 
+       SET current_phase = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [newPhase, id]
+    );
+
+    // Si avanzamos a PUBLICACION, generar sesiones automáticamente
+    let sessionsResult = null;
+    if (newPhase === PHASES.PUBLICACION) {
+      try {
+        sessionsResult = await sessionsService.generateSessionsForPeriod(id);
+      } catch (sessionError) {
+        console.error('Error generando sesiones:', sessionError.message);
+      }
+    }
+
+    res.json({
+      message: `Fase avanzada a ${newPhase}`,
+      period: result.rows[0],
+      sessions_generated: sessionsResult
+    });
+  } catch (error) {
+    res.status(500).json({ error: `Failed to advance phase: ${error.message}` });
   }
 };
 
@@ -142,8 +418,7 @@ const deletePeriod = async (req, res) => {
 
     res.json({ message: 'Period deleted successfully' });
   } catch (error) {
-    // Posible error por referencia de clave foránea
-    if (error.message.includes('foreign key')) {
+    if (error.message.includes('foreign key') || error.message.includes('violates')) {
       return res.status(400).json({ 
         error: 'Cannot delete period with existing requests or allocations' 
       });
@@ -153,67 +428,24 @@ const deletePeriod = async (req, res) => {
 };
 
 /**
- * PUT /api/enrollment/periods/:id/publish
- * Publica los resultados de un período (solo ADMIN)
- * Cambia el estado a PUBLISHED y los centros pueden ver sus asignaciones
+ * PUT /api/enrollment/periods/:id/publish (DEPRECATED - usar advance-phase)
+ * Mantener por compatibilidad
  */
 const publishPeriod = async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Only admins can publish periods' });
-  }
-
-  const { id } = req.params;
-
-  try {
-    // Verificar que el período existe y está en estado PROCESSING
-    const check = await db.query(
-      'SELECT id, status FROM enrollment_periods WHERE id = $1',
-      [id]
-    );
-
-    if (check.rows.length === 0) {
-      return res.status(404).json({ error: 'Period not found' });
-    }
-
-    if (check.rows[0].status !== 'PROCESSING') {
-      return res.status(400).json({ 
-        error: 'Solo se pueden publicar períodos en estado PROCESSING' 
-      });
-    }
-
-    // Actualizar estado a PUBLISHED y establecer fecha de publicación
-    const result = await db.query(
-      `UPDATE enrollment_periods 
-       SET status = 'PUBLISHED', publication_date = NOW()
-       WHERE id = $1
-       RETURNING id, name, start_date_requests, end_date_requests, publication_date, status`,
-      [id]
-    );
-
-    // US #18: Generar automàticament les 10 sessions per a cada taller del període
-    let sessionsResult = null;
-    try {
-      sessionsResult = await sessionsService.generateSessionsForPeriod(id);
-    } catch (sessionError) {
-      console.error('Error generant sessions:', sessionError.message);
-      // No fem fail de la publicació, només loguem l'error
-    }
-
-    res.json({ 
-      message: 'Resultados publicados correctamente',
-      period: result.rows[0],
-      sessions_generated: sessionsResult
-    });
-  } catch (error) {
-    res.status(500).json({ error: `Failed to publish period: ${error.message}` });
-  }
+  req.body.target_phase = PHASES.PUBLICACION;
+  return advancePhase(req, res);
 };
 
 module.exports = {
   listEnrollmentPeriods,
   getPeriodById,
+  getCurrentPhase,
   createPeriod,
   updatePeriod,
+  activatePeriod,
+  advancePhase,
   deletePeriod,
   publishPeriod,
+  PHASES,
+  PHASE_ORDER
 };

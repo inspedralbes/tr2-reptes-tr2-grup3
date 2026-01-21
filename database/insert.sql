@@ -24,9 +24,21 @@ DECLARE
     v_edition_id UUID;
 BEGIN
 
-    -- 1. INSERTAR EL PERIODO DE INSCRIPCIÓN
-    INSERT INTO enrollment_periods (name, start_date_requests, end_date_requests, publication_date, status)
-    VALUES ('Enginy 2025-2026 - Modalitat C', '2024-09-30 13:00:00', '2024-10-10 23:59:59', '2024-10-20 10:00:00', 'PUBLISHED')
+    -- 1. INSERTAR EL PERIODO DE INSCRIPCIÓN CON NUEVO SISTEMA DE FASES
+    INSERT INTO enrollment_periods (
+        name, status, current_phase,
+        phase_solicitudes_start, phase_solicitudes_end,
+        phase_publicacion_start, phase_publicacion_end,
+        phase_ejecucion_start, phase_ejecucion_end
+    )
+    VALUES (
+        'Enginy 2025-2026 - Modalitat C', 
+        'ACTIVE', 
+        'SOLICITUDES',
+        '2025-09-15 08:00:00', '2026-02-15 23:59:59',  -- Solicitudes: hasta febrero
+        '2026-02-20 08:00:00', '2026-02-28 23:59:59',  -- Publicación: 1 semana
+        '2026-03-01 08:00:00', '2026-06-15 14:00:00'   -- Ejecución: Todo el resto del curso
+    )
     RETURNING id INTO v_period_id;
 
     -- 2. INSERTAR PROVEEDORES
