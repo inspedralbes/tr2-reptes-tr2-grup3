@@ -18,18 +18,28 @@ const MyAllocations = () => {
 
   // Cargar asignaciones
   useEffect(() => {
-    loadAllocations();
-  }, []);
+    if (user) {
+      loadAllocations();
+    }
+  }, [user]);
 
   const loadAllocations = async () => {
     try {
       setLoading(true);
+      setError(null);
       // Filtrar por school_id si está disponible
       const filters = user?.school_id ? { school_id: user.school_id } : {};
       const data = await listAllocations(filters);
       setAllocations(data);
     } catch (err) {
-      setError('Error al cargar asignaciones: ' + err.message);
+      // Manejar error de fase incorrecta
+      if (err.response?.status === 403 && err.response?.data?.code === 'INVALID_PHASE') {
+        setError(`Les assignacions no estan disponibles en la fase actual. Estaràn visibles quan es publiquin els resultats.`);
+      } else if (err.response?.status === 400 && err.response?.data?.code === 'NO_ACTIVE_PERIOD') {
+        setError("No hi ha cap període actiu en aquest moment.");
+      } else {
+        setError("Error en carregar les assignacions: " + err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -39,10 +49,12 @@ const MyAllocations = () => {
   const startConfirmation = (allocation) => {
     setConfirmingId(allocation.id);
     // Crear array de estudiantes vacíos según asignación
-    const studentList = Array(allocation.assigned_seats).fill(null).map((_, i) => ({
-      name: '',
-      idalu: '',
-    }));
+    const studentList = Array(allocation.assigned_seats)
+      .fill(null)
+      .map((_, i) => ({
+        name: "",
+        idalu: "",
+      }));
     setStudents(studentList);
   };
 
@@ -56,9 +68,9 @@ const MyAllocations = () => {
   // Confirmar asignación
   const handleConfirm = async () => {
     // Validar que todos los estudiantes tengan nombre
-    const validStudents = students.filter(s => s.name.trim());
+    const validStudents = students.filter((s) => s.name.trim());
     if (validStudents.length === 0) {
-      setError('Debes añadir al menos un alumno');
+      setError("Has d'afegir almenys un alumne");
       return;
     }
 
@@ -68,43 +80,61 @@ const MyAllocations = () => {
       setStudents([]);
       loadAllocations();
     } catch (err) {
-      setError('Error al confirmar: ' + err.message);
+      setError("Error en confirmar: " + err.message);
     }
   };
 
   // Obtener color según estado
   const getStatusColor = (status) => {
     switch (status) {
-      case 'PUBLISHED': return 'bg-green-100 text-green-800';
-      case 'ACCEPTED': return 'bg-blue-100 text-blue-800';
-      case 'PROVISIONAL': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "PUBLISHED":
+        return "bg-green-100 text-green-800";
+      case "ACCEPTED":
+        return "bg-blue-100 text-blue-800";
+      case "PROVISIONAL":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   // Traducir estado
   const translateStatus = (status) => {
     switch (status) {
-      case 'PUBLISHED': return 'Publicada';
-      case 'ACCEPTED': return 'Confirmada';
-      case 'PROVISIONAL': return 'Provisional';
-      default: return status;
+      case "PUBLISHED":
+        return "Publicada";
+      case "ACCEPTED":
+        return "Confirmada";
+      case "PROVISIONAL":
+        return "Provisional";
+      default:
+        return status;
     }
+  };
+
+  const traverseToConfirmation = (id) => {
+    // Navegar a la página de confirmación nominal
+    window.location.href = `/center/allocations/${id}/confirm`;
   };
 
   return (
     <div className="space-y-4">
-      <Card title="Mis Asignaciones">
+      <Card title="Les Meves Assignacions">
         {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>
+          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+            {error}
+          </div>
         )}
 
         {loading ? (
-          <p className="text-center py-8">Cargando asignaciones...</p>
+          <p className="text-center py-8">Carregant assignacions...</p>
         ) : allocations.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p>No tienes asignaciones todavía.</p>
-            <p className="text-sm mt-2">Las asignaciones aparecerán aquí cuando el administrador las publique.</p>
+            <p>Encara no tens assignacions.</p>
+            <p className="text-sm mt-2">
+              Les assignaciones apareixeran aquí quan l'administrador les
+              publiqui.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -112,89 +142,58 @@ const MyAllocations = () => {
               <div key={alloc.id} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-semibold text-lg">{alloc.workshop_title}</h3>
+                    <h3 className="font-semibold text-lg">
+                      {alloc.workshop_title}
+                    </h3>
                     <p className="text-gray-600 text-sm">
-                      {alloc.day_of_week === 'TUESDAY' ? '📅 Martes' : '📅 Jueves'} • 
-                      {alloc.start_time} - {alloc.end_time}
+                      {alloc.day_of_week === "TUESDAY"
+                        ? "📅 Dimarts"
+                        : "📅 Dijous"}{" "}
+                      •{alloc.start_time} - {alloc.end_time}
                     </p>
                   </div>
-                  <span className={`px-3 py-1 rounded text-sm ${getStatusColor(alloc.status)}`}>
+                  <span
+                    className={`px-3 py-1 rounded text-sm ${getStatusColor(
+                      alloc.status
+                    )}`}
+                  >
                     {translateStatus(alloc.status)}
                   </span>
                 </div>
 
                 <div className="bg-gray-50 rounded p-3 mb-3">
                   <p className="text-sm">
-                    <strong>Plazas asignadas:</strong> {alloc.assigned_seats}
+                    <strong>Places assignades:</strong> {alloc.assigned_seats}
                   </p>
                 </div>
 
                 {/* Botón de confirmar (solo si está publicada y no confirmada) */}
-                {alloc.status === 'PUBLISHED' && (
-                  <Button onClick={() => startConfirmation(alloc)}>
-                    ✓ Confirmar y añadir alumnos
+                {alloc.status === "PUBLISHED" && (
+                  <Button onClick={() => traverseToConfirmation(alloc.id)}>
+                    ✓ Confirmar Assignació
                   </Button>
                 )}
 
-                {alloc.status === 'ACCEPTED' && (
-                  <p className="text-green-600 text-sm">✓ Ya has confirmado esta asignación</p>
+                {/* Permitir editar aunque esté confirmada si se desea, o ver detalles */}
+                {alloc.status === "ACCEPTED" && (
+                  <div className="flex justify-between items-center">
+                    <p className="text-green-600 text-sm">
+                      ✓ Ja has confirmat aquesta assignació
+                    </p>
+                    <Button
+                      variant="secondary"
+                      onClick={() => traverseToConfirmation(alloc.id)}
+                    >
+                      Veure Alumnes
+                    </Button>
+                  </div>
                 )}
               </div>
             ))}
           </div>
         )}
       </Card>
-
-      {/* Modal de confirmación */}
-      {confirmingId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Confirmar Asignación</h2>
-            <p className="text-gray-600 mb-4">
-              Introduce los nombres de los alumnos que participarán:
-            </p>
-
-            <div className="space-y-3">
-              {students.map((student, index) => (
-                <div key={index} className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="block text-sm mb-1">Alumno {index + 1}</label>
-                    <input
-                      type="text"
-                      placeholder="Nombre completo"
-                      value={student.name}
-                      onChange={(e) => updateStudent(index, 'name', e.target.value)}
-                      className="w-full border rounded px-3 py-2"
-                    />
-                  </div>
-                  <div className="w-32">
-                    <label className="block text-sm mb-1">ID Alu</label>
-                    <input
-                      type="text"
-                      placeholder="Opcional"
-                      value={student.idalu}
-                      onChange={(e) => updateStudent(index, 'idalu', e.target.value)}
-                      className="w-full border rounded px-3 py-2"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2 mt-6">
-              <Button onClick={handleConfirm}>Confirmar</Button>
-              <Button variant="secondary" onClick={() => {
-                setConfirmingId(null);
-                setStudents([]);
-              }}>
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
-
 export default MyAllocations;

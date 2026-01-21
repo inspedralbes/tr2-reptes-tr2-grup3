@@ -29,6 +29,18 @@ const createRequest = async (req, res) => {
     });
   }
 
+  // Verificar limite total de alumnos: 12
+  const totalStudents = items.reduce(
+    (sum, item) => sum + (parseInt(item.requested_students) || 0),
+    0
+  );
+  if (totalStudents > 12) {
+    return res.status(400).json({
+      error:
+        "Maximum 12 students allowed in total across all requested workshops.",
+    });
+  }
+
   // Verificar que ningún item pide más de 4 alumnos
   for (const item of items) {
     if (item.requested_students > 4) {
@@ -38,10 +50,33 @@ const createRequest = async (req, res) => {
     }
   }
 
-  // Verificar máximo 3 preferencias docentes
-  if (teacher_preferences && teacher_preferences.length > 3) {
+  // Verificar máximo 6 preferencias docentes (2 profes x 3 opciones)
+  if (teacher_preferences && teacher_preferences.length > 6) {
     return res.status(400).json({
-      error: "Maximum 3 teacher preferences allowed",
+      error: "Maximum 6 teacher preferences allowed",
+    });
+  }
+
+  // Verificar que el período esté en fase SOLICITUDES
+  const periodCheck = await db.query(
+    "SELECT status, current_phase FROM enrollment_periods WHERE id = $1",
+    [enrollment_period_id]
+  );
+
+  if (periodCheck.rows.length === 0) {
+    return res.status(404).json({ error: "Enrollment period not found" });
+  }
+
+  const period = periodCheck.rows[0];
+  if (period.status !== "ACTIVE") {
+    return res.status(400).json({
+      error: "El període d'inscripció no està actiu",
+    });
+  }
+
+  if (period.current_phase !== "SOLICITUDES") {
+    return res.status(400).json({
+      error: `No es poden enviar sol·licituds durant la fase ${period.current_phase}. Només durant la fase SOLICITUDES.`,
     });
   }
 
@@ -50,6 +85,19 @@ const createRequest = async (req, res) => {
 
   try {
     await client.query("BEGIN");
+
+    // 0. VERIFICAR QUE NO EXISTA YA UNA SOLICITUD EN ESTE PERIODO PARA ESTA ESCUELA
+    const duplicateCheck = await client.query(
+      "SELECT id FROM requests WHERE school_id = $1 AND enrollment_period_id = $2 AND status = 'SUBMITTED'",
+      [school_id, enrollment_period_id]
+    );
+
+    if (duplicateCheck.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error: "You have already submitted a request for this period.",
+      });
+    }
 
     // 1. Crear la solicitud principal
     const reqResult = await client.query(
@@ -214,6 +262,7 @@ const listRequests = async (req, res) => {
                  'day', we.day_of_week,
                  'start_time', we.start_time,
                  'end_time', we.end_time,
+                 'priority', ri.priority,
                   'students', (
                     SELECT json_agg(json_build_object(
                       'name', st.nombre_completo, 
@@ -222,19 +271,29 @@ const listRequests = async (req, res) => {
                     FROM request_item_students ris
                     JOIN students st ON st.id = ris.student_id
                     WHERE ris.request_item_id = ri.id
-                  ),
-                 'teachers', (
-                    SELECT json_agg(t.full_name)
-                    FROM request_teacher_preferences rtp
-                    JOIN teachers t ON t.id = rtp.teacher_id
-                    WHERE rtp.request_id = r.id AND rtp.workshop_edition_id = ri.workshop_edition_id
-                 )
+                  )
                ))
                FROM request_items ri
                JOIN workshop_editions we ON ri.workshop_edition_id = we.id
                JOIN workshops w ON we.workshop_id = w.id
                WHERE ri.request_id = r.id
-             ) as items_summary
+             ) as items_summary,
+             (
+                SELECT json_agg(json_build_object(
+                    'teacher_name', t.full_name,
+                    'workshop_name', w.title,
+                    'preference_order', rtp.preference_order,
+                    'workshop_edition_id', rtp.workshop_edition_id,
+                    'day', we.day_of_week,
+                    'start_time', we.start_time,
+                    'end_time', we.end_time
+                ))
+                FROM request_teacher_preferences rtp
+                JOIN teachers t ON t.id = rtp.teacher_id
+                JOIN workshop_editions we ON we.id = rtp.workshop_edition_id
+                JOIN workshops w ON w.id = we.workshop_id
+                WHERE rtp.request_id = r.id
+             ) as preferences_summary
       FROM requests r
       JOIN schools s ON r.school_id = s.id
     `;
@@ -316,6 +375,18 @@ const updateRequest = async (req, res) => {
 
     // Si se envían nuevos items, reemplazar los existentes
     if (items && items.length > 0) {
+      // Validate total students limit (12)
+      const totalRequested = items.reduce(
+        (sum, i) => sum + (i.requested_students || 0),
+        0
+      );
+      if (totalRequested > 12) {
+        await client.query("ROLLBACK");
+        return res
+          .status(400)
+          .json({ error: "Cannot request more than 12 students in total" });
+      }
+
       // Eliminar items anteriores
       await client.query("DELETE FROM request_items WHERE request_id = $1", [
         id,
@@ -323,15 +394,19 @@ const updateRequest = async (req, res) => {
 
       // Insertar nuevos items
       for (const item of items) {
+        // Enforce per-workshop limit if needed (e.g. max 4) - keeping existing check if desired
         if (item.requested_students > 4) {
           await client.query("ROLLBACK");
-          return res.status(400).json({
-            error: "Cannot request more than 4 students per workshop",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "Cannot request more than 4 students per workshop",
+            });
         }
-        await client.query(
+
+        const itemResult = await client.query(
           `INSERT INTO request_items (request_id, workshop_edition_id, priority, requested_students)
-           VALUES ($1, $2, $3, $4)`,
+           VALUES ($1, $2, $3, $4) RETURNING id`,
           [
             id,
             item.workshop_edition_id,
@@ -339,16 +414,30 @@ const updateRequest = async (req, res) => {
             item.requested_students,
           ]
         );
+
+        const request_item_id = itemResult.rows[0].id;
+
+        // Re-insert assigned students
+        if (item.student_ids && item.student_ids.length > 0) {
+          for (const student_id of item.student_ids) {
+            if (student_id) {
+              await client.query(
+                `INSERT INTO request_item_students (request_item_id, student_id) VALUES ($1, $2)`,
+                [request_item_id, student_id]
+              );
+            }
+          }
+        }
       }
     }
 
     // Si se envían nuevas preferencias docentes, reemplazar las existentes
     if (teacher_preferences) {
-      if (teacher_preferences.length > 3) {
+      if (teacher_preferences.length > 6) {
         await client.query("ROLLBACK");
         return res
           .status(400)
-          .json({ error: "Maximum 3 teacher preferences allowed" });
+          .json({ error: "Maximum 6 teacher preferences allowed" });
       }
 
       await client.query(

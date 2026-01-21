@@ -61,7 +61,7 @@ const AdminDashboard = () => {
 
       // Procesar periodos
       const periods = periodsRes.data;
-      const active = periods.find((p) => p.status !== "CLOSED");
+      const active = periods.find((p) => p.status === "ACTIVE");
       setStats((prev) => ({ ...prev, activePeriod: active }));
 
       // Procesar talleres
@@ -87,7 +87,7 @@ const AdminDashboard = () => {
   };
 
   /**
-   * Obtiene el color y texto según el estado del período
+   * Obtiene el color y texto según el estado y fase del período
    */
   const getPeriodStatus = () => {
     if (!stats.activePeriod) {
@@ -97,32 +97,54 @@ const AdminDashboard = () => {
         icon: <PauseCircle size={48} />,
       };
     }
-    switch (stats.activePeriod.status) {
-      case "OPEN":
-        return {
-          color: "bg-green-600",
-          text: "CONVOCATORIA ABIERTA",
-          icon: <CheckCircle size={48} />,
-        };
-      case "PROCESSING":
-        return {
-          color: "bg-yellow-500",
-          text: "EN PROCESO",
-          icon: <Clock size={48} />,
-        };
-      case "PUBLISHED":
-        return {
-          color: "bg-blue-600",
-          text: "RESULTADOS PUBLICADOS",
-          icon: <Megaphone size={48} />,
-        };
-      default:
-        return {
-          color: "bg-gray-500",
-          text: "CERRADA",
-          icon: <Lock size={48} />,
-        };
+    
+    const { status, current_phase } = stats.activePeriod;
+    
+    if (status === "DRAFT") {
+      return {
+        color: "bg-gray-500",
+        text: "BORRADOR",
+        icon: <Clock size={48} />,
+      };
     }
+    
+    if (status === "CLOSED") {
+      return {
+        color: "bg-gray-500",
+        text: "CERRADA",
+        icon: <Lock size={48} />,
+      };
+    }
+    
+    // Status ACTIVE - mostrar según fase
+    const phaseConfig = {
+      SOLICITUDES: {
+        color: "bg-green-600",
+        text: "FASE: SOLICITUDES",
+        icon: <CheckCircle size={48} />,
+      },
+      ASIGNACION: {
+        color: "bg-yellow-500",
+        text: "FASE: ASIGNACIÓN",
+        icon: <Clock size={48} />,
+      },
+      PUBLICACION: {
+        color: "bg-blue-600",
+        text: "FASE: PUBLICACIÓN",
+        icon: <Megaphone size={48} />,
+      },
+      EJECUCION: {
+        color: "bg-teal-600",
+        text: "FASE: EJECUCIÓN",
+        icon: <Target size={48} />,
+      },
+    };
+    
+    return phaseConfig[current_phase] || {
+      color: "bg-green-600",
+      text: "CONVOCATORIA ACTIVA",
+      icon: <CheckCircle size={48} />,
+    };
   };
 
   const periodStatus = getPeriodStatus();
@@ -320,7 +342,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Alertas/Acciones pendientes */}
-      {stats.activePeriod?.status === "PROCESSING" && (
+      {stats.activePeriod?.current_phase === "ASIGNACION" && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-sm">
           <div className="bg-yellow-100 p-4 rounded-full text-yellow-600">
             <AlertTriangle size={32} />
@@ -331,7 +353,7 @@ const AdminDashboard = () => {
             </h3>
             <p className="text-yellow-700 mt-1">
               El período <strong>{stats.activePeriod.name}</strong> está en fase
-              de procesamiento. Es necesario ejecutar el algoritmo de asignación
+              de asignación. Es necesario ejecutar el algoritmo de asignación
               y revisar los resultados antes de publicarlos.
             </p>
           </div>

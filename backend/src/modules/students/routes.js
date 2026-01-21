@@ -9,6 +9,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { authenticate } = require("../../common/middleware/authMiddleware");
+const { requirePhase } = require("../../common/middleware/phaseMiddleware");
 const {
   listStudents,
   getStudentById,
@@ -63,44 +64,48 @@ const upload = multer({
   },
 });
 
+// Gestió d'alumnes disponible en PUBLICACION (inscripcions) i EJECUCION
+const canManageStudents = requirePhase(['PUBLICACION', 'EJECUCION'], { adminBypass: true });
+
 // ==========================================
 // RUTES D'ALUMNES
 // ==========================================
 
-// GET - Llistar alumnes
-router.get("/", authenticate, listStudents);
+// GET - Llistar alumnes (visible després de publicació)
+router.get("/", authenticate, canManageStudents, listStudents);
 
 // GET - Obtenir alumne per ID
-router.get("/:id", authenticate, getStudentById);
+router.get("/:id", authenticate, canManageStudents, getStudentById);
 
-// POST - Crear alumne
-router.post("/", authenticate, createStudent);
+// POST - Crear alumne (només després de publicació)
+router.post("/", authenticate, canManageStudents, createStudent);
 
 // PUT - Actualitzar alumne
-router.put("/:id", authenticate, updateStudent);
+router.put("/:id", authenticate, canManageStudents, updateStudent);
 
 // ==========================================
 // RUTES DE DOCUMENTS
 // ==========================================
 
 // GET - Llistar documents d'un alumne
-router.get("/:id/documents", authenticate, listDocuments);
+router.get("/:id/documents", authenticate, canManageStudents, listDocuments);
 
 // POST - Pujar document per a un alumne (US #16)
 router.post(
   "/:id/documents",
   authenticate,
+  canManageStudents,
   upload.single("document"),
   uploadDocument
 );
 
 // PUT - Verificar document (només ADMIN)
-router.put("/documents/:docId/verify", authenticate, verifyDocument);
+router.put("/documents/:docId/verify", authenticate, canManageStudents, verifyDocument);
 
 // DELETE - Eliminar document
-router.delete("/documents/:docId", authenticate, deleteDocument);
+router.delete("/documents/:docId", authenticate, canManageStudents, deleteDocument);
 
 // DELETE - Eliminar alumne (US #95 CRUD)
-router.delete("/:id", authenticate, deleteStudent);
+router.delete("/:id", authenticate, canManageStudents, deleteStudent);
 
 module.exports = router;

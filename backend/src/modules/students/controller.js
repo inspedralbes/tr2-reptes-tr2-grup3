@@ -91,7 +91,16 @@ const getStudentById = async (req, res) => {
  * Crear nou alumne (quan el centre confirma nominalment)
  */
 const createStudent = async (req, res) => {
-  let { nombre_completo, email, curso, school_id } = req.body;
+  let {
+    nombre_completo,
+    email,
+    curso,
+    school_id,
+    check_acuerdo_pedagogico,
+    check_autorizacion_movilidad,
+    check_derechos_imagen,
+    nivel_absentismo,
+  } = req.body;
   const user = req.user;
 
   if (!nombre_completo) {
@@ -119,10 +128,19 @@ const createStudent = async (req, res) => {
     }
 
     const result = await db.query(
-      `INSERT INTO students (nombre_completo, email, curso, school_id)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, nombre_completo, email, curso, school_id, created_at`,
-      [nombre_completo, email || null, curso || null, school_id]
+      `INSERT INTO students (nombre_completo, email, curso, school_id, check_acuerdo_pedagogico, check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, nombre_completo, email, curso, school_id, created_at, check_acuerdo_pedagogico, check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo`,
+      [
+        nombre_completo,
+        email || null,
+        curso || null,
+        school_id,
+        check_acuerdo_pedagogico ? 1 : 0,
+        check_autorizacion_movilidad ? 1 : 0,
+        check_derechos_imagen ? 1 : 0,
+        nivel_absentismo || 1,
+      ]
     );
 
     res.status(201).json(result.rows[0]);
@@ -161,7 +179,6 @@ const updateStudent = async (req, res) => {
        RETURNING *`,
       [
         nombre_completo,
-        email,
         email,
         curso,
         check_acuerdo_pedagogico,
