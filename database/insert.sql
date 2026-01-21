@@ -110,6 +110,17 @@ BEGIN
     VALUES ('ESCOLA TEST', '00000000', (SELECT id FROM users WHERE email = 'coord_test@test.cat'))
     ON CONFLICT (code) DO NOTHING;
 
+    -- INSERT TEACHER USER FOR TEST
+    INSERT INTO users (email, password_hash, full_name, role) VALUES 
+        ('teacher_test@test.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Teacher Test', 'TEACHER')
+    ON CONFLICT (email) DO NOTHING;
+
+    -- INSERT TEACHER LINKED TO SCHOOL AND USER
+    INSERT INTO teachers (full_name, email, phone_number, school_id, user_id) 
+    VALUES ('Teacher Test', 'teacher_test@test.cat', '666777888', 
+            (SELECT id FROM schools WHERE name = 'ESCOLA TEST'),
+            (SELECT id FROM users WHERE email = 'teacher_test@test.cat'));
+
     -- =======================================================================
     -- 4. INSERTAR TALLERES (WORKSHOPS) Y EDICIONES
     -- =======================================================================

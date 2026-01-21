@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ==========================================
 -- ENUMS (Tipos de datos fijos)
 -- ==========================================
-CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CENTER_COORD');
+CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CENTER_COORD', 'TEACHER');
 CREATE TYPE period_status_enum AS ENUM ('DRAFT', 'ACTIVE', 'CLOSED');
 CREATE TYPE period_phase_enum AS ENUM (
     'SOLICITUDES',      -- Centros pueden enviar solicitudes
@@ -83,6 +83,7 @@ CREATE TABLE teachers (
     full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     phone_number VARCHAR(50),
+    user_id UUID REFERENCES users(id), -- Link to user for login
     created_at TIMESTAMP DEFAULT NOW()
 );
 

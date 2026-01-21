@@ -39,6 +39,14 @@ const login = async ({ email, password }) => {
       if (schoolRes.rows.length > 0) {
         school_id = schoolRes.rows[0].id;
       }
+    } else if (user.role === "TEACHER") {
+      const teacherRes = await db.query(
+        "SELECT school_id FROM teachers WHERE user_id = $1",
+        [user.id]
+      );
+      if (teacherRes.rows.length > 0) {
+        school_id = teacherRes.rows[0].school_id;
+      }
     }
 
     // Generar token JWT con los datos del usuario INCLUYENDO school_id
@@ -92,6 +100,14 @@ const getProfile = async (userId) => {
       );
       if (schoolRes.rows.length > 0) {
         school_id = schoolRes.rows[0].id;
+      }
+    } else if (user.role === "TEACHER") {
+      const teacherRes = await db.query(
+        "SELECT school_id FROM teachers WHERE user_id = $1",
+        [user.id]
+      );
+      if (teacherRes.rows.length > 0) {
+        school_id = teacherRes.rows[0].school_id;
       }
     }
 

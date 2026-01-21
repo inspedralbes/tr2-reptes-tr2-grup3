@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependencias (incluye bcrypt y sus compilaciones nativas)
-RUN npm ci --only=production && npm install nodemon
+RUN npm install --only=production && npm install nodemon
 
 # Copiar el resto del código
 COPY . .

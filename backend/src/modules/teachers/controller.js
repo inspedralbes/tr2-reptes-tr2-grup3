@@ -132,6 +132,51 @@ const assignTeacher = async (req, res) => {
         .json({ error: "Ja hi ha 2 referents assignats a aquest taller" });
     }
 
+    // =========================================================================
+    // LOGICA AUTOMATICA: Crear Usuario y Enviar Email
+    // =========================================================================
+    // 1. Ver si el profesor ya tiene usuario
+    const teacherData = teacherCheck.rows[0];
+    const checkUser = await db.query(
+      "SELECT user_id, email FROM teachers WHERE id = $1",
+      [teacher_id]
+    );
+
+    let userCreated = false;
+    let emailSent = false;
+
+    if (checkUser.rows.length > 0 && !checkUser.rows[0].user_id) {
+      // NO tiene usuario vinculado -> CREARLO
+      const teacherEmail = checkUser.rows[0].email;
+
+      if (teacherEmail) {
+        const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-2); // Random ~10 chars
+        const bcrypt = require('bcrypt');
+        const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+        // Insertar usuario
+        const newUser = await db.query(
+          "INSERT INTO users (full_name, email, password_hash, role) VALUES ($1, $2, $3, 'TEACHER') RETURNING id",
+          [teacherData.full_name, teacherEmail, hashedPassword]
+        );
+
+        const newUserId = newUser.rows[0].id;
+
+        // Vincular usuario al profesor
+        await db.query(
+          "UPDATE teachers SET user_id = $1 WHERE id = $2",
+          [newUserId, teacher_id]
+        );
+
+        userCreated = true;
+
+        // Enviar Email
+        const emailService = require('../../common/services/EmailService');
+        emailSent = await emailService.sendTeacherCredentials(teacherEmail, generatedPassword, teacherData.full_name);
+      }
+    }
+    // =========================================================================
+
     // Assignar
     const result = await db.query(
       `INSERT INTO workshop_assigned_teachers (workshop_edition_id, teacher_id, is_main_referent)
@@ -142,9 +187,11 @@ const assignTeacher = async (req, res) => {
 
     res.status(201).json({
       message: "Professor assignat correctament",
+      user_created: userCreated,
+      email_sent: emailSent,
       assignment: {
         ...result.rows[0],
-        teacher_name: teacherCheck.rows[0].full_name,
+        teacher_name: teacherData.full_name,
       },
     });
   } catch (error) {
