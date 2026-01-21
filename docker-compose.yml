@@ -20,6 +20,8 @@ services:
     container_name: enginy_backend
     ports:
       - "3000:3000"
+    env_file:
+      - ./backend/.env
     environment:
       - PORT=3000
       - JWT_SECRET=your-secret-key-change-in-production
@@ -62,6 +64,7 @@ services:
 
 volumes:
   postgres_data:
+
 
 networks:
   enginy_network:
