@@ -7,7 +7,7 @@
  * - SOLICITUDES: Centros pueden crear/editar solicitudes
  * - ASIGNACION: Admin puede ejecutar algoritmo (interno)
  * - PUBLICACION: Centros pueden ver resultados
- * - EJECUCION: Talleres en marcha, se pasa lista
+ * - EJECUCION: Talleres en marcha, PROFESORES pasan lista
  */
 
 const db = require('../../config/db');
@@ -27,6 +27,7 @@ const getActivePeriodPhase = async () => {
  * @param {string[]} allowedPhases - Array de fases permitidas
  * @param {object} options - Opciones adicionales
  * @param {boolean} options.adminBypass - Si true, admins pueden saltarse la restricción
+ * @param {string[]} options.allowedRoles - Array de roles permitidos (además de admin si adminBypass)
  */
 const requirePhase = (allowedPhases, options = {}) => {
   return async (req, res, next) => {
@@ -34,6 +35,19 @@ const requirePhase = (allowedPhases, options = {}) => {
       // Admins pueden saltarse si está configurado
       if (options.adminBypass && req.user?.role === 'ADMIN') {
         return next();
+      }
+
+      // Verificar rol si se especifica allowedRoles
+      if (options.allowedRoles && options.allowedRoles.length > 0) {
+        const userRole = req.user?.role;
+        if (!options.allowedRoles.includes(userRole) && !(options.adminBypass && userRole === 'ADMIN')) {
+          return res.status(403).json({
+            error: `Aquesta acció requereix un dels següents rols: ${options.allowedRoles.join(', ')}`,
+            code: 'INVALID_ROLE',
+            required_roles: options.allowedRoles,
+            current_role: userRole
+          });
+        }
       }
 
       const period = await getActivePeriodPhase();
@@ -75,17 +89,20 @@ const requirePhase = (allowedPhases, options = {}) => {
  * Middleware específicos para cada acción
  */
 
-// Solo en fase SOLICITUDES: crear/editar solicitudes
-const canCreateRequests = requirePhase(['SOLICITUDES']);
+// Solo en fase SOLICITUDES: crear/editar solicitudes (CENTER_COORD)
+const canCreateRequests = requirePhase(['SOLICITUDES'], { allowedRoles: ['CENTER_COORD'] });
 
 // Solo en fase ASIGNACION: ejecutar algoritmo (solo admin)
-const canRunAllocation = requirePhase(['ASIGNACION'], { adminBypass: false });
+const canRunAllocation = requirePhase(['ASIGNACION'], { adminBypass: false, allowedRoles: ['ADMIN'] });
 
 // En PUBLICACION o EJECUCION: ver resultados de asignación
 const canViewAllocations = requirePhase(['PUBLICACION', 'EJECUCION'], { adminBypass: true });
 
-// Solo en EJECUCION: pasar lista, gestionar asistencia
-const canManageAttendance = requirePhase(['EJECUCION'], { adminBypass: true });
+// Solo en EJECUCION: pasar lista, gestionar asistencia - SOLO PROFESORES (TEACHER)
+const canManageAttendance = requirePhase(['EJECUCION'], { 
+  adminBypass: true, 
+  allowedRoles: ['TEACHER'] 
+});
 
 // Admin siempre puede ver demanda (para monitoreo)
 const canViewDemand = requirePhase(['SOLICITUDES', 'ASIGNACION', 'PUBLICACION', 'EJECUCION'], { adminBypass: true });

@@ -9,8 +9,12 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      # Solo monta el schema (init.sql), NO los datos
+      # Para insertar datos de prueba, ejecutar manualmente:
+      #   docker exec -i enginy_postgres psql -U admin -d enginy_db < database/insert.sql
+      #   docker exec -i enginy_postgres psql -U admin -d enginy_db < database/test_data.sql
       - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
-      - ./database/insert.sql:/docker-entrypoint-initdb.d/02-insert.sql
+      # - ./database/insert.sql:/docker-entrypoint-initdb.d/02-insert.sql  # DESACTIVADO - insertar manualmente
       - postgres_data:/var/lib/postgresql/data
     networks:
       - enginy_network

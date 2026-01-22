@@ -726,6 +726,13 @@ const AllocationPanel = () => {
                                         }`}>
                                           {school.status === 'PROVISIONAL' ? '🟡 Provisional' : '✅ Aprovat'}
                                         </span>
+                                        {/* Mostrar profesor acompañante */}
+                                        {school.assigned_teachers && school.assigned_teachers.length > 0 && (
+                                          <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex items-center gap-1">
+                                            <User size={10} />
+                                            {school.assigned_teachers[0].name}
+                                          </span>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -788,6 +795,11 @@ const AllocationPanel = () => {
                   {viewMode === 'center' && groupByCenter().map((center) => {
                     const isExpanded = expandedItems[center.id] !== false;
                     const hasProvisional = center.provisionalCount > 0;
+                    // Obtener profesores únicos del centro
+                    const centerTeachers = center.workshops
+                      .filter(w => w.assigned_teachers && w.assigned_teachers.length > 0)
+                      .map(w => w.assigned_teachers[0])
+                      .filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
                     
                     return (
                       <div 
@@ -818,11 +830,35 @@ const AllocationPanel = () => {
                                   <span className="text-xs text-gray-500">
                                     {center.workshops.length} tallers assignats
                                   </span>
+                                  {/* Mostrar profesores del centro */}
+                                  {centerTeachers.length > 0 && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex items-center gap-1">
+                                      <GraduationCap size={10} />
+                                      {centerTeachers.length} professors
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
                             
                             <div className="flex items-center gap-4">
+                              {/* Avatares de profesores */}
+                              {centerTeachers.length > 0 && (
+                                <div className="hidden md:flex items-center gap-2">
+                                  <div className="flex -space-x-2">
+                                    {centerTeachers.slice(0, 3).map((teacher, idx) => (
+                                      <div 
+                                        key={teacher.id} 
+                                        className="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold"
+                                        title={teacher.name}
+                                      >
+                                        {teacher.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
                               <div className="text-right">
                                 <div className="text-xl font-bold text-gray-800">{center.totalStudents}</div>
                                 <div className="text-xs text-gray-500">alumnes total</div>
@@ -841,6 +877,39 @@ const AllocationPanel = () => {
                         
                         {isExpanded && (
                           <div className="p-4 border-t border-gray-100 bg-white">
+                            {/* Resumen de profesores del centro */}
+                            {centerTeachers.length > 0 && (
+                              <div className="mb-4 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                                <h5 className="text-sm font-semibold text-indigo-800 mb-2 flex items-center gap-2">
+                                  <GraduationCap size={16} /> Professors acompanyants del centre
+                                </h5>
+                                <div className="flex flex-wrap gap-2">
+                                  {centerTeachers.map((teacher) => {
+                                    const teacherWorkshop = center.workshops.find(w => 
+                                      w.assigned_teachers && w.assigned_teachers.some(t => t.id === teacher.id)
+                                    );
+                                    return (
+                                      <div 
+                                        key={teacher.id} 
+                                        className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-indigo-200"
+                                      >
+                                        <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+                                          {teacher.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                        </div>
+                                        <div>
+                                          <div className="text-sm font-medium text-gray-800">{teacher.name}</div>
+                                          {teacherWorkshop && (
+                                            <div className="text-xs text-indigo-600">→ {teacherWorkshop.workshop_title}</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <h5 className="text-sm font-semibold text-gray-700 mb-2">Tallers assignats</h5>
                             <div className="space-y-2">
                               {center.workshops
                                 .filter(w => filterStatus === 'all' || w.status === filterStatus)
@@ -863,7 +932,7 @@ const AllocationPanel = () => {
                                     </div>
                                     <div>
                                       <span className="font-medium text-gray-800">{workshop.workshop_title}</span>
-                                      <div className="flex items-center gap-2 mt-0.5">
+                                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                         <span className={`text-xs px-2 py-0.5 rounded-full ${
                                           workshop.day_of_week === 'TUESDAY' 
                                             ? 'bg-blue-100 text-blue-700' 
@@ -878,6 +947,13 @@ const AllocationPanel = () => {
                                         }`}>
                                           {workshop.status === 'PROVISIONAL' ? '🟡 Provisional' : '✅ Aprovat'}
                                         </span>
+                                        {/* Profesor asignado al taller */}
+                                        {workshop.assigned_teachers && workshop.assigned_teachers.length > 0 && (
+                                          <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex items-center gap-1">
+                                            <User size={10} />
+                                            {workshop.assigned_teachers[0].name}
+                                          </span>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -943,25 +1019,98 @@ const AllocationPanel = () => {
           {/* ========== TAB: PROFESSORS ========== */}
           {activeTab === 'teachers' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                   <GraduationCap className="text-indigo-500" size={20} />
                   Assignació de Professors als Tallers
                 </h3>
-              </div>
-
-              {/* Info box */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-                <AlertCircle className="text-blue-500 mt-0.5 flex-shrink-0" size={20} />
-                <div>
-                  <p className="text-sm text-blue-800 font-medium">Com funciona l'assignació de professors?</p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    Els centres indiquen les preferències de professors a les seves sol·licituds. 
-                    L'algoritme assigna automàticament els professors segons disponibilitat i preferències.
-                    Pots revisar i modificar manualment les assignacions aquí.
-                  </p>
+                
+                {/* Vista toggle */}
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('workshop')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      viewMode === 'workshop' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                  >
+                    <Layers size={14} className="inline mr-1" /> Per Taller
+                  </button>
+                  <button
+                    onClick={() => setViewMode('center')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      viewMode === 'center' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                  >
+                    <Building size={14} className="inline mr-1" /> Per Centre
+                  </button>
                 </div>
               </div>
+
+              {/* Stats de profesores */}
+              {allocations.length > 0 && (() => {
+                // Agrupar asignaciones por edición de taller para contar profesores por taller
+                const editionTeachers = {};
+                allocations.forEach(a => {
+                  if (!editionTeachers[a.workshop_edition_id]) {
+                    editionTeachers[a.workshop_edition_id] = {
+                      title: a.workshop_title,
+                      teachers: new Set(),
+                      allTeachers: a.all_workshop_teachers || []
+                    };
+                  }
+                  // Usar all_workshop_teachers que contiene TODOS los profesores del taller
+                  if (a.all_workshop_teachers) {
+                    a.all_workshop_teachers.forEach(t => editionTeachers[a.workshop_edition_id].teachers.add(t.id));
+                  }
+                });
+                
+                const uniqueEditions = Object.keys(editionTeachers);
+                const editionsWithTeachers = uniqueEditions.filter(id => editionTeachers[id].teachers.size > 0).length;
+                const editionsWithoutTeachers = uniqueEditions.filter(id => editionTeachers[id].teachers.size === 0).length;
+                
+                // Contar profesores únicos
+                const allUniqueTeacherIds = new Set();
+                allocations.forEach(a => {
+                  if (a.all_workshop_teachers) {
+                    a.all_workshop_teachers.forEach(t => allUniqueTeacherIds.add(t.id));
+                  }
+                });
+                
+                return (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+                      <div className="flex items-center gap-2 mb-1">
+                        <GraduationCap className="text-indigo-500" size={18} />
+                        <span className="text-xs font-medium text-indigo-600">Total Professors</span>
+                      </div>
+                      <div className="text-2xl font-bold text-indigo-700">{allUniqueTeacherIds.size}</div>
+                    </div>
+                    <div className="bg-green-50 rounded-xl p-3 border border-green-100">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CheckCircle className="text-green-500" size={18} />
+                        <span className="text-xs font-medium text-green-600">Tallers amb Prof.</span>
+                      </div>
+                      <div className="text-2xl font-bold text-green-700">{editionsWithTeachers}</div>
+                    </div>
+                    <div className={`rounded-xl p-3 border ${editionsWithoutTeachers > 0 ? 'bg-amber-50 border-amber-100' : 'bg-gray-50 border-gray-100'}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <AlertCircle className={editionsWithoutTeachers > 0 ? 'text-amber-500' : 'text-gray-400'} size={18} />
+                        <span className={`text-xs font-medium ${editionsWithoutTeachers > 0 ? 'text-amber-600' : 'text-gray-500'}`}>Sense Professor</span>
+                      </div>
+                      <div className={`text-2xl font-bold ${editionsWithoutTeachers > 0 ? 'text-amber-700' : 'text-gray-400'}`}>{editionsWithoutTeachers}</div>
+                    </div>
+                    <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
+                      <div className="flex items-center gap-2 mb-1">
+                        <BarChart className="text-purple-500" size={18} />
+                        <span className="text-xs font-medium text-purple-600">Cobertura</span>
+                      </div>
+                      <div className="text-2xl font-bold text-purple-700">
+                        {uniqueEditions.length > 0 ? Math.round((editionsWithTeachers / uniqueEditions.length) * 100) : 0}%
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {allocations.length === 0 ? (
                 <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
@@ -969,79 +1118,241 @@ const AllocationPanel = () => {
                   <p className="text-gray-500">No hi ha assignacions de tallers encara.</p>
                   <p className="text-sm text-gray-400 mt-1">Primer executa l'algoritme per assignar places.</p>
                 </div>
-              ) : (
+              ) : viewMode === 'workshop' ? (
+                /* VISTA POR TALLER - Muestra centros y sus profesores */
                 <div className="space-y-3">
                   {groupByWorkshop().map((workshop) => {
                     const isExpanded = expandedItems[`teacher_${workshop.id}`];
+                    const allWorkshopTeachers = workshop.schools
+                      .filter(s => s.all_workshop_teachers)
+                      .flatMap(s => s.all_workshop_teachers)
+                      .filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
                     
                     return (
                       <div key={workshop.id} className="border border-gray-200 rounded-xl overflow-hidden">
                         <div 
-                          className="p-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-between"
+                          className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 cursor-pointer hover:from-indigo-100 hover:to-purple-100 transition-colors flex items-center justify-between"
                           onClick={() => toggleExpand(`teacher_${workshop.id}`)}
                         >
                           <div className="flex items-center gap-4">
                             <div className={`p-2.5 rounded-xl ${
-                              workshop.day === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+                              workshop.day === 'TUESDAY' ? 'bg-blue-500 text-white' : 'bg-purple-500 text-white'
                             }`}>
                               <BookOpen size={22} />
                             </div>
                             <div>
                               <h4 className="font-semibold text-gray-900">{workshop.title}</h4>
                               <p className="text-sm text-gray-500">
-                                {workshop.day === 'TUESDAY' ? 'Dimarts' : 'Dijous'} • {workshop.schools.length} centres
+                                {workshop.day === 'TUESDAY' ? '📅 Dimarts' : '📅 Dijous'} • {workshop.schools.length} centres
                               </p>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                              <div className="flex -space-x-2">
-                                {[1, 2].map(i => (
-                                  <div key={i} className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center">
-                                    <User size={14} className="text-gray-400" />
-                                  </div>
-                                ))}
+                            {/* Avatares de profesores del taller */}
+                            {allWorkshopTeachers.length > 0 ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex -space-x-2">
+                                  {allWorkshopTeachers.slice(0, 4).map((teacher) => (
+                                    <div 
+                                      key={teacher.id} 
+                                      className="w-9 h-9 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                                      title={`${teacher.name} (${teacher.school_name})`}
+                                    >
+                                      {teacher.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                    </div>
+                                  ))}
+                                  {allWorkshopTeachers.length > 4 && (
+                                    <div className="w-9 h-9 rounded-full bg-gray-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
+                                      +{allWorkshopTeachers.length - 4}
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="text-sm font-medium text-indigo-600 ml-2">
+                                  {allWorkshopTeachers.length} professors
+                                </span>
                               </div>
-                              <span className="text-sm text-gray-500 ml-2">Sense professors assignats</span>
-                            </div>
-                            {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                            ) : (
+                              <span className="text-sm text-amber-600 bg-amber-100 px-3 py-1 rounded-full">
+                                ⚠️ Sense professors
+                              </span>
+                            )}
+                            {isExpanded ? <ChevronDown size={20} className="text-gray-400" /> : <ChevronRight size={20} className="text-gray-400" />}
                           </div>
                         </div>
                         
                         {isExpanded && (
                           <div className="p-4 border-t border-gray-100 bg-white">
-                            <div className="mb-4">
-                              <h5 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                <UserCheck size={16} /> Professors assignats al taller
-                              </h5>
-                              <div className="bg-gray-50 rounded-lg p-4 text-center border border-dashed border-gray-200">
-                                <User className="mx-auto text-gray-300 mb-2" size={32} />
-                                <p className="text-sm text-gray-500">No hi ha professors assignats a aquest taller</p>
-                                <button className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                  + Assignar professor
-                                </button>
+                            <div className="space-y-3">
+                              {workshop.schools.map((school, idx) => {
+                                const teacher = school.assigned_teachers?.[0];
+                                return (
+                                  <div key={idx} className={`flex items-center justify-between p-4 rounded-xl border ${
+                                    teacher ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'
+                                  }`}>
+                                    <div className="flex items-center gap-4">
+                                      <div className={`p-2 rounded-lg ${teacher ? 'bg-green-100' : 'bg-amber-100'}`}>
+                                        <Building className={teacher ? 'text-green-600' : 'text-amber-600'} size={20} />
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold text-gray-800">{school.school_name}</span>
+                                        <div className="text-sm text-gray-500">{school.assigned_seats} alumnes assignats</div>
+                                      </div>
+                                    </div>
+                                    
+                                    {teacher ? (
+                                      <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-green-200">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
+                                          {teacher.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                        </div>
+                                        <div>
+                                          <div className="font-medium text-gray-800">{teacher.name}</div>
+                                          <div className="text-xs text-green-600 flex items-center gap-1">
+                                            <CheckCircle size={12} /> Professor acompanyant
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-amber-600 bg-amber-100 px-4 py-2 rounded-xl border border-amber-200 text-sm font-medium flex items-center gap-2">
+                                        <AlertCircle size={16} />
+                                        Sense professor assignat
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* VISTA POR CENTRO - Muestra talleres y profesores del centro */
+                <div className="space-y-3">
+                  {groupByCenter().map((center) => {
+                    const isExpanded = expandedItems[`teacher_center_${center.id}`];
+                    const centerTeachers = center.workshops
+                      .filter(w => w.assigned_teachers && w.assigned_teachers.length > 0)
+                      .map(w => ({ ...w.assigned_teachers[0], workshop: w.workshop_title }))
+                      .filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
+                    const workshopsWithTeacher = center.workshops.filter(w => w.assigned_teachers?.length > 0).length;
+                    const workshopsWithoutTeacher = center.workshops.filter(w => !w.assigned_teachers?.length).length;
+                    
+                    return (
+                      <div key={center.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                        <div 
+                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                            workshopsWithoutTeacher > 0 ? 'bg-amber-50' : 'bg-green-50'
+                          }`}
+                          onClick={() => toggleExpand(`teacher_center_${center.id}`)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className={`p-2.5 rounded-xl ${
+                                workshopsWithoutTeacher > 0 ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'
+                              }`}>
+                                <Building size={22} />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-gray-900">{center.name}</h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs text-gray-500">{center.workshops.length} tallers</span>
+                                  {workshopsWithoutTeacher > 0 && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                      ⚠️ {workshopsWithoutTeacher} sense professor
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                             
-                            <div>
-                              <h5 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                <School size={16} /> Centres participants
-                              </h5>
-                              <div className="space-y-2">
-                                {workshop.schools.map((school, idx) => (
-                                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                    <div className="flex items-center gap-3">
-                                      <Building className="text-gray-400" size={18} />
+                            <div className="flex items-center gap-4">
+                              {/* Avatares y lista de profesores */}
+                              {centerTeachers.length > 0 ? (
+                                <div className="hidden md:flex items-center gap-2">
+                                  <div className="flex -space-x-2">
+                                    {centerTeachers.slice(0, 3).map((teacher) => (
+                                      <div 
+                                        key={teacher.id} 
+                                        className="w-9 h-9 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                                        title={teacher.name}
+                                      >
+                                        {teacher.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <span className="text-sm font-medium text-indigo-600">
+                                    {centerTeachers.length} prof.
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-amber-600">Sense professors</span>
+                              )}
+                              
+                              <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                                workshopsWithoutTeacher === 0 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'bg-amber-100 text-amber-700'
+                              }`}>
+                                {workshopsWithTeacher}/{center.workshops.length} coberts
+                              </div>
+                              
+                              {isExpanded ? <ChevronDown size={20} className="text-gray-400" /> : <ChevronRight size={20} className="text-gray-400" />}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {isExpanded && (
+                          <div className="p-4 border-t border-gray-100 bg-white">
+                            <div className="space-y-3">
+                              {center.workshops.map((workshop, idx) => {
+                                const teacher = workshop.assigned_teachers?.[0];
+                                return (
+                                  <div key={idx} className={`flex items-center justify-between p-4 rounded-xl border ${
+                                    teacher ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'
+                                  }`}>
+                                    <div className="flex items-center gap-4">
+                                      <div className={`p-2 rounded-lg ${
+                                        workshop.day_of_week === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+                                      }`}>
+                                        <BookOpen size={20} />
+                                      </div>
                                       <div>
-                                        <span className="font-medium text-gray-800">{school.school_name}</span>
-                                        <span className="text-xs text-gray-500 ml-2">({school.assigned_seats} alumnes)</span>
+                                        <span className="font-semibold text-gray-800">{workshop.workshop_title}</span>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                            workshop.day_of_week === 'TUESDAY' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                          }`}>
+                                            {workshop.day_of_week === 'TUESDAY' ? 'Dimarts' : 'Dijous'}
+                                          </span>
+                                          <span className="text-xs text-gray-500">{workshop.assigned_seats} alumnes</span>
+                                        </div>
                                       </div>
                                     </div>
-                                    <span className="text-sm text-gray-400 italic">Sense preferència indicada</span>
+                                    
+                                    {teacher ? (
+                                      <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-green-200">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
+                                          {teacher.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                        </div>
+                                        <div>
+                                          <div className="font-medium text-gray-800">{teacher.name}</div>
+                                          <div className="text-xs text-green-600 flex items-center gap-1">
+                                            <CheckCircle size={12} /> Acompanyant
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-amber-600 bg-amber-100 px-4 py-2 rounded-xl border border-amber-200 text-sm font-medium flex items-center gap-2">
+                                        <AlertCircle size={16} />
+                                        Sense professor
+                                      </div>
+                                    )}
                                   </div>
-                                ))}
-                              </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}

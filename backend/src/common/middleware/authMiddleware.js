@@ -30,8 +30,32 @@ const isCenterCoord = (req, res, next) => {
   }
 };
 
+/**
+ * Middleware para verificar rol TEACHER (profesor referente del taller)
+ */
+const isTeacher = (req, res, next) => {
+  if (req.user && req.user.role === 'TEACHER') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Forbidden: Requereix ser Professor Referent' });
+  }
+};
+
+/**
+ * Middleware para verificar que el usuario es TEACHER o ADMIN
+ */
+const isTeacherOrAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'TEACHER' || req.user.role === 'ADMIN')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Forbidden: Requereix ser Professor Referent o Administrador' });
+  }
+};
+
 module.exports = {
   authenticate,
   isAuthenticated,
   isCenterCoord,
+  isTeacher,
+  isTeacherOrAdmin,
 };

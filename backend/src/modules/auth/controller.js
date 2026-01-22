@@ -38,7 +38,7 @@ const me = async (req, res) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const profile = await authService.getProfile(req.user.id);
+    const profile = await authService.getProfile(req.user.id, req.user.user_type);
     res.json({ user: profile });
   } catch (error) {
     res.status(500).json({ error: error.message });

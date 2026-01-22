@@ -1,30 +1,86 @@
 -- ==================================================================
--- SCRIPT LIMPIO: POBLADO DE DATOS REALES (Modalitat C)
+-- SCRIPT DE TESTING: DATOS COMPLETOS PARA PROBAR TODO EL FLUJO
+-- ==================================================================
+-- Este script inserta datos de prueba para testear:
+-- 1. Fase SOLICITUDES: Crear solicitudes desde centros
+-- 2. Fase ASIGNACION: Admin ejecuta algoritmo
+-- 3. Fase PUBLICACION: Centros ven asignaciones, confirman alumnos
+-- 4. Fase EJECUCION: Profesores pasan lista, evalúan
 -- ==================================================================
 
--- 0. INSERTAR USUARIOS PARA AUTENTICACIÓN (fuera del bloque DO)
--- Password hash para 'admin123' usando bcrypt (generado en Docker Linux)
+-- 0. INSERTAR USUARIOS PARA AUTENTICACIÓN
+-- Password: 'admin123' para todos (hash bcrypt)
+-- NOTA: Solo ADMIN y CENTER_COORD están en tabla users
+-- Los profesores acompañantes están en tabla teachers (con password para login)
 INSERT INTO users (email, password_hash, full_name, role) VALUES 
     ('admin@enginy.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Admin Enginy', 'ADMIN'),
-    ('coord1@escola1.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Coordinador Escola 1', 'CENTER_COORD'),
-    ('coord2@escola2.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Coordinador Escola 2', 'CENTER_COORD')
+    ('coord1@baixeras.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Marta García (Coord. Baixeras)', 'CENTER_COORD'),
+    ('coord2@ciutadella.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Joan Puig (Coord. Ciutadella)', 'CENTER_COORD'),
+    ('coord3@verdaguer.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Anna López (Coord. Verdaguer)', 'CENTER_COORD'),
+    ('coord4@polvorin.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Pere Vidal (Coord. Polvorí)', 'CENTER_COORD'),
+    ('coord5@canclos.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Laura Martí (Coord. Can Clos)', 'CENTER_COORD')
 ON CONFLICT (email) DO NOTHING;
 
 DO $$
 DECLARE
-    -- Variables para guardar los IDs generados
+    -- Variables para IDs generados
     v_period_id UUID;
-    v_prov_ismab UUID; v_prov_impulsem UUID; v_prov_santpere UUID;
-    v_prov_biciclot UUID; v_prov_colomer UUID; v_prov_vela UUID;
-    v_prov_ugt UUID; v_prov_sinai UUID; v_prov_ferrantallada UUID;
-    v_prov_mundet UUID; v_prov_escolatreball UUID; v_prov_picasso UUID;
-    v_prov_tmb UUID; v_prov_abaoaqu UUID; v_prov_artixoc UUID;
     
+    -- Proveedores
+    v_prov_ismab UUID; 
+    v_prov_impulsem UUID; 
+    v_prov_santpere UUID;
+    v_prov_biciclot UUID; 
+    v_prov_colomer UUID; 
+    v_prov_vela UUID;
+    
+    -- Centros
+    v_school_baixeras UUID;
+    v_school_ciutadella UUID;
+    v_school_verdaguer UUID;
+    v_school_polvorin UUID;
+    v_school_canclos UUID;
+    
+    -- Workshops y ediciones
     v_workshop_id UUID;
     v_edition_id UUID;
+    v_edition_jardineria_2t UUID;
+    v_edition_jardineria_3t UUID;
+    v_edition_tecnolab_2t UUID;
+    v_edition_serigrafia_2t UUID;
+    v_edition_cuina_2t UUID;
+    v_edition_bici_2t UUID;
+    
+    -- Allocations para vincular estudiantes
+    v_alloc_baixeras_jardineria UUID;
+    v_alloc_ciutadella_jardineria UUID;
+    v_alloc_verdaguer_tecnolab UUID;
+    v_alloc_polvorin_serigrafia UUID;
+    v_alloc_canclos_cuina UUID;
+    
+    -- Teachers
+    v_teacher_baixeras_1 UUID;
+    v_teacher_baixeras_2 UUID;
+    v_teacher_ciutadella_1 UUID;
+    v_teacher_verdaguer_1 UUID;
+    v_teacher_polvorin_1 UUID;
+    v_teacher_canclos_1 UUID;
+    
+    -- Students
+    v_student_id UUID;
+    
+    -- Sessions
+    v_session_id UUID;
+    
 BEGIN
-
-    -- 1. INSERTAR EL PERIODO DE INSCRIPCIÓN CON NUEVO SISTEMA DE FASES
+    -- ==================================================================
+    -- 1. CREAR PERÍODO DE INSCRIPCIÓN PARA TESTING
+    -- ==================================================================
+    -- Configuramos las fases para poder probar cada una:
+    -- - SOLICITUDES: Ahora hasta febrero (para poder crear solicitudes)
+    -- - PUBLICACION: Febrero
+    -- - EJECUCION: Marzo en adelante
+    
     INSERT INTO enrollment_periods (
         name, status, current_phase,
         phase_solicitudes_start, phase_solicitudes_end,
@@ -32,686 +88,489 @@ BEGIN
         phase_ejecucion_start, phase_ejecucion_end
     )
     VALUES (
-        'Enginy 2025-2026 - Modalitat C', 
+        'ENGINY 2025-2026 Testing', 
         'ACTIVE', 
-        'SOLICITUDES',
-        '2025-09-15 08:00:00', '2026-02-15 23:59:59',  -- Solicitudes: hasta febrero
-        '2026-02-20 08:00:00', '2026-02-28 23:59:59',  -- Publicación: 1 semana
-        '2026-03-01 08:00:00', '2026-06-15 14:00:00'   -- Ejecución: Todo el resto del curso
+        'SOLICITUDES',  -- Empezamos en fase de solicitudes para testing
+        '2025-09-01 08:00:00', '2026-02-15 23:59:59',  -- Solicitudes
+        '2026-02-20 08:00:00', '2026-02-28 23:59:59',  -- Publicación
+        '2026-03-01 08:00:00', '2026-06-30 14:00:00'   -- Ejecución
     )
     RETURNING id INTO v_period_id;
 
-    -- 2. INSERTAR PROVEEDORES
-    INSERT INTO providers (name, address) VALUES 
-        ('ISMAB (Institut de Sostenibilitat i Medi Ambient)', 'C/ Mollerussa, 71') RETURNING id INTO v_prov_ismab;
-    INSERT INTO providers (name, address) VALUES 
-        ('Impulsem', 'C/ Tàpies, 6') RETURNING id INTO v_prov_impulsem;
-    INSERT INTO providers (name, address) VALUES 
-        ('Centre Sant Pere 1892', 'Carrer de Sant Pere Més Alt, 25') RETURNING id INTO v_prov_santpere;
-    INSERT INTO providers (name, address) VALUES 
-        ('Biciclot', 'C/ de la Verneda, 16-18') RETURNING id INTO v_prov_biciclot;
-    INSERT INTO providers (name, address) VALUES 
-        ('Centre Formació Colomer', 'C/ Leiva, 17-19') RETURNING id INTO v_prov_colomer;
-    INSERT INTO providers (name, address) VALUES 
-        ('Centre Municipal de Vela', 'Port Olímpic, Molí de Gregal, 33') RETURNING id INTO v_prov_vela;
-    INSERT INTO providers (name, address) VALUES 
-        ('Jaume Fargas (UGT)', 'Rambla de Santa Mònica, 10') RETURNING id INTO v_prov_ugt;
-    INSERT INTO providers (name, address) VALUES 
-        ('Granja escola Sinai', 'C/ de la Indústria, 137') RETURNING id INTO v_prov_sinai;
-    INSERT INTO providers (name, address) VALUES 
-        ('INS Ferran Tallada', 'C/ Gran Vista, 54') RETURNING id INTO v_prov_ferrantallada;
-    INSERT INTO providers (name, address) VALUES 
-        ('INS Anna Gironella de Mundet', 'C/ d''Olympe de Gouges, s/n') RETURNING id INTO v_prov_mundet;
-    INSERT INTO providers (name, address) VALUES 
-        ('INS Escola de Treball', 'C/ Urgell') RETURNING id INTO v_prov_escolatreball;
-    INSERT INTO providers (name, address) VALUES 
-        ('Museu Picasso', 'C/ Montcada, 15-23') RETURNING id INTO v_prov_picasso;
-    INSERT INTO providers (name, address) VALUES 
-        ('TMB', 'La Sagrera / Confluència Felip II') RETURNING id INTO v_prov_tmb;
-    INSERT INTO providers (name, address) VALUES 
-        ('Abaoaqu', 'A determinar') RETURNING id INTO v_prov_abaoaqu;
-    INSERT INTO providers (name, address) VALUES 
-        ('Artixoc', 'Rambla de Badal, 53') RETURNING id INTO v_prov_artixoc;
+    RAISE NOTICE 'Período creado: %', v_period_id;
 
-    -- 3. INSERTAR CENTROS EDUCATIVOS (Datos reales de Barcelona)
-    INSERT INTO schools (name, code) VALUES 
-        ('Escola Baixeras', '08001595'), ('Escola Parc de la Ciutadella', '08001601'), 
-        ('Escola Mossén Jacint Verdaguer', '08001649'), ('Escola El Polvorí', '08001650'), 
-        ('Escola Can Clos', '08001674'), ('Escola Dolors Monserdà-Santapau', '08001716'),
-        ('Escola Poeta Foix', '08001731'), ('Escola Ramon Llull', '08001777'), 
-        ('Escola Cervantes', '08001789'), ('Escola Pere Vila', '08001790'),
-        ('Escola de la Concepció', '08001807'), ('Escola Collaso i Gil', '08001819'), 
-        ('Escola Milà i Fontanals', '08001820'), ('Escola Castella', '08001832'),
-        ('Escola Drassanes', '08001856'), ('Escola Rubén Darío', '08001868'), 
-        ('Escola Els Llorers', '08001911'), ('Escola Diputació', '08001923'),
-        ('Escola Mallorca', '08001947'), ('Escola Francesc Macià', '08002009'), 
-        ('Escola Lluís Vives', '08002010'), ('Escola Cal Maiol', '08002022'),
-        ('Escola Pràctiques', '08002058'), ('Escola Jaume I', '08002061'), 
-        ('Escola Gayarre', '08002071'), ('Escola Rius i Taulet', '08002113'),
-        ('Escola Baldiri Reixac', '08002174'), ('Escola Mare de Déu de Montserrat', '08002186'), 
-        ('Escola La Farigola de Vallcarca', '08002198'), ('Escola Montseny', '08002204'),
-        ('Escola Josep Maria de Sagarra', '08002216'), ('Escola Calderón de la Barca', '08002277'), 
-        ('Escola Emili Juncadella', '08002290'), ('Escola El Turó', '08002344'),
-        ('Escola Timbaler del Bruc', '08002368'), ('Escola L''Arc de Sant Martí', '08002393'), 
-        ('Escola Baró de Viver', '08002411'), ('Escola Marta Mata', '08002484'),
-        ('Escola Tibidabo', '08002526'), ('Escola Víctor Català', '08002538')
-    ON CONFLICT (code) DO NOTHING;
-
-    -- VINCULAR COORDINADOR A ESCUELA (Manual seeding fix)
-    UPDATE schools SET coordinator_user_id = (SELECT id FROM users WHERE email = 'coord1@escola1.cat') 
-    WHERE name = 'Escola Baixeras';
-
-    -- UPDATE: Create TEST school and user
-    INSERT INTO users (email, password_hash, full_name, role) VALUES 
-        ('coord_test@test.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Coordinador Test', 'CENTER_COORD')
-    ON CONFLICT (email) DO NOTHING;
-
-    INSERT INTO schools (name, code, coordinator_user_id) 
-    VALUES ('ESCOLA TEST', '00000000', (SELECT id FROM users WHERE email = 'coord_test@test.cat'))
-    ON CONFLICT (code) DO NOTHING;
-
-    -- INSERT TEACHER USER FOR TEST
-    INSERT INTO users (email, password_hash, full_name, role) VALUES 
-        ('teacher_test@test.cat', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG', 'Teacher Test', 'TEACHER')
-    ON CONFLICT (email) DO NOTHING;
-
-    -- INSERT TEACHER LINKED TO SCHOOL AND USER
-    INSERT INTO teachers (full_name, email, phone_number, school_id, user_id) 
-    VALUES ('Teacher Test', 'teacher_test@test.cat', '666777888', 
-            (SELECT id FROM schools WHERE name = 'ESCOLA TEST'),
-            (SELECT id FROM users WHERE email = 'teacher_test@test.cat'));
-
-    -- =======================================================================
-    -- 4. INSERTAR TALLERES (WORKSHOPS) Y EDICIONES
-    -- =======================================================================
-
-    -- TALLER: JARDINERIA
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Jardineria', 'Medi ambient i sostenibilitat', v_prov_ismab) RETURNING id INTO v_workshop_id;
-
-    -- Edición 2n Trimestre (Jueves)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-
-    -- Asignaciones Jardineria 2n Trim
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Baixeras'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Parc de la Ciutadella'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Cervantes'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Pere Vila'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Faisà Eixample'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'ESCOLA TEST'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Rec Comtal'), 4, 'PUBLISHED');
-
-    -- Edición 3r Trimestre (Jueves)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
+    -- ==================================================================
+    -- 2. CREAR PROVEEDORES
+    -- ==================================================================
+    INSERT INTO providers (name, address, contact_email) VALUES 
+        ('ISMAB (Institut de Sostenibilitat)', 'C/ Mollerussa, 71', 'info@ismab.cat') 
+    RETURNING id INTO v_prov_ismab;
     
-    -- Asignaciones Jardineria 3r Trim
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Pau Claris'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Caterina Albert'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 2, 'PUBLISHED');
+    INSERT INTO providers (name, address, contact_email) VALUES 
+        ('Impulsem SCCL', 'C/ Tàpies, 6', 'info@impulsem.cat') 
+    RETURNING id INTO v_prov_impulsem;
+    
+    INSERT INTO providers (name, address, contact_email) VALUES 
+        ('Centre Sant Pere 1892', 'C/ Sant Pere Més Alt, 25', 'info@santpere.cat') 
+    RETURNING id INTO v_prov_santpere;
+    
+    INSERT INTO providers (name, address, contact_email) VALUES 
+        ('Biciclot', 'C/ de la Verneda, 16-18', 'info@biciclot.cat') 
+    RETURNING id INTO v_prov_biciclot;
+    
+    INSERT INTO providers (name, address, contact_email) VALUES 
+        ('Centre Formació Colomer', 'C/ Leiva, 17-19', 'info@colomer.cat') 
+    RETURNING id INTO v_prov_colomer;
+    
+    INSERT INTO providers (name, address, contact_email) VALUES 
+        ('Centre Municipal de Vela', 'Port Olímpic, Moll de Gregal, 33', 'info@vela.bcn.cat') 
+    RETURNING id INTO v_prov_vela;
 
+    RAISE NOTICE 'Proveedores creados';
+
+    -- ==================================================================
+    -- 3. CREAR CENTROS EDUCATIVOS CON COORDINADORES
+    -- ==================================================================
+    INSERT INTO schools (name, code, address, municipality, coordinator_user_id) VALUES 
+        ('Escola Baixeras', '08001595', 'Av. Francesc Cambó, 8', 'Barcelona',
+         (SELECT id FROM users WHERE email = 'coord1@baixeras.cat'))
+    RETURNING id INTO v_school_baixeras;
+    
+    INSERT INTO schools (name, code, address, municipality, coordinator_user_id) VALUES 
+        ('Escola Parc de la Ciutadella', '08001601', 'Pg. Circumval·lació, 8', 'Barcelona',
+         (SELECT id FROM users WHERE email = 'coord2@ciutadella.cat'))
+    RETURNING id INTO v_school_ciutadella;
+    
+    INSERT INTO schools (name, code, address, municipality, coordinator_user_id) VALUES 
+        ('Escola Mossén Jacint Verdaguer', '08001649', 'C/ Roger de Flor, 309', 'Barcelona',
+         (SELECT id FROM users WHERE email = 'coord3@verdaguer.cat'))
+    RETURNING id INTO v_school_verdaguer;
+    
+    INSERT INTO schools (name, code, address, municipality, coordinator_user_id) VALUES 
+        ('Escola El Polvorí', '08001650', 'C/ Mare de Déu de Port, 257', 'Barcelona',
+         (SELECT id FROM users WHERE email = 'coord4@polvorin.cat'))
+    RETURNING id INTO v_school_polvorin;
+    
+    INSERT INTO schools (name, code, address, municipality, coordinator_user_id) VALUES 
+        ('Escola Can Clos', '08001674', 'Pg. de la Zona Franca, 118', 'Barcelona',
+         (SELECT id FROM users WHERE email = 'coord5@canclos.cat'))
+    RETURNING id INTO v_school_canclos;
+
+    RAISE NOTICE 'Centros creados con coordinadores';
+
+    -- ==================================================================
+    -- 4. CREAR PROFESORES POR CADA CENTRO (CON PASSWORD PARA LOGIN)
+    -- ==================================================================
+    -- Password: 'admin123' para todos (hash bcrypt)
+    -- Escola Baixeras
+    INSERT INTO teachers (full_name, email, phone_number, school_id, password_hash) VALUES
+        ('Jordi López', 'jordi.lopez@baixeras.cat', '611223344', v_school_baixeras, '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG')
+    RETURNING id INTO v_teacher_baixeras_1;
+    
+    INSERT INTO teachers (full_name, email, phone_number, school_id, password_hash) VALUES
+        ('Carla Fernández', 'carla.fernandez@baixeras.cat', '622334455', v_school_baixeras, '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG')
+    RETURNING id INTO v_teacher_baixeras_2;
+    
+    -- Escola Ciutadella
+    INSERT INTO teachers (full_name, email, phone_number, school_id, password_hash) VALUES
+        ('Marc Soler', 'marc.soler@ciutadella.cat', '633445566', v_school_ciutadella, '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG')
+    RETURNING id INTO v_teacher_ciutadella_1;
+    
+    INSERT INTO teachers (full_name, email, phone_number, school_id, password_hash) VALUES
+        ('Nuria Camps', 'nuria.camps@ciutadella.cat', '644556677', v_school_ciutadella, '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG');
+    
+    -- Escola Verdaguer
+    INSERT INTO teachers (full_name, email, phone_number, school_id, password_hash) VALUES
+        ('Albert Roca', 'albert.roca@verdaguer.cat', '655667788', v_school_verdaguer, '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG')
+    RETURNING id INTO v_teacher_verdaguer_1;
+    
+    INSERT INTO teachers (full_name, email, phone_number, school_id, password_hash) VALUES
+        ('Elena Mas', 'elena.mas@verdaguer.cat', '666778899', v_school_verdaguer, '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG');
+    
+    -- Escola El Polvorí
+    INSERT INTO teachers (full_name, email, phone_number, school_id, password_hash) VALUES
+        ('David Gómez', 'david.gomez@polvorin.cat', '677889900', v_school_polvorin, '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG')
+    RETURNING id INTO v_teacher_polvorin_1;
+    
+    -- Escola Can Clos
+    INSERT INTO teachers (full_name, email, phone_number, school_id, password_hash) VALUES
+        ('Sandra Pérez', 'sandra.perez@canclos.cat', '688990011', v_school_canclos, '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG')
+    RETURNING id INTO v_teacher_canclos_1;
+
+    RAISE NOTICE 'Profesores creados (con login habilitado)';
+
+    -- ==================================================================
+    -- 5. CREAR ALUMNOS POR CADA CENTRO
+    -- ==================================================================
+    -- Escola Baixeras (4 alumnos para poder llenar 2 talleres)
+    INSERT INTO students (nombre_completo, email, curso, check_acuerdo_pedagogico, 
+                         check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo, school_id) VALUES
+        ('Marc García Martínez', 'marc.garcia@baixeras.cat', '3 ESO', 1, 1, 1, 1, v_school_baixeras),
+        ('Laia Puig Costa', 'laia.puig@baixeras.cat', '4 ESO', 1, 1, 0, 2, v_school_baixeras),
+        ('Pau Vidal Serra', 'pau.vidal@baixeras.cat', '3 ESO', 1, 0, 1, 1, v_school_baixeras),
+        ('Anna López Roca', 'anna.lopez@baixeras.cat', '4 ESO', 0, 1, 1, 3, v_school_baixeras);
+    
+    -- Escola Ciutadella (3 alumnos)
+    INSERT INTO students (nombre_completo, email, curso, check_acuerdo_pedagogico, 
+                         check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo, school_id) VALUES
+        ('Júlia Mas Font', 'julia.mas@ciutadella.cat', '3 ESO', 1, 1, 1, 1, v_school_ciutadella),
+        ('Oriol Camps Pla', 'oriol.camps@ciutadella.cat', '4 ESO', 1, 1, 1, 2, v_school_ciutadella),
+        ('Berta Solé Mir', 'berta.sole@ciutadella.cat', '3 ESO', 1, 1, 1, 1, v_school_ciutadella);
+    
+    -- Escola Verdaguer (4 alumnos)
+    INSERT INTO students (nombre_completo, email, curso, check_acuerdo_pedagogico, 
+                         check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo, school_id) VALUES
+        ('Arnau Ferrer Gil', 'arnau.ferrer@verdaguer.cat', '3 ESO', 1, 1, 1, 1, v_school_verdaguer),
+        ('Martina Sala Bosch', 'martina.sala@verdaguer.cat', '4 ESO', 1, 1, 0, 2, v_school_verdaguer),
+        ('Jan Torres Gómez', 'jan.torres@verdaguer.cat', '3 ESO', 1, 1, 1, 1, v_school_verdaguer),
+        ('Aina Prat Valls', 'aina.prat@verdaguer.cat', '4 ESO', 1, 0, 1, 4, v_school_verdaguer);
+    
+    -- Escola El Polvorí (3 alumnos)
+    INSERT INTO students (nombre_completo, email, curso, check_acuerdo_pedagogico, 
+                         check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo, school_id) VALUES
+        ('Eric Muñoz López', 'eric.munoz@polvorin.cat', '3 ESO', 1, 1, 1, 2, v_school_polvorin),
+        ('Clàudia Ruiz Pérez', 'claudia.ruiz@polvorin.cat', '4 ESO', 0, 1, 1, 3, v_school_polvorin),
+        ('Hugo Martínez Vidal', 'hugo.martinez@polvorin.cat', '3 ESO', 1, 1, 1, 1, v_school_polvorin);
+    
+    -- Escola Can Clos (4 alumnos)
+    INSERT INTO students (nombre_completo, email, curso, check_acuerdo_pedagogico, 
+                         check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo, school_id) VALUES
+        ('Noa Sánchez Riera', 'noa.sanchez@canclos.cat', '3 ESO', 1, 1, 1, 1, v_school_canclos),
+        ('Leo Navarro Pons', 'leo.navarro@canclos.cat', '4 ESO', 1, 1, 1, 2, v_school_canclos),
+        ('Emma Giménez Blanco', 'emma.gimenez@canclos.cat', '3 ESO', 1, 1, 0, 1, v_school_canclos),
+        ('Pol Fernández Soler', 'pol.fernandez@canclos.cat', '4 ESO', 1, 0, 1, 5, v_school_canclos);
+
+    RAISE NOTICE 'Alumnos creados';
+
+    -- ==================================================================
+    -- 6. CREAR TALLERES Y EDICIONES
+    -- ==================================================================
+    
+    -- TALLER: JARDINERIA
+    INSERT INTO workshops (title, description, ambit, is_new, provider_id) VALUES 
+        ('Jardineria', 'Taller de jardineria sostenible i horticultura urbana', 
+         'Medi ambient i sostenibilitat', false, v_prov_ismab) 
+    RETURNING id INTO v_workshop_id;
+    
+    -- Edición 2n Trimestre (Jueves)
+    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, 
+                                   start_time, end_time, capacity_total, max_per_school)
+    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00', 16, 4) 
+    RETURNING id INTO v_edition_jardineria_2t;
+    
+    -- Edición 3r Trimestre (Jueves)
+    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, 
+                                   start_time, end_time, capacity_total, max_per_school)
+    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00', 16, 4) 
+    RETURNING id INTO v_edition_jardineria_3t;
 
     -- TALLER: TECNOLAB MAKERS
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Tecnolab Makers', 'Tecnològic', v_prov_ismab) RETURNING id INTO v_workshop_id;
-
-    -- Edición 2n Trimestre (Jueves)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
+    INSERT INTO workshops (title, description, ambit, is_new, provider_id) VALUES 
+        ('Tecnolab Makers', 'Introducció a la fabricació digital i prototipatge', 
+         'Tecnològic', true, v_prov_ismab) 
+    RETURNING id INTO v_workshop_id;
     
-    -- Asignaciones Tecnolab 2n Trim
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS L''Alzina'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Sants'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Jaume Balmes'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'ESCOLA TEST'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 2, 'PUBLISHED');
-
-    -- Edición 3r Trimestre (Jueves)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-
-    -- Asignaciones Tecnolab 3r Trim
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Nou Barris'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS L''Alzina'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Bernat Metge'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 1, 'PUBLISHED');
-
+    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, 
+                                   start_time, end_time, capacity_total, max_per_school)
+    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00', 16, 4) 
+    RETURNING id INTO v_edition_tecnolab_2t;
 
     -- TALLER: SERIGRAFIA
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Serigrafia', 'Indústria-manufactura', v_prov_impulsem) RETURNING id INTO v_workshop_id;
-
-    -- Edición 2n Trimestre (Jueves)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-
-    -- Asignaciones Serigrafia 2n Trim
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Pau Claris'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Sants'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Lexia'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 1, 'PUBLISHED');
-
-
-    -- TALLER: TEATRE (SABER PARLAR EN PUBLIC)
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Saber parlar en públic - Tècniques bàsiques', 'Arts escèniques', v_prov_santpere) RETURNING id INTO v_workshop_id;
-
-    -- Edición 2n Trimestre (Jueves, Horario a determinar, ponemos 09:00 default)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-
-    -- Asignaciones Teatre 2n Trim
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 1, 'PUBLISHED');
-
-
-    -- TALLER: OFICIS GASTRONOMICS
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Oficis Gastronòmics', 'Oci i benestar-Restauració', v_prov_impulsem) RETURNING id INTO v_workshop_id;
-
-    -- Edición 2n Trimestre (Jueves 8:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '08:30', '11:30') RETURNING id INTO v_edition_id;
+    INSERT INTO workshops (title, description, ambit, is_new, provider_id) VALUES 
+        ('Serigrafia', 'Tècniques bàsiques d''estampació serigràfica', 
+         'Indústria-manufactura', false, v_prov_impulsem) 
+    RETURNING id INTO v_workshop_id;
     
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS L''Alzina'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Flos i Calcat'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 2, 'PUBLISHED');
+    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, 
+                                   start_time, end_time, capacity_total, max_per_school)
+    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00', 16, 4) 
+    RETURNING id INTO v_edition_serigrafia_2t;
 
-    -- Edición 2n Trimestre (Jueves 11:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '11:30', '14:30') RETURNING id INTO v_edition_id;
+    -- TALLER: CUINA COMUNITÀRIA
+    INSERT INTO workshops (title, description, ambit, is_new, provider_id) VALUES 
+        ('Cuina Comunitària', 'Aprèn a cuinar en equip i coneix la gastronomia local', 
+         'Hoteleria-Indústries alimentàries', false, v_prov_colomer) 
+    RETURNING id INTO v_workshop_id;
+    
+    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, 
+                                   start_time, end_time, capacity_total, max_per_school)
+    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '10:00', '13:00', 16, 4) 
+    RETURNING id INTO v_edition_cuina_2t;
 
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'CEE La Ginesta'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Fasià Sarrià'), 2, 'PUBLISHED');
-
-    -- Edición 3r Trimestre (MARTES 9:00)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'TUESDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Vila de Gràcia'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Jaume Balmes'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED');
-
-    -- Edición 3r Trimestre (Jueves - Turnos mezclados en tabla "Oficis Gastronòmics 2")
-    -- Turno 8:30
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '08:30', '11:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Sants'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE El Til·ler'), 3, 'PUBLISHED');
-
-    -- Turno 11:30
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '11:30', '14:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Parc de la Ciutadella'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Nou Barris'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Caterina Albert'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Fort Pius'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 1, 'PUBLISHED');
-
-
-    -- TALLER: MECANICA DE BICICLETA
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Mecànica bàsica de la bicicleta', 'Indústria 4.0', v_prov_biciclot) RETURNING id INTO v_workshop_id;
-
-    -- Edición 2n Trimestre (Jueves 8:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '08:30', '11:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Pau Claris'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Bernat Metge'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE El Til·ler'), 2, 'PUBLISHED');
-
-    -- Edición 2n Trimestre (Jueves 11:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '11:30', '14:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Faisà Eixample'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Baixeras'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Sants'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Fort Pius'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 3, 'PUBLISHED');
-
-    -- Edición 3r Trimestre (Jueves 9:00)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Montserrat'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED');
-
-
-    -- TALLER: OFICIS DE LA MAR
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Oficis de la mar', 'Medi ambient i sostenibilitat', v_prov_vela) RETURNING id INTO v_workshop_id;
-
-    -- Edición 2n Trimestre (Jueves)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Faisà Eixample'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Bernat Metge'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Eixample'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS El Joncar'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED');
-
+    -- TALLER: MECÀNICA DE BICICLETA
+    INSERT INTO workshops (title, description, ambit, is_new, provider_id) VALUES 
+        ('Mecànica de la Bicicleta', 'Aprèn a reparar i mantenir la teva bici', 
+         'Indústria 4.0', false, v_prov_biciclot) 
+    RETURNING id INTO v_workshop_id;
+    
+    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, 
+                                   start_time, end_time, capacity_total, max_per_school)
+    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'TUESDAY', '09:00', '12:00', 16, 4) 
+    RETURNING id INTO v_edition_bici_2t;
 
     -- TALLER: VELA
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Vela', 'Esportiu, oci i benestar', v_prov_vela) RETURNING id INTO v_workshop_id;
-
-    -- Edición 2n Trimestre (Jueves)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS El Joncar'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Rec Comtal'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS J. Serrat i Bonastre'), 3, 'PUBLISHED');
-
-    -- Edición 2n Trimestre (MARTES)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'TUESDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Jaume Balmes'), 4, 'PUBLISHED');
-
-
-    -- TALLER: PERRUQUERIA (2N TRIMESTRE)
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Perruqueria', 'Oci i benestar-Imatge personal', v_prov_colomer) RETURNING id INTO v_workshop_id;
-
-    -- Edición 2n Trimestre (Jueves 8:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '08:30', '11:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Flos i Calcat'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE El Til·ler'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 2, 'PUBLISHED');
-
-    -- Edición 2n Trimestre (Jueves 11:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '11:30', '14:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS L''Alzina'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Fort Pius'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Sants'), 4, 'PUBLISHED');
-
-
-    -- TALLER: ESTETICA (3R TRIMESTRE)
-    INSERT INTO workshops (title, ambit, provider_id) 
-    VALUES ('Estètica', 'Oci i benestar-Imatge personal', v_prov_colomer) RETURNING id INTO v_workshop_id;
-
-    -- Edición 3r Trimestre (Jueves 8:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '08:30', '11:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 5, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS El Joncar'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS L''Alzina'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 3, 'PUBLISHED');
-
-    -- Edición 3r Trimestre (Jueves 11:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '11:30', '14:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Baixeras'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Caterina Albert'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'CEE La Ginesta'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Sants'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE El Til·ler'), 3, 'PUBLISHED');
-
-
-    -- FEM CINE (2N TRIMESTRE)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Fem cine', 'Indústries creatives-social', v_prov_ugt) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Parc de la Ciutadella'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Vila de Gràcia'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Flos i Calcat'), 1, 'PUBLISHED');
-
-    -- CUINA COMUNITARIA (2N TRIMESTRE)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Cuina comunitària', 'Hoteleria-Indústries alimentàries', v_prov_sinai) RETURNING id INTO v_workshop_id;
+    INSERT INTO workshops (title, description, ambit, is_new, provider_id) VALUES 
+        ('Vela', 'Iniciació a la navegació a vela al Port Olímpic', 
+         'Esportiu, oci i benestar', true, v_prov_vela) 
+    RETURNING id INTO v_workshop_id;
     
-    -- Turno 9:00
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Pau Claris'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Montserrat'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Vila de Gràcia'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Eixample'), 1, 'PUBLISHED');
+    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, 
+                                   start_time, end_time, capacity_total, max_per_school)
+    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00', 16, 4);
+
+    RAISE NOTICE 'Talleres y ediciones creados';
+
+    -- ==================================================================
+    -- 7. CREAR ASIGNACIONES (ALLOCATIONS) - Simular después de algoritmo
+    -- ==================================================================
+    -- Baixeras -> Jardineria 2T (2 plazas)
+    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) 
+    VALUES (v_edition_jardineria_2t, v_school_baixeras, 2, 'PUBLISHED')
+    RETURNING id INTO v_alloc_baixeras_jardineria;
     
-    -- Turno 10:00
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '10:00', '13:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Flos i Calcat'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Nou Barris'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE El Til·ler'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 2, 'PUBLISHED');
-
-    -- ACOMPANYAMENT A LES PERSONES (2N TRIM)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Acompanyament a les persones', 'Sanitari-Serveis a la comuitat', v_prov_ferrantallada) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Nou Barris'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 3, 'PUBLISHED');
-
-    -- INSTAL·LACIONS DOMESTIQUES
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Instal·lacions domèstiques', 'Indústria avançada', v_prov_mundet) RETURNING id INTO v_workshop_id;
-
-    -- 2n Trimestre (Jueves 8:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '2N_TRIMESTRE', 'THURSDAY', '08:30', '11:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Ramon Llull'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Pau Claris'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Nou Barris'), 4, 'PUBLISHED');
+    -- Ciutadella -> Jardineria 2T (2 plazas)
+    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) 
+    VALUES (v_edition_jardineria_2t, v_school_ciutadella, 2, 'PUBLISHED')
+    RETURNING id INTO v_alloc_ciutadella_jardineria;
     
-    -- 3r Trimestre (Jueves 8:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '08:30', '11:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Puigverd'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Anna Gironella de Mundet'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Poeta Maragall'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS L''Alzina'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 1, 'PUBLISHED');
-
-    -- 3r Trimestre (MARTES 8:30)
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'TUESDAY', '08:30', '11:30') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Fort Pius'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Bernat Metge'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Jaume Balmes'), 3, 'PUBLISHED'), 
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Baixeras'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS J. Serrat i Bonastre'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'), 
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 4, 'PUBLISHED');
-
-    -- SABER QUÈ FER: METALL I ARTESANIA (3R TRIM)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Saber què fer: metall i artesania', 'Indústria-Artesania', v_prov_impulsem) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Fasià Sarrià'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Sants'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED');
-
-    -- INFORMATICA MIXTA (3R TRIM - MARTES)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Informàtica mixta', 'Digital', v_prov_escolatreball) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'TUESDAY', '10:00', '13:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Arts'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Flos i Calcat'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Fasià Sarrià'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Lexia'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE El Til·ler'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 3, 'PUBLISHED');
-
-    -- MOUTE EN BICI (3R TRIM)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Moute en bici', 'Esportiu-social', v_prov_biciclot) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Nou Barris'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Salvat Papasseit'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Parc de la Ciutadella'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Caterina Albert'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS L''Alzina'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 3, 'PUBLISHED');
-
-    -- FUSTA (3R TRIM)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Fusta', 'Indústria-manufactura', v_prov_impulsem) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Pau Claris'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Bernat Metge'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Sants'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 1, 'PUBLISHED');
-
-    -- PICASSO AL MANGA (3R TRIM)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Picasso al Manga', 'Artístic', v_prov_picasso) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Milà i Fontanals'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Salvador Espriu'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Coves d''en Cimany'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Fasià Sarrià'), 1, 'PUBLISHED'), 
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Tramuntana'), 1, 'PUBLISHED');
-
-    -- TMB (3R TRIM)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('TMB', 'Indústria 4.0 - Mobilitat', v_prov_tmb) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Montserrat'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS L''Alzina'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Consell de Cent'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Escola Lexia'), 4, 'PUBLISHED');
-
-    -- RETRATISTES DE LA CIUTAT (3R TRIM)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Retratistes de la ciutat', 'Digital-artístic-social', v_prov_abaoaqu) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'THURSDAY', '09:00', '12:00') RETURNING id INTO v_edition_id;
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'Reprèn Pro'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Joan Brossa'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Caterina Albert'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Mirades'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS L''Alzina'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Bernat Metge'), 4, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 1, 'PUBLISHED');
-
-    -- IMATGE PERSONAL (MARTES - 3R TRIM)
-    INSERT INTO workshops (title, ambit, provider_id) VALUES ('Imatge personal', 'Oci i benestar', v_prov_colomer) RETURNING id INTO v_workshop_id;
-    INSERT INTO workshop_editions (workshop_id, enrollment_period_id, term, day_of_week, start_time, end_time)
-    VALUES (v_workshop_id, v_period_id, '3R_TRIMESTRE', 'TUESDAY', '09:00', '12:00') RETURNING id INTO v_edition_id; -- Hora inferida
-    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Fort Pius'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Bernat Metge'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Trinitat Nova'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Angeleta Ferrer'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Jaume Balmes'), 2, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Maria Espinalt'), 3, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'IE Eixample'), 1, 'PUBLISHED'),
-        (v_edition_id, (SELECT id FROM schools WHERE name = 'INS Vila de Gràcia'), 4, 'PUBLISHED');
-
-    -- 5. INSERTAR ALUMNOS MOCK
-    INSERT INTO students (nombre_completo, email, curso, check_acuerdo_pedagogico, check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo, school_id) VALUES
-    ('Marc García', 'marc.garcia@exemple.cat', '3 ESO', 1, 1, 1, 1, (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
-    ('Laia Martí', 'laia.marti@exemple.cat', '4 ESO', 0, 1, 0, 2, (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
-    ('Pau López', 'pau.lopez@exemple.cat', '3 ESO', 1, 0, 1, 5, (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1));
-
-    -- 6. INSERTAR PROFESORES MOCK (Escola Baixeras)
-    INSERT INTO teachers (full_name, email, phone_number, school_id) VALUES
-    ('Jordi López', 'jordi.lopez@baixeras.cat', '611223344', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
-    ('Marta Vidal', 'marta.vidal@baixeras.cat', '622334455', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1)),
-    ('Albert Roca', 'albert.roca@baixeras.cat', '633445566', (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1));
-
-    -- 7. MOCK DATA FOR ESCOLA BAIXERAS (User: coord1@escola1.cat)
-    -- We already have 3 students inserted (Marc, Laia, Pau) for Escola Baixeras in section 5.
+    -- Verdaguer -> Tecnolab 2T (3 plazas)
+    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) 
+    VALUES (v_edition_tecnolab_2t, v_school_verdaguer, 3, 'PUBLISHED')
+    RETURNING id INTO v_alloc_verdaguer_tecnolab;
     
-    -- Link 2 students to 'Jardineria' (2n Trimestre) - Escola Baixeras has 2 seats there (see line 115)
+    -- Polvorí -> Serigrafia 2T (2 plazas)
+    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) 
+    VALUES (v_edition_serigrafia_2t, v_school_polvorin, 2, 'PUBLISHED')
+    RETURNING id INTO v_alloc_polvorin_serigrafia;
+    
+    -- Can Clos -> Cuina 2T (3 plazas)
+    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) 
+    VALUES (v_edition_cuina_2t, v_school_canclos, 3, 'PUBLISHED')
+    RETURNING id INTO v_alloc_canclos_cuina;
+    
+    -- Más asignaciones para otros centros
+    INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status) VALUES
+        (v_edition_jardineria_2t, v_school_verdaguer, 2, 'PUBLISHED'),
+        (v_edition_jardineria_2t, v_school_polvorin, 2, 'PUBLISHED'),
+        (v_edition_tecnolab_2t, v_school_baixeras, 2, 'PUBLISHED'),
+        (v_edition_tecnolab_2t, v_school_ciutadella, 2, 'PUBLISHED'),
+        (v_edition_serigrafia_2t, v_school_baixeras, 2, 'PUBLISHED'),
+        (v_edition_serigrafia_2t, v_school_canclos, 2, 'PUBLISHED'),
+        (v_edition_cuina_2t, v_school_baixeras, 2, 'PUBLISHED'),
+        (v_edition_bici_2t, v_school_verdaguer, 3, 'PUBLISHED'),
+        (v_edition_bici_2t, v_school_polvorin, 3, 'PUBLISHED');
+
+    RAISE NOTICE 'Asignaciones creadas';
+
+    -- ==================================================================
+    -- 8. VINCULAR ALUMNOS A ASIGNACIONES (Confirmación nominal)
+    -- ==================================================================
+    -- Baixeras -> Jardineria: Marc García y Laia Puig
     INSERT INTO allocation_students (allocation_id, student_id, status)
-    SELECT a.id, s.id, 'ACTIVE'
-    FROM allocations a
-    JOIN workshop_editions we ON a.workshop_edition_id = we.id
-    JOIN workshops w ON we.workshop_id = w.id
-    JOIN students s ON s.school_id = a.school_id
-    WHERE w.title = 'Jardineria' 
-    AND we.term = '2N_TRIMESTRE'
-    AND s.nombre_completo IN ('Marc García', 'Laia Martí')
-    AND a.school_id = (SELECT id FROM schools WHERE name = 'Escola Baixeras' LIMIT 1);
+    SELECT v_alloc_baixeras_jardineria, id, 'ACTIVE'
+    FROM students WHERE nombre_completo IN ('Marc García Martínez', 'Laia Puig Costa')
+    AND school_id = v_school_baixeras;
+    
+    -- Ciutadella -> Jardineria: Júlia Mas y Oriol Camps
+    INSERT INTO allocation_students (allocation_id, student_id, status)
+    SELECT v_alloc_ciutadella_jardineria, id, 'ACTIVE'
+    FROM students WHERE nombre_completo IN ('Júlia Mas Font', 'Oriol Camps Pla')
+    AND school_id = v_school_ciutadella;
+    
+    -- Verdaguer -> Tecnolab: Arnau, Martina, Jan
+    INSERT INTO allocation_students (allocation_id, student_id, status)
+    SELECT v_alloc_verdaguer_tecnolab, id, 'ACTIVE'
+    FROM students WHERE nombre_completo IN ('Arnau Ferrer Gil', 'Martina Sala Bosch', 'Jan Torres Gómez')
+    AND school_id = v_school_verdaguer;
+    
+    -- Polvorí -> Serigrafia: Eric y Clàudia
+    INSERT INTO allocation_students (allocation_id, student_id, status)
+    SELECT v_alloc_polvorin_serigrafia, id, 'ACTIVE'
+    FROM students WHERE nombre_completo IN ('Eric Muñoz López', 'Clàudia Ruiz Pérez')
+    AND school_id = v_school_polvorin;
+    
+    -- Can Clos -> Cuina: Noa, Leo, Emma
+    INSERT INTO allocation_students (allocation_id, student_id, status)
+    SELECT v_alloc_canclos_cuina, id, 'ACTIVE'
+    FROM students WHERE nombre_completo IN ('Noa Sánchez Riera', 'Leo Navarro Pons', 'Emma Giménez Blanco')
+    AND school_id = v_school_canclos;
 
-    -- Mock Documents for Visualization (Escola Baixeras)
-    -- Marc García: Complete
-    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
-    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/mock_auth_img.pdf', true
-    FROM students WHERE nombre_completo = 'Marc García';
+    RAISE NOTICE 'Alumnos vinculados a asignaciones';
 
-    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
-    SELECT id, 'AUTORITZACIO_SORTIDA', '/uploads/mock_auth_exit.pdf', true
-    FROM students WHERE nombre_completo = 'Marc García';
+    -- ==================================================================
+    -- 9. ASIGNAR PROFESORES REFERENTES A TALLERES
+    -- ==================================================================
+    INSERT INTO workshop_assigned_teachers (workshop_edition_id, teacher_id, is_main_referent) VALUES
+        (v_edition_jardineria_2t, v_teacher_baixeras_1, true),
+        (v_edition_jardineria_2t, v_teacher_ciutadella_1, false),
+        (v_edition_tecnolab_2t, v_teacher_verdaguer_1, true),
+        (v_edition_serigrafia_2t, v_teacher_polvorin_1, true),
+        (v_edition_cuina_2t, v_teacher_canclos_1, true),
+        (v_edition_cuina_2t, v_teacher_baixeras_2, false);
 
-    -- Laia Martí: Partial (Image only)
-    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
-    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/mock_auth_img.pdf', false
-    FROM students WHERE nombre_completo = 'Laia Martí';
+    RAISE NOTICE 'Profesores referentes asignados';
 
-    -- Mock Documents for Visualization
-    -- Test Student 1: Complete (Both docs)
-    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
-    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/mock_auth_img.pdf', true
-    FROM students WHERE nombre_completo = 'Test Student 1';
+    -- ==================================================================
+    -- 10. CREAR SESIONES DE TALLER (10 sesiones por edición)
+    -- ==================================================================
+    -- Jardineria 2T - 10 sesiones empezando el 9 de enero 2026 (jueves)
+    INSERT INTO workshop_sessions (workshop_edition_id, session_number, date, is_cancelled) VALUES
+        (v_edition_jardineria_2t, 1, '2026-01-15', false),
+        (v_edition_jardineria_2t, 2, '2026-01-22', false),
+        (v_edition_jardineria_2t, 3, '2026-01-29', false),
+        (v_edition_jardineria_2t, 4, '2026-02-05', false),
+        (v_edition_jardineria_2t, 5, '2026-02-12', false),
+        (v_edition_jardineria_2t, 6, '2026-02-19', false),
+        (v_edition_jardineria_2t, 7, '2026-02-26', false),
+        (v_edition_jardineria_2t, 8, '2026-03-05', false),
+        (v_edition_jardineria_2t, 9, '2026-03-12', false),
+        (v_edition_jardineria_2t, 10, '2026-03-19', false);
+    
+    -- Tecnolab 2T - 10 sesiones
+    INSERT INTO workshop_sessions (workshop_edition_id, session_number, date, is_cancelled) VALUES
+        (v_edition_tecnolab_2t, 1, '2026-01-15', false),
+        (v_edition_tecnolab_2t, 2, '2026-01-22', false),
+        (v_edition_tecnolab_2t, 3, '2026-01-29', false),
+        (v_edition_tecnolab_2t, 4, '2026-02-05', false),
+        (v_edition_tecnolab_2t, 5, '2026-02-12', false),
+        (v_edition_tecnolab_2t, 6, '2026-02-19', false),
+        (v_edition_tecnolab_2t, 7, '2026-02-26', false),
+        (v_edition_tecnolab_2t, 8, '2026-03-05', false),
+        (v_edition_tecnolab_2t, 9, '2026-03-12', false),
+        (v_edition_tecnolab_2t, 10, '2026-03-19', false);
+    
+    -- Serigrafia 2T - 10 sesiones
+    INSERT INTO workshop_sessions (workshop_edition_id, session_number, date, is_cancelled) VALUES
+        (v_edition_serigrafia_2t, 1, '2026-01-15', false),
+        (v_edition_serigrafia_2t, 2, '2026-01-22', false),
+        (v_edition_serigrafia_2t, 3, '2026-01-29', false),
+        (v_edition_serigrafia_2t, 4, '2026-02-05', false),
+        (v_edition_serigrafia_2t, 5, '2026-02-12', false),
+        (v_edition_serigrafia_2t, 6, '2026-02-19', false),
+        (v_edition_serigrafia_2t, 7, '2026-02-26', false),
+        (v_edition_serigrafia_2t, 8, '2026-03-05', false),
+        (v_edition_serigrafia_2t, 9, '2026-03-12', false),
+        (v_edition_serigrafia_2t, 10, '2026-03-19', false);
+    
+    -- Cuina 2T - 10 sesiones
+    INSERT INTO workshop_sessions (workshop_edition_id, session_number, date, is_cancelled) VALUES
+        (v_edition_cuina_2t, 1, '2026-01-15', false),
+        (v_edition_cuina_2t, 2, '2026-01-22', false),
+        (v_edition_cuina_2t, 3, '2026-01-29', false),
+        (v_edition_cuina_2t, 4, '2026-02-05', false),
+        (v_edition_cuina_2t, 5, '2026-02-12', false),
+        (v_edition_cuina_2t, 6, '2026-02-19', false),
+        (v_edition_cuina_2t, 7, '2026-02-26', false),
+        (v_edition_cuina_2t, 8, '2026-03-05', false),
+        (v_edition_cuina_2t, 9, '2026-03-12', false),
+        (v_edition_cuina_2t, 10, '2026-03-19', false);
+    
+    -- Bici 2T - 10 sesiones (martes)
+    INSERT INTO workshop_sessions (workshop_edition_id, session_number, date, is_cancelled) VALUES
+        (v_edition_bici_2t, 1, '2026-01-13', false),
+        (v_edition_bici_2t, 2, '2026-01-20', false),
+        (v_edition_bici_2t, 3, '2026-01-27', false),
+        (v_edition_bici_2t, 4, '2026-02-03', false),
+        (v_edition_bici_2t, 5, '2026-02-10', false),
+        (v_edition_bici_2t, 6, '2026-02-17', false),
+        (v_edition_bici_2t, 7, '2026-02-24', false),
+        (v_edition_bici_2t, 8, '2026-03-03', false),
+        (v_edition_bici_2t, 9, '2026-03-10', false),
+        (v_edition_bici_2t, 10, '2026-03-17', false);
 
-    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
-    SELECT id, 'AUTORITZACIO_SORTIDA', '/uploads/mock_auth_exit.pdf', true
-    FROM students WHERE nombre_completo = 'Test Student 1';
+    RAISE NOTICE 'Sesiones de taller creadas';
 
-    -- Test Student 2: Partial (Only Image)
+    -- ==================================================================
+    -- 11. INSERTAR ALGUNOS REGISTROS DE ASISTENCIA (Para testing)
+    -- ==================================================================
+    -- Obtener primera sesión de Jardineria
+    SELECT id INTO v_session_id FROM workshop_sessions 
+    WHERE workshop_edition_id = v_edition_jardineria_2t AND session_number = 1;
+    
+    -- Registrar asistencia de la primera sesión
+    FOR v_student_id IN 
+        SELECT s.id FROM students s
+        JOIN allocation_students als ON s.id = als.student_id
+        WHERE als.allocation_id = v_alloc_baixeras_jardineria
+    LOOP
+        INSERT INTO attendance_logs (session_id, student_id, status, observation)
+        VALUES (v_session_id, v_student_id, 'PRESENT', 'Primera sessió - Assistència correcta');
+    END LOOP;
+    
+    FOR v_student_id IN 
+        SELECT s.id FROM students s
+        JOIN allocation_students als ON s.id = als.student_id
+        WHERE als.allocation_id = v_alloc_ciutadella_jardineria
+    LOOP
+        INSERT INTO attendance_logs (session_id, student_id, status, observation)
+        VALUES (v_session_id, v_student_id, 'PRESENT', NULL);
+    END LOOP;
+
+    RAISE NOTICE 'Registros de asistencia creados';
+
+    -- ==================================================================
+    -- 12. CREAR DOCUMENTOS DE EJEMPLO (Autorizaciones)
+    -- ==================================================================
+    -- Documentos para Marc García
     INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
-    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/mock_auth_img.pdf', false
-    FROM students WHERE nombre_completo = 'Test Student 2';
+    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/documents/marc_garcia_img.pdf', true
+    FROM students WHERE nombre_completo = 'Marc García Martínez';
+    
+    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
+    SELECT id, 'AUTORITZACIO_SORTIDA', '/uploads/documents/marc_garcia_sortida.pdf', true
+    FROM students WHERE nombre_completo = 'Marc García Martínez';
+    
+    -- Documentos para Laia Puig (parcial)
+    INSERT INTO student_documents (student_id, document_type, file_url, is_verified)
+    SELECT id, 'AUTORITZACIO_IMATGE', '/uploads/documents/laia_puig_img.pdf', false
+    FROM students WHERE nombre_completo = 'Laia Puig Costa';
+
+    RAISE NOTICE 'Documentos de ejemplo creados';
+
+    -- ==================================================================
+    -- 13. CREAR SOLICITUDES DE EJEMPLO (Para testing fase SOLICITUDES)
+    -- ==================================================================
+    -- Solicitud de Baixeras (ya enviada)
+    INSERT INTO requests (enrollment_period_id, school_id, is_first_time_participation, 
+                         available_for_tuesdays, teacher_comments, submitted_at, status)
+    VALUES (v_period_id, v_school_baixeras, false, true, 
+            'Interesados especialmente en talleres tecnológicos y medioambientales',
+            NOW(), 'SUBMITTED');
+    
+    -- Solicitud de Ciutadella (borrador)
+    INSERT INTO requests (enrollment_period_id, school_id, is_first_time_participation, 
+                         available_for_tuesdays, status)
+    VALUES (v_period_id, v_school_ciutadella, true, false, 'DRAFT');
+
+    RAISE NOTICE 'Solicitudes de ejemplo creadas';
+
+    RAISE NOTICE '====================================';
+    RAISE NOTICE 'DATOS DE TESTING INSERTADOS CORRECTAMENTE';
+    RAISE NOTICE '====================================';
+    RAISE NOTICE 'USUARIOS DISPONIBLES:';
+    RAISE NOTICE '  - admin@enginy.cat (ADMIN)';
+    RAISE NOTICE '  - coord1@baixeras.cat (CENTER_COORD)';
+    RAISE NOTICE '  - coord2@ciutadella.cat (CENTER_COORD)';
+    RAISE NOTICE '  - coord3@verdaguer.cat (CENTER_COORD)';
+    RAISE NOTICE '  - coord4@polvorin.cat (CENTER_COORD)';
+    RAISE NOTICE '  - coord5@canclos.cat (CENTER_COORD)';
+    RAISE NOTICE 'PASSWORD: admin123 (para todos)';
+    RAISE NOTICE '====================================';
+    RAISE NOTICE 'FASE ACTUAL: SOLICITUDES';
+    RAISE NOTICE 'Para cambiar fase: PUT /api/enrollment/periods/:id/advance-phase';
+    RAISE NOTICE '====================================';
 
 END $$;
+
+-- ==================================================================
+-- CONSULTAS DE VERIFICACIÓN (ejecutar después para comprobar datos)
+-- ==================================================================
+-- SELECT 'Períodos' as tabla, count(*) as total FROM enrollment_periods;
+-- SELECT 'Usuarios' as tabla, count(*) as total FROM users;
+-- SELECT 'Centros' as tabla, count(*) as total FROM schools;
+-- SELECT 'Profesores' as tabla, count(*) as total FROM teachers;
+-- SELECT 'Alumnos' as tabla, count(*) as total FROM students;
+-- SELECT 'Talleres' as tabla, count(*) as total FROM workshops;
+-- SELECT 'Ediciones' as tabla, count(*) as total FROM workshop_editions;
+-- SELECT 'Asignaciones' as tabla, count(*) as total FROM allocations;
+-- SELECT 'Sesiones' as tabla, count(*) as total FROM workshop_sessions;
