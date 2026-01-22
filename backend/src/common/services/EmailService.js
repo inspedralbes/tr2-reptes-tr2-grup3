@@ -22,6 +22,25 @@ class EmailService {
         }
 
         this.transporter = nodemailer.createTransport(transportOptions);
+
+        this.transporter.verify((error, success) => {
+            if (error) {
+                console.error("❌ SMTP Connection Error:", error);
+                console.error("Config used:", {
+                    host: transportOptions.host,
+                    port: transportOptions.port,
+                    user: transportOptions.auth?.user,
+                    pass: transportOptions.auth?.pass ? "****" : "missing"
+                });
+            } else {
+                console.log("✅ SMTP Server is ready to take our messages");
+                console.log("Config used:", {
+                    host: transportOptions.host,
+                    port: transportOptions.port,
+                    user: transportOptions.auth?.user
+                });
+            }
+        });
     }
 
     /**
@@ -57,7 +76,7 @@ class EmailService {
 
         try {
             const info = await this.transporter.sendMail({
-                from: '"Enginy Admin" <noreply@enginy.daw.inspedralbes.cat>',
+                from: `"Enginy Admin" <${process.env.SMTP_USER}>`,
                 to: email,
                 subject,
                 html,
