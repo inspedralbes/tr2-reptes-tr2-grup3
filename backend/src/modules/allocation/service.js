@@ -327,21 +327,20 @@ const tryAssignRequest = (request, editionState, schoolState, isSecondPass = fal
 /**
  * ASIGNACIÓN DE PROFESORES ACOMPAÑANTES
  * 
- * LÓGICA: Cada centro tiene hasta 2 profesores acompañantes.
+ * LÓGICA: Cada taller donde el centro tiene alumnos DEBE tener un profesor acompañante.
  * Cada profesor va a UN taller diferente donde hay alumnos de su centro.
- * El profesor acompaña a los alumnos y pasa lista junto al profesor del taller.
+ * El profesor acompaña a los alumnos y pasa lista.
  * 
  * Criterios:
- * 1. Solo asignar profesor a taller donde el centro tiene alumnos
- * 2. Cada profesor va a un taller diferente
+ * 1. Solo asignar profesor a taller donde el centro tiene alumnos asignados
+ * 2. Cada profesor va a un taller diferente (no puede estar en 2 a la vez)
  * 3. Respetar las preferencias declaradas por el centro
- * 4. Máximo 1 profesor acompañante por taller/centro
+ * 4. TODOS los talleres con alumnos deben tener un profesor acompañante
  */
 const assignTeacherReferents = async (client, periodId, allocations) => {
   const assignments = [];
 
   // 1. Obtener los profesores acompañantes declarados por cada centro
-  // Estos vienen del campo request_teachers en la solicitud
   const requestsQuery = await client.query(
     `SELECT 
       r.id as request_id,
@@ -387,7 +386,6 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
     const schoolWorkshops = workshopsBySchool[schoolId] || [];
     
     if (schoolWorkshops.length === 0) {
-      // Centro sin talleres asignados, no necesita profesores acompañantes
       continue;
     }
 
@@ -409,16 +407,14 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
     const assignedTeacherIds = new Set();
     const assignedWorkshopIds = new Set();
 
-    // 4.1 Primero, intentar asignar según preferencias declaradas
+    // 4.1 Primero, asignar según preferencias declaradas
     for (const pref of schoolPreferences) {
       // Solo asignar si el centro tiene alumnos en ese taller
       if (!schoolWorkshops.includes(pref.workshop_edition_id)) continue;
-      // No repetir profesor
+      // No repetir profesor (un profe no puede estar en 2 talleres simultáneos)
       if (assignedTeacherIds.has(pref.teacher_id)) continue;
-      // No repetir taller (cada profe a un taller diferente)
+      // No repetir taller (cada taller tiene 1 profe acompañante del centro)
       if (assignedWorkshopIds.has(pref.workshop_edition_id)) continue;
-      // Máximo 2 profesores por centro
-      if (assignedTeacherIds.size >= 2) break;
 
       await client.query(
         `INSERT INTO workshop_assigned_teachers (workshop_edition_id, teacher_id, is_main_referent)
@@ -438,41 +434,94 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
       assignedTeacherIds.add(pref.teacher_id);
       assignedWorkshopIds.add(pref.workshop_edition_id);
       
-      console.log(`👨‍🏫 ${pref.teacher_name} (${schoolName}) → Taller ${pref.workshop_edition_id} com a acompanyant`);
+      console.log(`👨‍🏫 ${pref.teacher_name} (${schoolName}) → Taller preferit com a acompanyant`);
     }
 
-    // 4.2 Si quedan talleres sin profesor asignado, asignar profesores disponibles
-    if (assignedTeacherIds.size < 2 && schoolTeachers.length > 0) {
-      const remainingWorkshops = schoolWorkshops.filter(w => !assignedWorkshopIds.has(w));
-      const remainingTeachers = schoolTeachers.filter(t => !assignedTeacherIds.has(t.id));
+    // 4.2 Asignar profesores restantes a talleres sin profesor
+    const remainingWorkshops = schoolWorkshops.filter(w => !assignedWorkshopIds.has(w));
+    const remainingTeachers = schoolTeachers.filter(t => !assignedTeacherIds.has(t.id));
 
-      for (let i = 0; i < Math.min(remainingTeachers.length, remainingWorkshops.length); i++) {
-        if (assignedTeacherIds.size >= 2) break;
+    for (let i = 0; i < remainingWorkshops.length; i++) {
+      const workshopId = remainingWorkshops[i];
+      const teacher = remainingTeachers[i];
+      
+      if (teacher && teacher.id) {
+        await client.query(
+          `INSERT INTO workshop_assigned_teachers (workshop_edition_id, teacher_id, is_main_referent)
+           VALUES ($1, $2, false)
+           ON CONFLICT (workshop_edition_id, teacher_id) DO NOTHING`,
+          [workshopId, teacher.id]
+        );
+
+        assignments.push({
+          workshop_edition_id: workshopId,
+          teacher_id: teacher.id,
+          teacher_name: teacher.name || teacher.full_name || 'Professor',
+          school_name: schoolName,
+          role: 'Acompanyant'
+        });
+
+        assignedTeacherIds.add(teacher.id);
+        assignedWorkshopIds.add(workshopId);
         
-        const teacher = remainingTeachers[i];
-        const workshopId = remainingWorkshops[i];
+        console.log(`👨‍🏫 ${teacher.name || teacher.full_name} (${schoolName}) → Taller auto-assignat com a acompanyant`);
+      } else {
+        console.log(`⚠️ ${schoolName}: Taller sense professor disponible (falten professors declarats)`);
+      }
+    }
+  }
 
-        if (teacher.id) {
-          await client.query(
-            `INSERT INTO workshop_assigned_teachers (workshop_edition_id, teacher_id, is_main_referent)
-             VALUES ($1, $2, false)
-             ON CONFLICT (workshop_edition_id, teacher_id) DO NOTHING`,
-            [workshopId, teacher.id]
-          );
-
-          assignments.push({
-            workshop_edition_id: workshopId,
-            teacher_id: teacher.id,
-            teacher_name: teacher.name || teacher.full_name || 'Professor',
-            school_name: schoolName,
-            role: 'Acompanyant'
-          });
-
-          assignedTeacherIds.add(teacher.id);
-          assignedWorkshopIds.add(workshopId);
-          
-          console.log(`👨‍🏫 ${teacher.name || 'Professor'} (${schoolName}) → Taller ${workshopId} com a acompanyant (auto-assignat)`);
-        }
+  // 5. VERIFICAR que cada edición de taller con alumnos tenga al menos 1 profesor
+  // Obtener todas las ediciones que tienen asignaciones (alumnos)
+  const editionsWithStudents = [...new Set(allocations.map(a => a.workshop_edition_id))];
+  
+  for (const editionId of editionsWithStudents) {
+    // Verificar si ya tiene profesor asignado
+    const hasTeacher = await client.query(
+      `SELECT COUNT(*) as count FROM workshop_assigned_teachers WHERE workshop_edition_id = $1`,
+      [editionId]
+    );
+    
+    if (parseInt(hasTeacher.rows[0].count) === 0) {
+      // No tiene profesor! Buscar uno de los centros que tienen alumnos en este taller
+      const schoolsInEdition = allocations
+        .filter(a => a.workshop_edition_id === editionId)
+        .map(a => a.school_id);
+      
+      // Buscar un profesor disponible de cualquiera de estos centros
+      const availableTeacher = await client.query(
+        `SELECT t.id, t.full_name, t.school_id, s.name as school_name
+         FROM teachers t
+         JOIN schools s ON t.school_id = s.id
+         WHERE t.school_id = ANY($1)
+         AND t.id NOT IN (
+           SELECT teacher_id FROM workshop_assigned_teachers 
+           WHERE workshop_edition_id = $2
+         )
+         LIMIT 1`,
+        [schoolsInEdition, editionId]
+      );
+      
+      if (availableTeacher.rows.length > 0) {
+        const teacher = availableTeacher.rows[0];
+        await client.query(
+          `INSERT INTO workshop_assigned_teachers (workshop_edition_id, teacher_id, is_main_referent)
+           VALUES ($1, $2, false)
+           ON CONFLICT (workshop_edition_id, teacher_id) DO NOTHING`,
+          [editionId, teacher.id]
+        );
+        
+        assignments.push({
+          workshop_edition_id: editionId,
+          teacher_id: teacher.id,
+          teacher_name: teacher.full_name,
+          school_name: teacher.school_name,
+          role: 'Acompanyant (auto-assignat per cobertura)'
+        });
+        
+        console.log(`✅ Cobertura: ${teacher.full_name} (${teacher.school_name}) assignat a taller sense professor`);
+      } else {
+        console.log(`❌ ALERTA: Taller ${editionId} sense professor i sense candidats disponibles!`);
       }
     }
   }

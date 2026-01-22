@@ -4,6 +4,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ==========================================
 -- ENUMS (Tipos de datos fijos)
 -- ==========================================
+-- ADMIN: Administrador del sistema
+-- CENTER_COORD: Coordinador de centro educativo
+-- NOTA: Los profesores acompañantes están en tabla 'teachers' (no en users)
+--       Al hacer login obtienen rol virtual 'TEACHER' para el frontend
 CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CENTER_COORD');
 CREATE TYPE period_status_enum AS ENUM ('DRAFT', 'ACTIVE', 'CLOSED');
 CREATE TYPE period_phase_enum AS ENUM (
@@ -76,13 +80,15 @@ CREATE TABLE schools (
     ownership_type VARCHAR(100)
 );
 
--- Nueva tabla para Profesores (Sin login)
+-- Tabla para Profesores Acompañantes del Centro
+-- Estos profesores van con los alumnos a los talleres y pueden pasar lista
 CREATE TABLE teachers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
     full_name VARCHAR(255) NOT NULL,
-    email VARCHAR(255),
+    email VARCHAR(255) UNIQUE, -- Email único para login
     phone_number VARCHAR(50),
+    password_hash VARCHAR(255), -- Para poder hacer login y pasar lista
     created_at TIMESTAMP DEFAULT NOW()
 );
 

@@ -3,13 +3,15 @@
  *
  * Rutes per a la gestió d'alumnes i documents
  * US #16: Pujada de documentació (Checklist)
+ * 
+ * NOTA: La gestión de alumnos está disponible SIEMPRE (sin restricción de fase)
+ * Los centros deben poder registrar alumnos antes de hacer solicitudes
  */
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { authenticate } = require("../../common/middleware/authMiddleware");
-const { requirePhase } = require("../../common/middleware/phaseMiddleware");
 const {
   listStudents,
   getStudentById,
@@ -64,48 +66,47 @@ const upload = multer({
   },
 });
 
-// Gestió d'alumnes disponible en PUBLICACION (inscripcions) i EJECUCION
-const canManageStudents = requirePhase(['PUBLICACION', 'EJECUCION'], { adminBypass: true });
+// La gestión de alumnos está disponible SIEMPRE (los centros registran alumnos antes de hacer solicitudes)
+// No hay restricción de fase para crear/editar alumnos
 
 // ==========================================
 // RUTES D'ALUMNES
 // ==========================================
 
-// GET - Llistar alumnes (visible després de publicació)
-router.get("/", authenticate, canManageStudents, listStudents);
+// GET - Llistar alumnes (disponible siempre para coordinadores)
+router.get("/", authenticate, listStudents);
 
 // GET - Obtenir alumne per ID
-router.get("/:id", authenticate, canManageStudents, getStudentById);
+router.get("/:id", authenticate, getStudentById);
 
-// POST - Crear alumne (només després de publicació)
-router.post("/", authenticate, canManageStudents, createStudent);
+// POST - Crear alumne (disponible siempre - se registran antes de hacer solicitudes)
+router.post("/", authenticate, createStudent);
 
 // PUT - Actualitzar alumne
-router.put("/:id", authenticate, canManageStudents, updateStudent);
+router.put("/:id", authenticate, updateStudent);
 
 // ==========================================
 // RUTES DE DOCUMENTS
 // ==========================================
 
 // GET - Llistar documents d'un alumne
-router.get("/:id/documents", authenticate, canManageStudents, listDocuments);
+router.get("/:id/documents", authenticate, listDocuments);
 
 // POST - Pujar document per a un alumne (US #16)
 router.post(
   "/:id/documents",
   authenticate,
-  canManageStudents,
   upload.single("document"),
   uploadDocument
 );
 
 // PUT - Verificar document (només ADMIN)
-router.put("/documents/:docId/verify", authenticate, canManageStudents, verifyDocument);
+router.put("/documents/:docId/verify", authenticate, verifyDocument);
 
 // DELETE - Eliminar document
-router.delete("/documents/:docId", authenticate, canManageStudents, deleteDocument);
+router.delete("/documents/:docId", authenticate, deleteDocument);
 
 // DELETE - Eliminar alumne (US #95 CRUD)
-router.delete("/:id", authenticate, canManageStudents, deleteStudent);
+router.delete("/:id", authenticate, deleteStudent);
 
 module.exports = router;

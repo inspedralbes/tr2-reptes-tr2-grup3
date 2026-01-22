@@ -119,7 +119,7 @@ const runAllocation = async (req, res) => {
 
 /**
  * GET /api/allocations?period_id=xxx&school_id=yyy
- * Lista las asignaciones realizadas
+ * Lista las asignaciones realizadas con profesores asignados
  * Filtros opcionales: period_id, school_id, status
  */
 const listAllocations = async (req, res) => {
@@ -129,8 +129,36 @@ const listAllocations = async (req, res) => {
     let query = `
       SELECT a.id, a.workshop_edition_id, a.school_id, a.assigned_seats, a.status,
              s.name as school_name,
+             s.code as school_code,
              w.title as workshop_title,
-             we.day_of_week, we.start_time, we.end_time
+             we.day_of_week, we.start_time, we.end_time,
+             we.enrollment_period_id,
+             (
+               SELECT json_agg(json_build_object(
+                 'id', t.id,
+                 'name', t.full_name,
+                 'email', t.email,
+                 'school_id', t.school_id,
+                 'school_name', ts.name
+               ))
+               FROM workshop_assigned_teachers wat
+               JOIN teachers t ON wat.teacher_id = t.id
+               JOIN schools ts ON t.school_id = ts.id
+               WHERE wat.workshop_edition_id = a.workshop_edition_id
+                 AND t.school_id = a.school_id
+             ) as assigned_teachers,
+             (
+               SELECT json_agg(json_build_object(
+                 'id', t.id,
+                 'name', t.full_name,
+                 'school_id', t.school_id,
+                 'school_name', ts.name
+               ))
+               FROM workshop_assigned_teachers wat
+               JOIN teachers t ON wat.teacher_id = t.id
+               JOIN schools ts ON t.school_id = ts.id
+               WHERE wat.workshop_edition_id = a.workshop_edition_id
+             ) as all_workshop_teachers
       FROM allocations a
       JOIN schools s ON a.school_id = s.id
       JOIN workshop_editions we ON a.workshop_edition_id = we.id
