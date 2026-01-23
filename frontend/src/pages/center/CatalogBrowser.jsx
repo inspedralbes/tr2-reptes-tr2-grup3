@@ -84,7 +84,7 @@ const CatalogBrowser = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Cabecera Tipo StudentManager */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -269,7 +269,7 @@ const CatalogBrowser = () => {
                 Sessions i Capacitat
               </h4>
               {selectedWorkshop.editions &&
-              selectedWorkshop.editions.length > 0 ? (
+                selectedWorkshop.editions.length > 0 ? (
                 <div className="grid gap-3">
                   {selectedWorkshop.editions.map((edition, idx) => (
                     <div
@@ -279,11 +279,10 @@ const CatalogBrowser = () => {
                       <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${
-                              edition.day_of_week === "TUESDAY"
+                            className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${edition.day_of_week === "TUESDAY"
                                 ? "bg-blue-100 text-blue-700"
                                 : "bg-purple-100 text-purple-700"
-                            }`}
+                              }`}
                           >
                             {edition.day_of_week === "TUESDAY"
                               ? "Dimarts"

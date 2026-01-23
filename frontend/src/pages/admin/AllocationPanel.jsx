@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import {
   Play, BarChart, CheckCircle, Calendar, AlertCircle, Users, Clock, Cpu,
   Edit3, Save, X, RefreshCw, Eye, EyeOff, ChevronDown, ChevronRight,
-  School, AlertTriangle, Check, Trash2, Plus, Minus, FileCheck, 
+  School, AlertTriangle, Check, Trash2, Plus, Minus, FileCheck,
   UserCheck, GraduationCap, Building, Filter, ArrowUpDown, Layers,
   MapPin, Phone, Mail, User, BookOpen
 } from "lucide-react";
+import toast from "react-hot-toast";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import {
   listEnrollmentPeriods,
   getDemandSummary,
@@ -37,11 +39,20 @@ const AllocationPanel = () => {
   const [editingAllocation, setEditingAllocation] = useState(null);
   const [expandedItems, setExpandedItems] = useState({});
   const [publishingAll, setPublishingAll] = useState(false);
-  
+
   // Nuevos estados para vistas y filtros
   const [viewMode, setViewMode] = useState('workshop'); // 'workshop' | 'center'
   const [sortBy, setSortBy] = useState('name'); // 'name' | 'students' | 'status'
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'PROVISIONAL' | 'PUBLISHED'
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "warning"
+  });
 
   useEffect(() => {
     loadPeriods();
@@ -65,7 +76,7 @@ const AllocationPanel = () => {
         setSelectedPeriod(data[0].id);
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al cargar períodos: ' + err.message });
+      setMessage({ type: 'error', text: 'Error carregant períodes: ' + err.message });
     }
   };
 
@@ -87,7 +98,7 @@ const AllocationPanel = () => {
     }
   };
 
-  const handleRunAllocation = async () => {
+  const handleRunAllocation = () => {
     const period = periods.find(p => p.id === selectedPeriod);
     if (period && period.current_phase !== 'ASIGNACION') {
       setMessage({
@@ -96,29 +107,37 @@ const AllocationPanel = () => {
       });
       return;
     }
-    
-    const hasExisting = allocations.length > 0;
-    const confirmMsg = hasExisting 
-      ? "Ja existeixen assignacions. Vols eliminar-les i tornar a executar l'algoritme?" 
-      : "Executar l'algoritme d'assignació? Això processarà totes les sol·licituds.";
-    
-    if (!window.confirm(confirmMsg)) return;
 
-    try {
-      setLoading(true);
-      setMessage(null);
-      const result = await runAllocation(selectedPeriod, hasExisting);
-      setMessage({
-        type: 'success',
-        text: `✅ Assignació completada: ${result.allocations_created || 0} assignacions creades, ${result.total_students_allocated || 0} alumnes assignats`
-      });
-      loadAllocations();
-      setActiveTab('places');
-    } catch (err) {
-      setMessage({ type: 'error', text: "Error en assignació: " + (err.response?.data?.error || err.message) });
-    } finally {
-      setLoading(false);
-    }
+    const hasExisting = allocations.length > 0;
+    const confirmMsg = hasExisting
+      ? "Ja existeixen assignacions. Vols eliminar-les i tornar a executar l'algoritme?"
+      : "Executar l'algoritme d'assignació? Això processarà totes les sol·licituds.";
+
+    setConfirmModal({
+      isOpen: true,
+      title: "Executar algoritme",
+      message: confirmMsg,
+      variant: hasExisting ? "danger" : "warning",
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          setMessage(null);
+          const result = await runAllocation(selectedPeriod, hasExisting);
+          toast.success(`Assignació completada: ${result.allocations_created || 0} assignacions creades`);
+          setMessage({
+            type: 'success',
+            text: `✅ Assignació completada: ${result.allocations_created || 0} assignacions creades, ${result.total_students_allocated || 0} alumnes assignats`
+          });
+          loadAllocations();
+          setActiveTab('places');
+        } catch (err) {
+          toast.error("Error en assignació: " + (err.response?.data?.error || err.message));
+        } finally {
+          setLoading(false);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleEditAllocation = (allocation) => {
@@ -130,7 +149,7 @@ const AllocationPanel = () => {
 
   const handleSaveEdit = async () => {
     if (!editingAllocation) return;
-    
+
     try {
       await updateAllocation(editingAllocation.id, {
         assigned_seats: editingAllocation.new_seats
@@ -139,25 +158,31 @@ const AllocationPanel = () => {
       setEditingAllocation(null);
       loadAllocations();
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al actualitzar: ' + err.message });
+      setMessage({ type: 'error', text: 'Error actualitzant: ' + err.message });
     }
   };
 
-  const handlePublishAll = async () => {
-    if (!window.confirm("Aprovar totes les assignacions provisionals? Els centres no les veuran fins que canviïs a la fase PUBLICACIÓ.")) {
-      return;
-    }
-    
-    try {
-      setPublishingAll(true);
-      await publishAllocations(selectedPeriod);
-      setMessage({ type: 'success', text: '✅ Totes les assignacions han estat aprovades (PUBLISHED)' });
-      loadAllocations();
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Error al publicar: ' + err.message });
-    } finally {
-      setPublishingAll(false);
-    }
+  const handlePublishAll = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Aprovar assignacions",
+      message: "Aprovar totes les assignacions provisionals? Els centres no les veuran fins que canviïs a la fase PUBLICACIÓ.",
+      variant: "warning",
+      onConfirm: async () => {
+        try {
+          setPublishingAll(true);
+          await publishAllocations(selectedPeriod);
+          toast.success("Totes les assignacions han estat aprovades");
+          setMessage({ type: 'success', text: '✅ Totes les assignacions han estat aprovades (PUBLISHED)' });
+          loadAllocations();
+        } catch (err) {
+          toast.error('Error publicant: ' + err.message);
+        } finally {
+          setPublishingAll(false);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const toggleExpand = (key) => {
@@ -169,12 +194,12 @@ const AllocationPanel = () => {
     const grouped = allocations.reduce((acc, alloc) => {
       const key = alloc.workshop_edition_id;
       if (!acc[key]) {
-        acc[key] = { 
+        acc[key] = {
           id: key,
-          title: alloc.workshop_title, 
+          title: alloc.workshop_title,
           day: alloc.day_of_week,
           term: alloc.term || '2N_TRIMESTRE',
-          schools: [], 
+          schools: [],
           totalStudents: 0,
           provisionalCount: 0,
           publishedCount: 0,
@@ -187,7 +212,7 @@ const AllocationPanel = () => {
       if (alloc.status === 'PUBLISHED') acc[key].publishedCount++;
       return acc;
     }, {});
-    
+
     return Object.values(grouped).sort((a, b) => {
       if (sortBy === 'name') return a.title.localeCompare(b.title);
       if (sortBy === 'students') return b.totalStudents - a.totalStudents;
@@ -200,11 +225,11 @@ const AllocationPanel = () => {
     const grouped = allocations.reduce((acc, alloc) => {
       const key = alloc.school_id;
       if (!acc[key]) {
-        acc[key] = { 
+        acc[key] = {
           id: key,
           name: alloc.school_name,
           code: alloc.school_code,
-          workshops: [], 
+          workshops: [],
           totalStudents: 0,
           provisionalCount: 0,
           publishedCount: 0
@@ -216,7 +241,7 @@ const AllocationPanel = () => {
       if (alloc.status === 'PUBLISHED') acc[key].publishedCount++;
       return acc;
     }, {});
-    
+
     return Object.values(grouped).sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'students') return b.totalStudents - a.totalStudents;
@@ -253,19 +278,19 @@ const AllocationPanel = () => {
   const publishedCount = allocations.filter(a => a.status === 'PUBLISHED').length;
   const uniqueSchools = new Set(allocations.map(a => a.school_id)).size;
   const uniqueWorkshops = new Set(allocations.map(a => a.workshop_edition_id)).size;
-  
+
   const selectedPeriodData = periods.find(p => p.id === selectedPeriod);
   const currentPhase = selectedPeriodData?.current_phase;
   const canRunAllocation = currentPhase === 'ASIGNACION';
   const canPublish = canRunAllocation && provisionalCount > 0;
 
   // Filtrar asignaciones según estado
-  const filteredAllocations = filterStatus === 'all' 
-    ? allocations 
+  const filteredAllocations = filterStatus === 'all'
+    ? allocations
     : allocations.filter(a => a.status === filterStatus);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -279,7 +304,7 @@ const AllocationPanel = () => {
             Gestiona les assignacions de places i professors als tallers
           </p>
         </div>
-        
+
         {/* Selector de período */}
         <div className="flex items-center gap-3">
           <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-2 shadow-sm">
@@ -295,18 +320,17 @@ const AllocationPanel = () => {
             </select>
           </div>
           {currentPhase && (
-            <span className={`px-3 py-2 rounded-xl text-xs font-semibold ${
-              currentPhase === 'ASIGNACION' 
-                ? 'bg-amber-100 text-amber-700 border border-amber-200' 
-                : 'bg-gray-100 text-gray-600 border border-gray-200'
-            }`}>
+            <span className={`px-3 py-2 rounded-xl text-xs font-semibold ${currentPhase === 'ASIGNACION'
+              ? 'bg-amber-100 text-amber-700 border border-amber-200'
+              : 'bg-gray-100 text-gray-600 border border-gray-200'
+              }`}>
               {currentPhase}
             </span>
           )}
         </div>
       </div>
 
-      {/* Workflow Progress */}
+      {/* Workflow Progress + Info Banner */}
       <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl p-4 border border-slate-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -317,13 +341,11 @@ const AllocationPanel = () => {
             ].map((item, idx) => (
               <div key={item.step} className="flex items-center gap-2">
                 {idx > 0 && <div className={`w-12 h-0.5 ${item.active || item.done ? 'bg-blue-300' : 'bg-gray-200'}`} />}
-                <div className={`flex items-center gap-2 ${
-                  item.done ? 'text-green-600' : item.active ? 'text-blue-600' : 'text-gray-400'
-                }`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    item.done ? 'bg-green-500 text-white' : 
-                    item.active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
+                <div className={`flex items-center gap-2 ${item.done ? 'text-green-600' : item.active ? 'text-blue-600' : 'text-gray-400'
                   }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${item.done ? 'bg-green-500 text-white' :
+                    item.active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
+                    }`}>
                     {item.done ? <Check size={16} /> : <item.icon size={16} />}
                   </div>
                   <span className="text-sm font-medium hidden sm:block">{item.label}</span>
@@ -331,10 +353,10 @@ const AllocationPanel = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="flex gap-2">
-            <Button 
-              onClick={handleRunAllocation} 
+            <Button
+              onClick={handleRunAllocation}
               disabled={loading || !canRunAllocation}
               size="sm"
               className={!canRunAllocation ? 'opacity-50' : ''}
@@ -342,9 +364,9 @@ const AllocationPanel = () => {
               {loading ? <RefreshCw size={16} className="animate-spin mr-1" /> : <Play size={16} className="mr-1" />}
               Executar
             </Button>
-            
+
             {canPublish && (
-              <Button 
+              <Button
                 onClick={handlePublishAll}
                 disabled={publishingAll}
                 size="sm"
@@ -357,6 +379,33 @@ const AllocationPanel = () => {
           </div>
         </div>
       </div>
+
+      {/* Banner informativo para admin cuando hay asignaciones */}
+      {currentPhase === 'ASIGNACION' && allocations.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-4">
+          <div className="p-2 bg-blue-100 rounded-lg shrink-0">
+            <Edit3 className="text-blue-600" size={20} />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-semibold text-blue-900">Pots modificar les assignacions</h4>
+            <p className="text-sm text-blue-700 mt-1">
+              L'algoritme ha generat les assignacions automàtiques. Ara pots revisar-les i ajustar manualment 
+              el nombre de places de cada centre fent clic al botó <Edit3 size={14} className="inline mx-1" /> d'edició.
+              Un cop estiguis conforme, aprova les assignacions per passar a la fase de publicació.
+            </p>
+            <div className="flex gap-4 mt-3 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-amber-400"></span>
+                <span className="text-blue-800"><strong>Provisional:</strong> pendent de revisió</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-green-400"></span>
+                <span className="text-blue-800"><strong>Aprovat:</strong> confirmat per publicar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -412,11 +461,10 @@ const AllocationPanel = () => {
 
       {/* Message */}
       {message && (
-        <div className={`p-4 rounded-xl flex items-center gap-3 ${
-          message.type === 'error'
-            ? 'bg-red-50 text-red-800 border border-red-200'
-            : 'bg-green-50 text-green-800 border border-green-200'
-        }`}>
+        <div className={`p-4 rounded-xl flex items-center gap-3 ${message.type === 'error'
+          ? 'bg-red-50 text-red-800 border border-red-200'
+          : 'bg-green-50 text-green-800 border border-green-200'
+          }`}>
           {message.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
           <span className="font-medium flex-1">{message.text}</span>
           <button onClick={() => setMessage(null)} className="p-1 hover:bg-white/50 rounded">
@@ -436,20 +484,18 @@ const AllocationPanel = () => {
           ].map(tab => (
             <button
               key={tab.key}
-              className={`flex-1 py-3.5 text-sm font-medium text-center transition-all relative ${
-                activeTab === tab.key
-                  ? 'text-blue-600 bg-white'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-              }`}
+              className={`flex-1 py-3.5 text-sm font-medium text-center transition-all relative ${activeTab === tab.key
+                ? 'text-blue-600 bg-white'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
               onClick={() => setActiveTab(tab.key)}
             >
               <div className="flex items-center justify-center gap-2">
                 <tab.icon size={18} />
                 <span className="hidden sm:inline">{tab.label}</span>
                 {tab.count > 0 && (
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${
-                    tab.highlight ? "bg-amber-100 text-amber-700" : "bg-gray-200 text-gray-600"
-                  }`}>
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${tab.highlight ? "bg-amber-100 text-amber-700" : "bg-gray-200 text-gray-600"
+                    }`}>
                     {tab.count}
                   </span>
                 )}
@@ -461,7 +507,7 @@ const AllocationPanel = () => {
 
         {/* Tab Content */}
         <div className="p-5">
-          
+
           {/* ========== TAB: DEMANDA ========== */}
           {activeTab === 'demand' && (
             <div className="space-y-4">
@@ -484,14 +530,13 @@ const AllocationPanel = () => {
                 <div className="space-y-3">
                   {groupDemandByWorkshop().map((workshop, idx) => (
                     <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
-                      <div 
+                      <div
                         className="p-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-between"
                         onClick={() => toggleExpand(`demand_${workshop.title}`)}
                       >
                         <div className="flex items-center gap-4">
-                          <div className={`p-2 rounded-lg ${
-                            workshop.day === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
-                          }`}>
+                          <div className={`p-2 rounded-lg ${workshop.day === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+                            }`}>
                             <BookOpen size={20} />
                           </div>
                           <div>
@@ -506,15 +551,14 @@ const AllocationPanel = () => {
                             <div className="text-xl font-bold text-gray-800">{workshop.totalRequested}</div>
                             <div className="text-xs text-gray-500">alumnes sol·licitats</div>
                           </div>
-                          <div className={`p-2 rounded-lg ${
-                            workshop.totalRequested > 16 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-                          }`}>
+                          <div className={`p-2 rounded-lg ${workshop.totalRequested > 16 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                            }`}>
                             {workshop.totalRequested > 16 ? <AlertTriangle size={20} /> : <Check size={20} />}
                           </div>
                           {expandedItems[`demand_${workshop.title}`] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                         </div>
                       </div>
-                      
+
                       {expandedItems[`demand_${workshop.title}`] && (
                         <div className="p-4 border-t border-gray-100 bg-white">
                           <div className="grid gap-2">
@@ -558,23 +602,21 @@ const AllocationPanel = () => {
                   <Users className="text-blue-500" size={20} />
                   Assignacions de Places
                 </h3>
-                
+
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Vista */}
                   <div className="flex bg-gray-100 rounded-lg p-1">
                     <button
                       onClick={() => setViewMode('workshop')}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                        viewMode === 'workshop' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
-                      }`}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'workshop' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                        }`}
                     >
                       <Layers size={14} className="inline mr-1" /> Per Taller
                     </button>
                     <button
                       onClick={() => setViewMode('center')}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                        viewMode === 'center' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
-                      }`}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'center' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                        }`}
                     >
                       <Building size={14} className="inline mr-1" /> Per Centre
                     </button>
@@ -621,35 +663,31 @@ const AllocationPanel = () => {
                     const isExpanded = expandedItems[workshop.id] !== false;
                     const hasProvisional = workshop.provisionalCount > 0;
                     const occupancy = Math.round((workshop.totalStudents / workshop.capacity) * 100);
-                    
+
                     return (
-                      <div 
-                        key={workshop.id} 
-                        className={`border rounded-xl overflow-hidden transition-all ${
-                          hasProvisional ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200'
-                        }`}
-                      >
-                        <div 
-                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                            hasProvisional ? 'bg-amber-50/50' : 'bg-gray-50'
+                      <div
+                        key={workshop.id}
+                        className={`border rounded-xl overflow-hidden transition-all ${hasProvisional ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200'
                           }`}
+                      >
+                        <div
+                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${hasProvisional ? 'bg-amber-50/50' : 'bg-gray-50'
+                            }`}
                           onClick={() => toggleExpand(workshop.id)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              <div className={`p-2.5 rounded-xl ${
-                                workshop.day === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
-                              }`}>
+                              <div className={`p-2.5 rounded-xl ${workshop.day === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+                                }`}>
                                 <BookOpen size={22} />
                               </div>
                               <div>
                                 <h4 className="font-semibold text-gray-900">{workshop.title}</h4>
                                 <div className="flex items-center gap-3 mt-1">
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                    workshop.day === 'TUESDAY' 
-                                      ? 'bg-blue-100 text-blue-700' 
-                                      : 'bg-purple-100 text-purple-700'
-                                  }`}>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${workshop.day === 'TUESDAY'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-purple-100 text-purple-700'
+                                    }`}>
                                     {workshop.day === 'TUESDAY' ? 'Dimarts' : 'Dijous'}
                                   </span>
                                   <span className="text-xs text-gray-500">
@@ -658,132 +696,127 @@ const AllocationPanel = () => {
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-4">
                               {/* Barra de ocupación */}
                               <div className="hidden md:block w-32">
                                 <div className="flex justify-between text-xs mb-1">
                                   <span className="text-gray-500">Ocupació</span>
-                                  <span className={`font-semibold ${
-                                    occupancy > 100 ? 'text-red-600' : occupancy > 80 ? 'text-amber-600' : 'text-green-600'
-                                  }`}>{occupancy}%</span>
+                                  <span className={`font-semibold ${occupancy > 100 ? 'text-red-600' : occupancy > 80 ? 'text-amber-600' : 'text-green-600'
+                                    }`}>{occupancy}%</span>
                                 </div>
                                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                  <div 
-                                    className={`h-full rounded-full transition-all ${
-                                      occupancy > 100 ? 'bg-red-500' : occupancy > 80 ? 'bg-amber-500' : 'bg-green-500'
-                                    }`}
+                                  <div
+                                    className={`h-full rounded-full transition-all ${occupancy > 100 ? 'bg-red-500' : occupancy > 80 ? 'bg-amber-500' : 'bg-green-500'
+                                      }`}
                                     style={{ width: `${Math.min(occupancy, 100)}%` }}
                                   />
                                 </div>
                               </div>
-                              
+
                               <div className="text-right">
                                 <div className="text-xl font-bold text-gray-800">{workshop.totalStudents}/{workshop.capacity}</div>
                                 <div className="text-xs text-gray-500">places</div>
                               </div>
-                              
+
                               {hasProvisional && (
                                 <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
                                   {workshop.provisionalCount} pendent
                                 </span>
                               )}
-                              
+
                               {isExpanded ? <ChevronDown size={20} className="text-gray-400" /> : <ChevronRight size={20} className="text-gray-400" />}
                             </div>
                           </div>
                         </div>
-                        
+
                         {isExpanded && (
                           <div className="p-4 border-t border-gray-100 bg-white">
                             <div className="space-y-2">
                               {workshop.schools
                                 .filter(s => filterStatus === 'all' || s.status === filterStatus)
                                 .map((school) => (
-                                <div 
-                                  key={school.id}
-                                  className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                                    editingAllocation?.id === school.id 
-                                      ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200' 
+                                  <div
+                                    key={school.id}
+                                    className={`flex items-center justify-between p-3 rounded-xl border transition-all ${editingAllocation?.id === school.id
+                                      ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
                                       : school.status === 'PROVISIONAL'
                                         ? 'border-amber-200 bg-amber-50 hover:border-amber-300'
                                         : 'border-green-200 bg-green-50 hover:border-green-300'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${
-                                      school.status === 'PROVISIONAL' ? 'bg-amber-100' : 'bg-green-100'
-                                    }`}>
-                                      <School className={school.status === 'PROVISIONAL' ? 'text-amber-600' : 'text-green-600'} size={18} />
-                                    </div>
-                                    <div>
-                                      <span className="font-medium text-gray-800">{school.school_name}</span>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                          school.status === 'PROVISIONAL' 
+                                      }`}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className={`p-2 rounded-lg ${school.status === 'PROVISIONAL' ? 'bg-amber-100' : 'bg-green-100'
+                                        }`}>
+                                        <School className={school.status === 'PROVISIONAL' ? 'text-amber-600' : 'text-green-600'} size={18} />
+                                      </div>
+                                      <div>
+                                        <span className="font-medium text-gray-800">{school.school_name}</span>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${school.status === 'PROVISIONAL'
                                             ? 'bg-amber-100 text-amber-700'
                                             : 'bg-green-100 text-green-700'
-                                        }`}>
-                                          {school.status === 'PROVISIONAL' ? '🟡 Provisional' : '✅ Aprovat'}
-                                        </span>
-                                        {/* Mostrar profesor acompañante */}
-                                        {school.assigned_teachers && school.assigned_teachers.length > 0 && (
-                                          <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex items-center gap-1">
-                                            <User size={10} />
-                                            {school.assigned_teachers[0].name}
+                                            }`}>
+                                            {school.status === 'PROVISIONAL' ? '🟡 Provisional' : '✅ Aprovat'}
                                           </span>
-                                        )}
+                                          {/* Mostrar profesor acompañante */}
+                                          {school.assigned_teachers && school.assigned_teachers.length > 0 && (
+                                            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex items-center gap-1">
+                                              <User size={10} />
+                                              {school.assigned_teachers[0].name}
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-3">
-                                    {editingAllocation?.id === school.id ? (
-                                      <div className="flex items-center gap-2">
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); setEditingAllocation(prev => ({...prev, new_seats: Math.max(1, prev.new_seats - 1)})); }}
-                                          className="p-1.5 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                                        >
-                                          <Minus size={14} />
-                                        </button>
-                                        <span className="w-10 text-center font-bold text-xl">{editingAllocation.new_seats}</span>
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); setEditingAllocation(prev => ({...prev, new_seats: Math.min(4, prev.new_seats + 1)})); }}
-                                          className="p-1.5 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                                        >
-                                          <Plus size={14} />
-                                        </button>
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
-                                          className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors ml-2"
-                                        >
-                                          <Save size={16} />
-                                        </button>
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); setEditingAllocation(null); }}
-                                          className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
-                                        >
-                                          <X size={16} />
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        <div className="text-center">
-                                          <span className="text-2xl font-bold text-gray-800">{school.assigned_seats}</span>
-                                          <span className="text-sm text-gray-500 ml-1">alumnes</span>
+
+                                    <div className="flex items-center gap-3">
+                                      {editingAllocation?.id === school.id ? (
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingAllocation(prev => ({ ...prev, new_seats: Math.max(1, prev.new_seats - 1) })); }}
+                                            className="p-1.5 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                                          >
+                                            <Minus size={14} />
+                                          </button>
+                                          <span className="w-10 text-center font-bold text-xl">{editingAllocation.new_seats}</span>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingAllocation(prev => ({ ...prev, new_seats: Math.min(4, prev.new_seats + 1) })); }}
+                                            className="p-1.5 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                                          >
+                                            <Plus size={14} />
+                                          </button>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
+                                            className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors ml-2"
+                                          >
+                                            <Save size={16} />
+                                          </button>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingAllocation(null); }}
+                                            className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
+                                          >
+                                            <X size={16} />
+                                          </button>
                                         </div>
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); handleEditAllocation(school); }}
-                                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                          title="Editar places"
-                                        >
-                                          <Edit3 size={18} />
-                                        </button>
-                                      </>
-                                    )}
+                                      ) : (
+                                        <>
+                                          <div className="text-center">
+                                            <span className="text-2xl font-bold text-gray-800">{school.assigned_seats}</span>
+                                            <span className="text-sm text-gray-500 ml-1">alumnes</span>
+                                          </div>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleEditAllocation(school); }}
+                                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            title="Editar places"
+                                          >
+                                            <Edit3 size={18} />
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
                             </div>
                           </div>
                         )}
@@ -800,25 +833,22 @@ const AllocationPanel = () => {
                       .filter(w => w.assigned_teachers && w.assigned_teachers.length > 0)
                       .map(w => w.assigned_teachers[0])
                       .filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
-                    
+
                     return (
-                      <div 
-                        key={center.id} 
-                        className={`border rounded-xl overflow-hidden transition-all ${
-                          hasProvisional ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200'
-                        }`}
-                      >
-                        <div 
-                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                            hasProvisional ? 'bg-amber-50/50' : 'bg-gray-50'
+                      <div
+                        key={center.id}
+                        className={`border rounded-xl overflow-hidden transition-all ${hasProvisional ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200'
                           }`}
+                      >
+                        <div
+                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${hasProvisional ? 'bg-amber-50/50' : 'bg-gray-50'
+                            }`}
                           onClick={() => toggleExpand(center.id)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              <div className={`p-2.5 rounded-xl ${
-                                hasProvisional ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'
-                              }`}>
+                              <div className={`p-2.5 rounded-xl ${hasProvisional ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'
+                                }`}>
                                 <Building size={22} />
                               </div>
                               <div>
@@ -840,15 +870,15 @@ const AllocationPanel = () => {
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-4">
                               {/* Avatares de profesores */}
                               {centerTeachers.length > 0 && (
                                 <div className="hidden md:flex items-center gap-2">
                                   <div className="flex -space-x-2">
                                     {centerTeachers.slice(0, 3).map((teacher, idx) => (
-                                      <div 
-                                        key={teacher.id} 
+                                      <div
+                                        key={teacher.id}
                                         className="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold"
                                         title={teacher.name}
                                       >
@@ -858,23 +888,23 @@ const AllocationPanel = () => {
                                   </div>
                                 </div>
                               )}
-                              
+
                               <div className="text-right">
                                 <div className="text-xl font-bold text-gray-800">{center.totalStudents}</div>
                                 <div className="text-xs text-gray-500">alumnes total</div>
                               </div>
-                              
+
                               {hasProvisional && (
                                 <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
                                   {center.provisionalCount} pendent
                                 </span>
                               )}
-                              
+
                               {isExpanded ? <ChevronDown size={20} className="text-gray-400" /> : <ChevronRight size={20} className="text-gray-400" />}
                             </div>
                           </div>
                         </div>
-                        
+
                         {isExpanded && (
                           <div className="p-4 border-t border-gray-100 bg-white">
                             {/* Resumen de profesores del centro */}
@@ -885,12 +915,12 @@ const AllocationPanel = () => {
                                 </h5>
                                 <div className="flex flex-wrap gap-2">
                                   {centerTeachers.map((teacher) => {
-                                    const teacherWorkshop = center.workshops.find(w => 
+                                    const teacherWorkshop = center.workshops.find(w =>
                                       w.assigned_teachers && w.assigned_teachers.some(t => t.id === teacher.id)
                                     );
                                     return (
-                                      <div 
-                                        key={teacher.id} 
+                                      <div
+                                        key={teacher.id}
                                         className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-indigo-200"
                                       >
                                         <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold">
@@ -908,103 +938,99 @@ const AllocationPanel = () => {
                                 </div>
                               </div>
                             )}
-                            
+
                             <h5 className="text-sm font-semibold text-gray-700 mb-2">Tallers assignats</h5>
                             <div className="space-y-2">
                               {center.workshops
                                 .filter(w => filterStatus === 'all' || w.status === filterStatus)
                                 .map((workshop) => (
-                                <div 
-                                  key={workshop.id}
-                                  className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                                    editingAllocation?.id === workshop.id 
-                                      ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200' 
+                                  <div
+                                    key={workshop.id}
+                                    className={`flex items-center justify-between p-3 rounded-xl border transition-all ${editingAllocation?.id === workshop.id
+                                      ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
                                       : workshop.status === 'PROVISIONAL'
                                         ? 'border-amber-200 bg-amber-50 hover:border-amber-300'
                                         : 'border-green-200 bg-green-50 hover:border-green-300'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${
-                                      workshop.day_of_week === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
-                                    }`}>
-                                      <BookOpen size={18} />
-                                    </div>
-                                    <div>
-                                      <span className="font-medium text-gray-800">{workshop.workshop_title}</span>
-                                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                          workshop.day_of_week === 'TUESDAY' 
-                                            ? 'bg-blue-100 text-blue-700' 
-                                            : 'bg-purple-100 text-purple-700'
+                                      }`}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className={`p-2 rounded-lg ${workshop.day_of_week === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
                                         }`}>
-                                          {workshop.day_of_week === 'TUESDAY' ? 'Dimarts' : 'Dijous'}
-                                        </span>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                          workshop.status === 'PROVISIONAL' 
+                                        <BookOpen size={18} />
+                                      </div>
+                                      <div>
+                                        <span className="font-medium text-gray-800">{workshop.workshop_title}</span>
+                                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                          <span className={`text-xs px-2 py-0.5 rounded-full ${workshop.day_of_week === 'TUESDAY'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-purple-100 text-purple-700'
+                                            }`}>
+                                            {workshop.day_of_week === 'TUESDAY' ? 'Dimarts' : 'Dijous'}
+                                          </span>
+                                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${workshop.status === 'PROVISIONAL'
                                             ? 'bg-amber-100 text-amber-700'
                                             : 'bg-green-100 text-green-700'
-                                        }`}>
-                                          {workshop.status === 'PROVISIONAL' ? '🟡 Provisional' : '✅ Aprovat'}
-                                        </span>
-                                        {/* Profesor asignado al taller */}
-                                        {workshop.assigned_teachers && workshop.assigned_teachers.length > 0 && (
-                                          <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex items-center gap-1">
-                                            <User size={10} />
-                                            {workshop.assigned_teachers[0].name}
+                                            }`}>
+                                            {workshop.status === 'PROVISIONAL' ? '🟡 Provisional' : '✅ Aprovat'}
                                           </span>
-                                        )}
+                                          {/* Profesor asignado al taller */}
+                                          {workshop.assigned_teachers && workshop.assigned_teachers.length > 0 && (
+                                            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex items-center gap-1">
+                                              <User size={10} />
+                                              {workshop.assigned_teachers[0].name}
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-3">
-                                    {editingAllocation?.id === workshop.id ? (
-                                      <div className="flex items-center gap-2">
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); setEditingAllocation(prev => ({...prev, new_seats: Math.max(1, prev.new_seats - 1)})); }}
-                                          className="p-1.5 bg-gray-200 rounded-lg hover:bg-gray-300"
-                                        >
-                                          <Minus size={14} />
-                                        </button>
-                                        <span className="w-10 text-center font-bold text-xl">{editingAllocation.new_seats}</span>
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); setEditingAllocation(prev => ({...prev, new_seats: Math.min(4, prev.new_seats + 1)})); }}
-                                          className="p-1.5 bg-gray-200 rounded-lg hover:bg-gray-300"
-                                        >
-                                          <Plus size={14} />
-                                        </button>
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
-                                          className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-2"
-                                        >
-                                          <Save size={16} />
-                                        </button>
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); setEditingAllocation(null); }}
-                                          className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300"
-                                        >
-                                          <X size={16} />
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        <div className="text-center">
-                                          <span className="text-2xl font-bold text-gray-800">{workshop.assigned_seats}</span>
-                                          <span className="text-sm text-gray-500 ml-1">alumnes</span>
+
+                                    <div className="flex items-center gap-3">
+                                      {editingAllocation?.id === workshop.id ? (
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingAllocation(prev => ({ ...prev, new_seats: Math.max(1, prev.new_seats - 1) })); }}
+                                            className="p-1.5 bg-gray-200 rounded-lg hover:bg-gray-300"
+                                          >
+                                            <Minus size={14} />
+                                          </button>
+                                          <span className="w-10 text-center font-bold text-xl">{editingAllocation.new_seats}</span>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingAllocation(prev => ({ ...prev, new_seats: Math.min(4, prev.new_seats + 1) })); }}
+                                            className="p-1.5 bg-gray-200 rounded-lg hover:bg-gray-300"
+                                          >
+                                            <Plus size={14} />
+                                          </button>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
+                                            className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-2"
+                                          >
+                                            <Save size={16} />
+                                          </button>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); setEditingAllocation(null); }}
+                                            className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300"
+                                          >
+                                            <X size={16} />
+                                          </button>
                                         </div>
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); handleEditAllocation(workshop); }}
-                                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                                          title="Editar places"
-                                        >
-                                          <Edit3 size={18} />
-                                        </button>
-                                      </>
-                                    )}
+                                      ) : (
+                                        <>
+                                          <div className="text-center">
+                                            <span className="text-2xl font-bold text-gray-800">{workshop.assigned_seats}</span>
+                                            <span className="text-sm text-gray-500 ml-1">alumnes</span>
+                                          </div>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleEditAllocation(workshop); }}
+                                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                            title="Editar places"
+                                          >
+                                            <Edit3 size={18} />
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
                             </div>
                           </div>
                         )}
@@ -1024,22 +1050,20 @@ const AllocationPanel = () => {
                   <GraduationCap className="text-indigo-500" size={20} />
                   Assignació de Professors als Tallers
                 </h3>
-                
+
                 {/* Vista toggle */}
                 <div className="flex bg-gray-100 rounded-lg p-1">
                   <button
                     onClick={() => setViewMode('workshop')}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      viewMode === 'workshop' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
-                    }`}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'workshop' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                      }`}
                   >
                     <Layers size={14} className="inline mr-1" /> Per Taller
                   </button>
                   <button
                     onClick={() => setViewMode('center')}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      viewMode === 'center' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
-                    }`}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'center' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                      }`}
                   >
                     <Building size={14} className="inline mr-1" /> Per Centre
                   </button>
@@ -1063,11 +1087,11 @@ const AllocationPanel = () => {
                     a.all_workshop_teachers.forEach(t => editionTeachers[a.workshop_edition_id].teachers.add(t.id));
                   }
                 });
-                
+
                 const uniqueEditions = Object.keys(editionTeachers);
                 const editionsWithTeachers = uniqueEditions.filter(id => editionTeachers[id].teachers.size > 0).length;
                 const editionsWithoutTeachers = uniqueEditions.filter(id => editionTeachers[id].teachers.size === 0).length;
-                
+
                 // Contar profesores únicos
                 const allUniqueTeacherIds = new Set();
                 allocations.forEach(a => {
@@ -1075,7 +1099,7 @@ const AllocationPanel = () => {
                     a.all_workshop_teachers.forEach(t => allUniqueTeacherIds.add(t.id));
                   }
                 });
-                
+
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
@@ -1127,17 +1151,16 @@ const AllocationPanel = () => {
                       .filter(s => s.all_workshop_teachers)
                       .flatMap(s => s.all_workshop_teachers)
                       .filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
-                    
+
                     return (
                       <div key={workshop.id} className="border border-gray-200 rounded-xl overflow-hidden">
-                        <div 
+                        <div
                           className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 cursor-pointer hover:from-indigo-100 hover:to-purple-100 transition-colors flex items-center justify-between"
                           onClick={() => toggleExpand(`teacher_${workshop.id}`)}
                         >
                           <div className="flex items-center gap-4">
-                            <div className={`p-2.5 rounded-xl ${
-                              workshop.day === 'TUESDAY' ? 'bg-blue-500 text-white' : 'bg-purple-500 text-white'
-                            }`}>
+                            <div className={`p-2.5 rounded-xl ${workshop.day === 'TUESDAY' ? 'bg-blue-500 text-white' : 'bg-purple-500 text-white'
+                              }`}>
                               <BookOpen size={22} />
                             </div>
                             <div>
@@ -1147,15 +1170,15 @@ const AllocationPanel = () => {
                               </p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-4">
                             {/* Avatares de profesores del taller */}
                             {allWorkshopTeachers.length > 0 ? (
                               <div className="flex items-center gap-2">
                                 <div className="flex -space-x-2">
                                   {allWorkshopTeachers.slice(0, 4).map((teacher) => (
-                                    <div 
-                                      key={teacher.id} 
+                                    <div
+                                      key={teacher.id}
                                       className="w-9 h-9 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm"
                                       title={`${teacher.name} (${teacher.school_name})`}
                                     >
@@ -1180,16 +1203,15 @@ const AllocationPanel = () => {
                             {isExpanded ? <ChevronDown size={20} className="text-gray-400" /> : <ChevronRight size={20} className="text-gray-400" />}
                           </div>
                         </div>
-                        
+
                         {isExpanded && (
                           <div className="p-4 border-t border-gray-100 bg-white">
                             <div className="space-y-3">
                               {workshop.schools.map((school, idx) => {
                                 const teacher = school.assigned_teachers?.[0];
                                 return (
-                                  <div key={idx} className={`flex items-center justify-between p-4 rounded-xl border ${
-                                    teacher ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'
-                                  }`}>
+                                  <div key={idx} className={`flex items-center justify-between p-4 rounded-xl border ${teacher ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'
+                                    }`}>
                                     <div className="flex items-center gap-4">
                                       <div className={`p-2 rounded-lg ${teacher ? 'bg-green-100' : 'bg-amber-100'}`}>
                                         <Building className={teacher ? 'text-green-600' : 'text-amber-600'} size={20} />
@@ -1199,7 +1221,7 @@ const AllocationPanel = () => {
                                         <div className="text-sm text-gray-500">{school.assigned_seats} alumnes assignats</div>
                                       </div>
                                     </div>
-                                    
+
                                     {teacher ? (
                                       <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-green-200">
                                         <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
@@ -1239,20 +1261,18 @@ const AllocationPanel = () => {
                       .filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
                     const workshopsWithTeacher = center.workshops.filter(w => w.assigned_teachers?.length > 0).length;
                     const workshopsWithoutTeacher = center.workshops.filter(w => !w.assigned_teachers?.length).length;
-                    
+
                     return (
                       <div key={center.id} className="border border-gray-200 rounded-xl overflow-hidden">
-                        <div 
-                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                            workshopsWithoutTeacher > 0 ? 'bg-amber-50' : 'bg-green-50'
-                          }`}
+                        <div
+                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${workshopsWithoutTeacher > 0 ? 'bg-amber-50' : 'bg-green-50'
+                            }`}
                           onClick={() => toggleExpand(`teacher_center_${center.id}`)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              <div className={`p-2.5 rounded-xl ${
-                                workshopsWithoutTeacher > 0 ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'
-                              }`}>
+                              <div className={`p-2.5 rounded-xl ${workshopsWithoutTeacher > 0 ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'
+                                }`}>
                                 <Building size={22} />
                               </div>
                               <div>
@@ -1267,15 +1287,15 @@ const AllocationPanel = () => {
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-4">
                               {/* Avatares y lista de profesores */}
                               {centerTeachers.length > 0 ? (
                                 <div className="hidden md:flex items-center gap-2">
                                   <div className="flex -space-x-2">
                                     {centerTeachers.slice(0, 3).map((teacher) => (
-                                      <div 
-                                        key={teacher.id} 
+                                      <div
+                                        key={teacher.id}
                                         className="w-9 h-9 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm"
                                         title={teacher.name}
                                       >
@@ -1290,48 +1310,44 @@ const AllocationPanel = () => {
                               ) : (
                                 <span className="text-sm text-amber-600">Sense professors</span>
                               )}
-                              
-                              <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                                workshopsWithoutTeacher === 0 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-amber-100 text-amber-700'
-                              }`}>
+
+                              <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${workshopsWithoutTeacher === 0
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-amber-100 text-amber-700'
+                                }`}>
                                 {workshopsWithTeacher}/{center.workshops.length} coberts
                               </div>
-                              
+
                               {isExpanded ? <ChevronDown size={20} className="text-gray-400" /> : <ChevronRight size={20} className="text-gray-400" />}
                             </div>
                           </div>
                         </div>
-                        
+
                         {isExpanded && (
                           <div className="p-4 border-t border-gray-100 bg-white">
                             <div className="space-y-3">
                               {center.workshops.map((workshop, idx) => {
                                 const teacher = workshop.assigned_teachers?.[0];
                                 return (
-                                  <div key={idx} className={`flex items-center justify-between p-4 rounded-xl border ${
-                                    teacher ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'
-                                  }`}>
+                                  <div key={idx} className={`flex items-center justify-between p-4 rounded-xl border ${teacher ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'
+                                    }`}>
                                     <div className="flex items-center gap-4">
-                                      <div className={`p-2 rounded-lg ${
-                                        workshop.day_of_week === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
-                                      }`}>
+                                      <div className={`p-2 rounded-lg ${workshop.day_of_week === 'TUESDAY' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+                                        }`}>
                                         <BookOpen size={20} />
                                       </div>
                                       <div>
                                         <span className="font-semibold text-gray-800">{workshop.workshop_title}</span>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                            workshop.day_of_week === 'TUESDAY' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                                          }`}>
+                                          <span className={`text-xs px-2 py-0.5 rounded-full ${workshop.day_of_week === 'TUESDAY' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                            }`}>
                                             {workshop.day_of_week === 'TUESDAY' ? 'Dimarts' : 'Dijous'}
                                           </span>
                                           <span className="text-xs text-gray-500">{workshop.assigned_seats} alumnes</span>
                                         </div>
                                       </div>
                                     </div>
-                                    
+
                                     {teacher ? (
                                       <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-green-200">
                                         <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
@@ -1365,6 +1381,18 @@ const AllocationPanel = () => {
           )}
         </div>
       </div>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Confirmar"
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

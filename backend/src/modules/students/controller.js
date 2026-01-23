@@ -18,7 +18,8 @@ const listStudents = async (req, res) => {
 
   try {
     let query = `
-      SELECT s.id, s.email, s.nombre_completo, s.curso, s.check_acuerdo_pedagogico, s.check_autorizacion_movilidad, s.check_derechos_imagen, s.nivel_absentismo, s.school_id, s.created_at,
+      SELECT s.id, s.email, s.nombre_completo, s.curso, s.check_acuerdo_pedagogico, s.check_autorizacion_movilidad, s.check_derechos_imagen, s.nivel_absentismo, s.school_id, s.created_at, s.photo_url,
+             s.tutor_nombre, s.tutor_email, s.tutor_telefono,
              sc.name as school_name
       FROM students s
       LEFT JOIN schools sc ON s.school_id = sc.id
@@ -100,6 +101,9 @@ const createStudent = async (req, res) => {
     check_autorizacion_movilidad,
     check_derechos_imagen,
     nivel_absentismo,
+    tutor_nombre,
+    tutor_email,
+    tutor_telefono,
   } = req.body;
   const user = req.user;
 
@@ -128,9 +132,9 @@ const createStudent = async (req, res) => {
     }
 
     const result = await db.query(
-      `INSERT INTO students (nombre_completo, email, curso, school_id, check_acuerdo_pedagogico, check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, nombre_completo, email, curso, school_id, created_at, check_acuerdo_pedagogico, check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo`,
+      `INSERT INTO students (nombre_completo, email, curso, school_id, check_acuerdo_pedagogico, check_autorizacion_movilidad, check_derechos_imagen, nivel_absentismo, tutor_nombre, tutor_email, tutor_telefono)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING *`,
       [
         nombre_completo,
         email || null,
@@ -140,6 +144,9 @@ const createStudent = async (req, res) => {
         check_autorizacion_movilidad ? 1 : 0,
         check_derechos_imagen ? 1 : 0,
         nivel_absentismo || 1,
+        tutor_nombre || null,
+        tutor_email || null,
+        tutor_telefono || null,
       ]
     );
 
@@ -163,6 +170,9 @@ const updateStudent = async (req, res) => {
     check_autorizacion_movilidad,
     check_derechos_imagen,
     nivel_absentismo,
+    tutor_nombre,
+    tutor_email,
+    tutor_telefono,
   } = req.body;
 
   try {
@@ -174,8 +184,11 @@ const updateStudent = async (req, res) => {
            check_acuerdo_pedagogico = COALESCE($4, check_acuerdo_pedagogico),
            check_autorizacion_movilidad = COALESCE($5, check_autorizacion_movilidad),
            check_derechos_imagen = COALESCE($6, check_derechos_imagen),
-           nivel_absentismo = COALESCE($7, nivel_absentismo)
-       WHERE id = $8
+           nivel_absentismo = COALESCE($7, nivel_absentismo),
+           tutor_nombre = $8,
+           tutor_email = $9,
+           tutor_telefono = $10
+       WHERE id = $11
        RETURNING *`,
       [
         nombre_completo,
@@ -185,6 +198,9 @@ const updateStudent = async (req, res) => {
         check_autorizacion_movilidad,
         check_derechos_imagen,
         nivel_absentismo,
+        tutor_nombre || null,
+        tutor_email || null,
+        tutor_telefono || null,
         id,
       ]
     );
@@ -446,6 +462,114 @@ const deleteStudent = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/students/:id/photo
+ * Pujar foto de perfil d'un alumne
+ */
+const uploadStudentPhoto = async (req, res) => {
+  const { id } = req.params;
+  const user = req.user;
+
+  if (!req.file) {
+    return res.status(400).json({ error: "No s'ha pujat cap imatge" });
+  }
+
+  try {
+    // Verificar que l'alumne existeix
+    const studentCheck = await db.query(
+      "SELECT s.*, sc.coordinator_user_id FROM students s LEFT JOIN schools sc ON s.school_id = sc.id WHERE s.id = $1",
+      [id]
+    );
+
+    if (studentCheck.rows.length === 0) {
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ error: "Alumne no trobat" });
+    }
+
+    const student = studentCheck.rows[0];
+
+    // Verificar permisos (només el coordinador de l'escola o admin)
+    if (user.role === "CENTER_COORD" && student.coordinator_user_id !== user.id) {
+      fs.unlinkSync(req.file.path);
+      return res.status(403).json({ error: "No tens permisos per modificar aquest alumne" });
+    }
+
+    // Eliminar foto antiga si existeix
+    if (student.photo_url) {
+      const oldPath = path.join(__dirname, "../../../uploads", student.photo_url.replace("/uploads/", ""));
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    const photoUrl = `/uploads/photos/${req.file.filename}`;
+
+    // Actualitzar la BD
+    await db.query(
+      "UPDATE students SET photo_url = $1 WHERE id = $2",
+      [photoUrl, id]
+    );
+
+    res.json({
+      message: "Foto pujada correctament",
+      photo_url: photoUrl,
+    });
+  } catch (error) {
+    if (req.file && req.file.path) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: `Error pujant foto: ${error.message}` });
+  }
+};
+
+/**
+ * GET /api/students/documents/:docId/download
+ * Descarregar un document (només usuaris autenticats amb permisos)
+ */
+const downloadDocument = async (req, res) => {
+  const { docId } = req.params;
+  const user = req.user;
+
+  try {
+    // Obtenir info del document
+    const docResult = await db.query(
+      `SELECT sd.*, s.school_id, sc.coordinator_user_id 
+       FROM student_documents sd
+       JOIN students s ON sd.student_id = s.id
+       LEFT JOIN schools sc ON s.school_id = sc.id
+       WHERE sd.id = $1`,
+      [docId]
+    );
+
+    if (docResult.rows.length === 0) {
+      return res.status(404).json({ error: "Document no trobat" });
+    }
+
+    const doc = docResult.rows[0];
+
+    // Verificar permisos (admin o coordinador de l'escola)
+    if (user.role === "CENTER_COORD" && doc.coordinator_user_id !== user.id) {
+      return res.status(403).json({ error: "No tens permisos per accedir a aquest document" });
+    }
+
+    // Construir ruta del fitxer
+    const filePath = path.join(
+      __dirname,
+      "../../../uploads",
+      doc.file_url.replace("/uploads/", "")
+    );
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "Fitxer no trobat al servidor" });
+    }
+
+    // Enviar fitxer
+    res.download(filePath);
+  } catch (error) {
+    res.status(500).json({ error: `Error descarregant document: ${error.message}` });
+  }
+};
+
 module.exports = {
   listStudents,
   getStudentById,
@@ -456,4 +580,6 @@ module.exports = {
   verifyDocument,
   deleteDocument,
   deleteStudent,
+  uploadStudentPhoto,
+  downloadDocument,
 };

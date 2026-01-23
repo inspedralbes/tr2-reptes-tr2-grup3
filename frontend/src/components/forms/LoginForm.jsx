@@ -16,7 +16,7 @@ const LoginForm = ({ onSubmit, loading }) => {
       style={{ display: "grid", gap: "12px", maxWidth: "360px" }}
     >
       <label style={{ display: "grid", gap: "4px" }}>
-        <span>Email</span>
+        <span>Correu electrònic</span>
         <input
           type="email"
           value={email}
@@ -30,7 +30,7 @@ const LoginForm = ({ onSubmit, loading }) => {
         />
       </label>
       <label style={{ display: "grid", gap: "4px" }}>
-        <span>Password</span>
+        <span>Contrasenya</span>
         <input
           type="password"
           value={password}
@@ -44,7 +44,7 @@ const LoginForm = ({ onSubmit, loading }) => {
         />
       </label>
       <Button type="submit" variant="primary">
-        {loading ? "Entrando..." : "Entrar"}
+        {loading ? "Entrant..." : "Entrar"}
       </Button>
     </form>
   );

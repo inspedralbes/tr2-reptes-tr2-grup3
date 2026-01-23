@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, Filter, Layers, Wrench, Sparkles, Search } from "lucide-react";
+import toast from "react-hot-toast";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import { listWorkshops, createWorkshop, updateWorkshop, deleteWorkshop } from "../../api/catalog.js";
 
 /**
@@ -17,6 +19,15 @@ const CatalogManager = () => {
   const [editingWorkshop, setEditingWorkshop] = useState(null);
   const [filterAmbit, setFilterAmbit] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "danger"
+  });
 
   // Formulario
   const [formData, setFormData] = useState({
@@ -59,7 +70,7 @@ const CatalogManager = () => {
       setFormData({ title: '', ambit: '', is_new: false, description: '' });
       loadWorkshops();
     } catch (err) {
-      setError('Error al guardar: ' + err.message);
+      setError('Error desant: ' + err.message);
     }
   };
 
@@ -84,13 +95,22 @@ const CatalogManager = () => {
 
   // Manejar eliminación
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este taller?')) return;
-    try {
-      await deleteWorkshop(id);
-      loadWorkshops();
-    } catch (err) {
-      setError('Error al eliminar: ' + err.message);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar taller",
+      message: "Estàs segur d'eliminar aquest taller? Aquesta acció no es pot desfer.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await deleteWorkshop(id);
+          toast.success("Taller eliminat correctament");
+          loadWorkshops();
+        } catch (err) {
+          toast.error('Error al eliminar: ' + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // Ámbitos disponibles
@@ -108,14 +128,14 @@ const CatalogManager = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-          <Layers className="text-blue-600" size={28} /> Gestión del Catálogo
+          <Layers className="text-blue-600" size={28} /> Gestió del Catàleg
         </h1>
         <p className="text-gray-500 mt-1">
-          Administra la oferta de talleres disponibles para los centros educativos.
+          Administra l'oferta de tallers disponibles per als centres educatius.
         </p>
       </div>
 
@@ -123,19 +143,19 @@ const CatalogManager = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
           <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-          <div className="text-xs font-semibold uppercase text-blue-800 tracking-wide mt-1">Total Talleres</div>
+          <div className="text-xs font-semibold uppercase text-blue-800 tracking-wide mt-1">Total Tallers</div>
         </div>
         <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
           <div className="text-2xl font-bold text-green-600">{stats.new}</div>
-          <div className="text-xs font-semibold uppercase text-green-800 tracking-wide mt-1">Novedades</div>
+          <div className="text-xs font-semibold uppercase text-green-800 tracking-wide mt-1">Novetats</div>
         </div>
         <div className="bg-purple-50 rounded-xl p-4 text-center border border-purple-100">
           <div className="text-2xl font-bold text-purple-600">{stats.tech}</div>
-          <div className="text-xs font-semibold uppercase text-purple-800 tracking-wide mt-1">Tecnológicos</div>
+          <div className="text-xs font-semibold uppercase text-purple-800 tracking-wide mt-1">Tecnològics</div>
         </div>
         <div className="bg-orange-50 rounded-xl p-4 text-center border border-orange-100">
           <div className="text-2xl font-bold text-orange-600">{stats.art}</div>
-          <div className="text-xs font-semibold uppercase text-orange-800 tracking-wide mt-1">Artísticos</div>
+          <div className="text-xs font-semibold uppercase text-orange-800 tracking-wide mt-1">Artístics</div>
         </div>
       </div>
 
@@ -146,7 +166,7 @@ const CatalogManager = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar taller..."
+              placeholder="Cerca taller..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -160,7 +180,7 @@ const CatalogManager = () => {
               onChange={(e) => setFilterAmbit(e.target.value)}
               className="bg-transparent border-none text-sm focus:ring-0 cursor-pointer w-full md:w-auto text-gray-700 font-medium"
             >
-              <option value="">Todos los ámbitos</option>
+              <option value="">Tots els àmbits</option>
               {ambits.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
@@ -169,7 +189,7 @@ const CatalogManager = () => {
         <div className="w-full md:w-auto flex justify-end">
           <Button onClick={handleCreate}>
             <div className="flex items-center gap-2">
-              <Plus size={18} /> Nuevo Taller
+              <Plus size={18} /> Nou Taller
             </div>
           </Button>
         </div>
@@ -195,10 +215,10 @@ const CatalogManager = () => {
             <table className="w-full border-collapse bg-white text-left text-sm text-gray-500">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Título</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ámbito</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Acciones</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Títol</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Àmbit</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estat</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Accions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 border-t border-gray-100">
@@ -218,7 +238,7 @@ const CatalogManager = () => {
                     <td className="px-6 py-4">
                       {w.is_new ? (
                         <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 border border-green-200">
-                          <Sparkles size={10} className="mr-1" /> Nuevo
+                          <Sparkles size={10} className="mr-1" /> Nou
                         </span>
                       ) : (
                         <span className="text-gray-400 text-xs">-</span>
@@ -256,7 +276,7 @@ const CatalogManager = () => {
             </table>
           </div>
           <div className="bg-gray-50 border-t border-gray-100 px-6 py-3 text-xs text-gray-500 flex justify-between">
-            <span>Mostrando {filteredWorkshops.length} de {workshops.length} talleres</span>
+            <span>Mostrant {filteredWorkshops.length} de {workshops.length} tallers</span>
           </div>
         </div>
       )}
@@ -267,21 +287,21 @@ const CatalogManager = () => {
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingWorkshop ? 'Editar Taller' : 'Nuevo Taller'}
+        title={editingWorkshop ? 'Editar Taller' : 'Nou Taller'}
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Cancelar
+              Cancel·lar
             </Button>
             <Button type="submit" form="workshop-form">
-              Guardar
+              Desar
             </Button>
           </>
         }
       >
         <form id="workshop-form" onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Títol *</label>
             <input
               type="text"
               value={formData.title}
@@ -292,7 +312,7 @@ const CatalogManager = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ámbito *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Àmbit *</label>
             <select
               value={formData.ambit}
               onChange={(e) => setFormData({ ...formData, ambit: e.target.value })}
@@ -304,13 +324,13 @@ const CatalogManager = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Descripció</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
               rows={4}
-              placeholder="Breve descripción del taller..."
+              placeholder="Breu descripció del taller..."
             />
           </div>
           <div className="flex items-center gap-2 pt-2">
@@ -321,10 +341,22 @@ const CatalogManager = () => {
               checked={formData.is_new}
               onChange={(e) => setFormData({ ...formData, is_new: e.target.checked })}
             />
-            <label htmlFor="is_new" className="text-sm text-gray-700 select-none">Es un taller nuevo este año</label>
+            <label htmlFor="is_new" className="text-sm text-gray-700 select-none">És un taller nou aquest any</label>
           </div>
         </form>
       </Modal>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Eliminar"
+        cancelText="Cancel·lar"
+      />
     </div >
   );
 };

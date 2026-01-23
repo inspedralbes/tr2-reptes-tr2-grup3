@@ -18,14 +18,14 @@ import {
   Megaphone,
   Lock,
   PauseCircle,
-  BarChart3,
   Users,
   Briefcase,
   Building2,
+  Mail,
+  GraduationCap,
 } from "lucide-react";
 
 import client from "../../api/client";
-// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -93,56 +93,56 @@ const AdminDashboard = () => {
     if (!stats.activePeriod) {
       return {
         color: "bg-gray-500",
-        text: "Sin período activo",
+        text: "Sense període actiu",
         icon: <PauseCircle size={48} />,
       };
     }
-    
+
     const { status, current_phase } = stats.activePeriod;
-    
+
     if (status === "DRAFT") {
       return {
         color: "bg-gray-500",
-        text: "BORRADOR",
+        text: "ESBORRANY",
         icon: <Clock size={48} />,
       };
     }
-    
+
     if (status === "CLOSED") {
       return {
         color: "bg-gray-500",
-        text: "CERRADA",
+        text: "TANCADA",
         icon: <Lock size={48} />,
       };
     }
-    
+
     // Status ACTIVE - mostrar según fase
     const phaseConfig = {
       SOLICITUDES: {
         color: "bg-green-600",
-        text: "FASE: SOLICITUDES",
+        text: "FASE: SOL·LICITUDS",
         icon: <CheckCircle size={48} />,
       },
       ASIGNACION: {
         color: "bg-yellow-500",
-        text: "FASE: ASIGNACIÓN",
+        text: "FASE: ASSIGNACIÓ",
         icon: <Clock size={48} />,
       },
       PUBLICACION: {
         color: "bg-blue-600",
-        text: "FASE: PUBLICACIÓN",
+        text: "FASE: PUBLICACIÓ",
         icon: <Megaphone size={48} />,
       },
       EJECUCION: {
         color: "bg-teal-600",
-        text: "FASE: EJECUCIÓN",
+        text: "FASE: EXECUCIÓ",
         icon: <Target size={48} />,
       },
     };
-    
+
     return phaseConfig[current_phase] || {
       color: "bg-green-600",
-      text: "CONVOCATORIA ACTIVA",
+      text: "CONVOCATÒRIA ACTIVA",
       icon: <CheckCircle size={48} />,
     };
   };
@@ -158,16 +158,15 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <LayoutDashboard size={32} className="text-blue-600" /> Panel de
-          Administración
+          <LayoutDashboard size={32} className="text-blue-600" /> Tauler d'Administració
         </h1>
         <p className="text-gray-500 mt-2 text-lg">
-          Gestiona la plataforma Enginy, monitoriza la actividad y controla las
-          convocatorias.
+          Gestiona la plataforma Enginy, monitora l'activitat i controla les
+          convocatòries.
         </p>
       </div>
 
@@ -182,7 +181,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <div className="text-sm font-medium opacity-90 uppercase tracking-widest mb-1">
-                Estado de la Convocatoria
+                Estat de la Convocatòria
               </div>
               <h2 className="text-3xl font-bold">{periodStatus.text}</h2>
               {stats.activePeriod && (
@@ -196,7 +195,7 @@ const AdminDashboard = () => {
             onClick={() => navigate("/admin/enrollment")}
             className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-xl transition font-semibold text-lg flex items-center gap-2"
           >
-            Gestionar períodos <Calendar size={20} />
+            Gestiona períodes <Calendar size={20} />
           </button>
         </div>
       </div>
@@ -210,7 +209,7 @@ const AdminDashboard = () => {
             </div>
             <BookOpen className="text-blue-200" size={24} />
           </div>
-          <div className="text-gray-600 font-medium">Talleres en catálogo</div>
+          <div className="text-gray-600 font-medium">Tallers al catàleg</div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-6 border-l-4 border-yellow-500 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
@@ -219,7 +218,7 @@ const AdminDashboard = () => {
             </div>
             <FileText className="text-yellow-200" size={24} />
           </div>
-          <div className="text-gray-600 font-medium">Solicitudes recibidas</div>
+          <div className="text-gray-600 font-medium">Sol·licituds rebudes</div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-6 border-l-4 border-green-500 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
@@ -228,7 +227,7 @@ const AdminDashboard = () => {
             </div>
             <Target className="text-green-200" size={24} />
           </div>
-          <div className="text-gray-600 font-medium">Plazas asignadas</div>
+          <div className="text-gray-600 font-medium">Places assignades</div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-6 border-l-4 border-purple-500 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
@@ -238,7 +237,7 @@ const AdminDashboard = () => {
             <Users className="text-purple-200" size={24} />
           </div>
           <div className="text-gray-600 font-medium">
-            Validaciones pendientes
+            Validacions pendents
           </div>
         </div>
       </div>
@@ -246,7 +245,7 @@ const AdminDashboard = () => {
       {/* Accesos rápidos */}
       <div>
         <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          Acciones rápidas
+          Accions ràpides
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <button
@@ -257,10 +256,10 @@ const AdminDashboard = () => {
               <Calendar size={32} />
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
-              Períodos
+              Períodes
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Abrir/cerrar convocatorias y plazos
+              Obrir/tancar convocatòries i terminis
             </p>
           </button>
 
@@ -272,10 +271,10 @@ const AdminDashboard = () => {
               <BookOpen size={32} />
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-700 transition-colors">
-              Catálogo
+              Catàleg
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Gestionar talleres, ediciones y plazas
+              Gestiona tallers, edicions i places
             </p>
           </button>
 
@@ -287,10 +286,10 @@ const AdminDashboard = () => {
               <FileText size={32} />
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-yellow-700 transition-colors">
-              Solicitudes
+              Sol·licituds
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Monitorizar la demanda de los centros
+              Monitora la demanda dels centres
             </p>
           </button>
 
@@ -302,10 +301,10 @@ const AdminDashboard = () => {
               <Target size={32} />
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
-              Asignación
+              Assignació
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Ejecutar algoritmo y publicar resultados
+              Executar algorisme i publicar resultats
             </p>
           </button>
 
@@ -317,10 +316,10 @@ const AdminDashboard = () => {
               <Briefcase size={32} />
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors">
-              Proveedores
+              Proveïdors
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Gestionar empresas y colaboradores
+              Gestionar empreses i col·laboradors
             </p>
           </button>
 
@@ -332,12 +331,85 @@ const AdminDashboard = () => {
               <Building2 size={32} />
             </div>
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">
-              Centros
+              Centres
             </h3>
             <p className="text-sm text-gray-500 mt-2">
-              Administrar centros educativos
+              Administrar centres educatius
             </p>
           </button>
+        </div>
+      </div>
+
+      {/* Sección Informativa de Envío de Emails */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <Mail size={24} className="text-blue-600" /> Enviament Automàtic de Credencials
+        </h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <p className="text-gray-600 mb-6">
+            Les credencials s'envien automàticament en els moments següents del flux de treball:
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Info Coordinadores */}
+            <div className="border border-blue-200 rounded-xl p-5 bg-blue-50/50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Users size={24} className="text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Coordinadors de Centre</h3>
+                  <p className="text-sm text-gray-500">Credencials d'accés a la plataforma</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-blue-100">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold text-blue-700">Quan s'envia:</span> Automàticament al <strong>crear un nou període</strong> (nou curs escolar).
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Es genera una nova contrasenya per a cada coordinador registrat.
+                </p>
+              </div>
+            </div>
+
+            {/* Info Profesores */}
+            <div className="border border-green-200 rounded-xl p-5 bg-green-50/50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <GraduationCap size={24} className="text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Professors Assignats</h3>
+                  <p className="text-sm text-gray-500">Credencials per passar llista</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-green-100">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold text-green-700">Quan s'envia:</span> Automàticament al <strong>avançar a fase EXECUCIÓ</strong>.
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Es creen comptes per als professors assignats als tallers del període.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Estado actual */}
+          {stats.activePeriod && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-2 text-gray-700">
+                <Clock size={18} />
+                <span className="font-medium">Estat actual:</span>
+                <span className="text-gray-600">
+                  Període <strong>{stats.activePeriod.name}</strong> en fase <strong>{stats.activePeriod.current_phase}</strong>
+                </span>
+              </div>
+              {stats.activePeriod.current_phase === 'EJECUCION' && (
+                <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                  <CheckCircle size={14} /> Els professors ja han rebut les seves credencials.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -349,22 +421,23 @@ const AdminDashboard = () => {
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-bold text-yellow-800">
-              Acción Requerida: Asignación Pendiente
+              Acció Requerida: Assignació Pendent
             </h3>
             <p className="text-yellow-700 mt-1">
-              El período <strong>{stats.activePeriod.name}</strong> está en fase
-              de asignación. Es necesario ejecutar el algoritmo de asignación
-              y revisar los resultados antes de publicarlos.
+              El període <strong>{stats.activePeriod.name}</strong> està en fase
+              d'assignació. Cal executar l'algorisme d'assignació
+              i revisar els resultats abans de publicar-los.
             </p>
           </div>
           <button
             onClick={() => navigate("/admin/allocation")}
             className="bg-yellow-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-yellow-700 transition shadow-sm hover:shadow-md whitespace-nowrap"
           >
-            Ir a Asignación
+            Anar a Assignació
           </button>
         </div>
       )}
+
     </div>
   );
 };

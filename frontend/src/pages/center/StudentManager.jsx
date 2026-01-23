@@ -7,8 +7,16 @@ import {
   Users,
   Download,
   Upload,
+  Camera,
+  FileText,
+  X,
+  Check,
+  AlertCircle
 } from "lucide-react";
+import toast from "react-hot-toast";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
+import ImageCropper from "../../components/common/ImageCropper.jsx";
 import Button from "../../components/ui/Button.jsx";
 import studentsService from "../../services/students.service";
 import client from "../../api/client";
@@ -23,16 +31,42 @@ const StudentManager = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
 
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "warning"
+  });
+
   // Estado del formulario
   const [formData, setFormData] = useState({
     nombre_completo: "",
     email: "",
     curso: "3 ESO",
     nivel_absentismo: 1,
-    check_acuerdo_pedagogico: false,
-    check_autorizacion_movilidad: false,
-    check_derechos_imagen: false,
+    tutor_nombre: "",
+    tutor_email: "",
+    tutor_telefono: "",
   });
+  
+  // Estado para guardar documentos existentes del alumno
+  const [existingDocuments, setExistingDocuments] = useState([]);
+  const [savingStudent, setSavingStudent] = useState(false);
+
+  // Estado para foto de perfil y documentos
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
+  const [documents, setDocuments] = useState({
+    autoritzacio_imatge: null,
+    autoritzacio_sortida: null,
+    dni_front: null,
+    dni_back: null
+  });
+  const [uploadingDoc, setUploadingDoc] = useState(null);
+  const docInputRef = useRef(null);
 
   // Exportar/Importar
   const fileInputRef = useRef(null);
@@ -80,7 +114,7 @@ const StudentManager = () => {
         setError("No hi ha cap període actiu en aquest moment.");
         return;
       }
-      
+
       try {
         const data = await studentsService.getAll();
         setStudents(data);
@@ -104,39 +138,73 @@ const StudentManager = () => {
       email: "",
       curso: "3 ESO",
       nivel_absentismo: 1,
-      check_acuerdo_pedagogico: false,
-      check_autorizacion_movilidad: false,
-      check_derechos_imagen: false,
+      tutor_nombre: "",
+      tutor_email: "",
+      tutor_telefono: "",
     });
+    resetPhotoAndDocs();
+    setExistingDocuments([]);
     setShowModal(true);
   };
 
-  const handleEdit = (student) => {
+  const handleEdit = async (student) => {
     setEditingStudent(student);
     setFormData({
       nombre_completo: student.nombre_completo,
       email: student.email || "",
       curso: student.curso || "3 ESO",
       nivel_absentismo: student.nivel_absentismo || 1,
-      check_acuerdo_pedagogico: !!student.check_acuerdo_pedagogico,
-      check_autorizacion_movilidad: !!student.check_autorizacion_movilidad,
-      check_derechos_imagen: !!student.check_derechos_imagen,
+      tutor_nombre: student.tutor_nombre || "",
+      tutor_email: student.tutor_email || "",
+      tutor_telefono: student.tutor_telefono || "",
     });
+    // Cargar foto existente si la hay
+    if (student.photo_url) {
+      setProfilePhotoPreview(student.photo_url);
+    } else {
+      setProfilePhotoPreview(null);
+    }
+    setProfilePhoto(null);
+    setDocuments({
+      autoritzacio_imatge: null,
+      autoritzacio_sortida: null,
+      dni_front: null,
+      dni_back: null
+    });
+    // Cargar documentos existentes
+    try {
+      const docs = await studentsService.getDocuments(student.id);
+      setExistingDocuments(docs || []);
+    } catch (e) {
+      console.error("Error carregant documents:", e);
+      setExistingDocuments([]);
+    }
     setShowModal(true);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Segur que vols eliminar aquest alumne?")) return;
-    try {
-      await studentsService.delete(id);
-      setStudents(students.filter((s) => s.id !== id));
-    } catch (err) {
-      alert("Error en eliminar: " + (err.response?.data?.error || err.message));
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar alumne",
+      message: "Segur que vols eliminar aquest alumne? Aquesta acció no es pot desfer.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await studentsService.delete(id);
+          setStudents(students.filter((s) => s.id !== id));
+          toast.success("Alumne eliminat correctament");
+        } catch (err) {
+          toast.error("Error eliminant: " + (err.response?.data?.error || err.message));
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    setSavingStudent(true);
+    
     try {
       let savedStudent;
 
@@ -145,18 +213,13 @@ const StudentManager = () => {
         email: formData.email,
         curso: formData.curso,
         nivel_absentismo: parseInt(formData.nivel_absentismo),
-        check_acuerdo_pedagogico: formData.check_acuerdo_pedagogico ? 1 : 0,
-        check_autorizacion_movilidad: formData.check_autorizacion_movilidad
-          ? 1
-          : 0,
-        check_derechos_imagen: formData.check_derechos_imagen ? 1 : 0,
+        tutor_nombre: formData.tutor_nombre || null,
+        tutor_email: formData.tutor_email || null,
+        tutor_telefono: formData.tutor_telefono || null,
       };
 
       if (editingStudent) {
         savedStudent = await studentsService.update(editingStudent.id, payload);
-        setStudents(
-          students.map((s) => (s.id === savedStudent.id ? savedStudent : s))
-        );
       } else {
         if (!schoolId) {
           console.warn("No schoolId in front, relying on backend auto-assign.");
@@ -165,16 +228,139 @@ const StudentManager = () => {
           ...payload,
           school_id: schoolId,
         });
+      }
+
+      const studentId = savedStudent.id;
+
+      // Pujar foto si s'ha seleccionat una nova
+      if (profilePhotoPreview && profilePhotoPreview.startsWith('data:')) {
+        try {
+          // Convertir dataURL a Blob
+          const response = await fetch(profilePhotoPreview);
+          const blob = await response.blob();
+          const photoResult = await studentsService.uploadPhoto(studentId, blob);
+          savedStudent.photo_url = photoResult.photo_url;
+        } catch (photoErr) {
+          console.error("Error pujant foto:", photoErr);
+          toast.error("L'alumne s'ha guardat però la foto no s'ha pogut pujar");
+        }
+      }
+
+      // Pujar documents nous
+      const docTypes = {
+        autoritzacio_imatge: 'AUTORITZACIO_IMATGE',
+        autoritzacio_sortida: 'AUTORITZACIO_SORTIDA',
+        dni_front: 'DNI_FRONT',
+        dni_back: 'DNI_BACK'
+      };
+
+      for (const [key, type] of Object.entries(docTypes)) {
+        if (documents[key]?.file) {
+          try {
+            await studentsService.uploadDocument(studentId, documents[key].file, type);
+          } catch (docErr) {
+            console.error(`Error pujant ${key}:`, docErr);
+            toast.error(`Error pujant document: ${documents[key].name}`);
+          }
+        }
+      }
+
+      // Actualizar lista de estudiantes
+      if (editingStudent) {
+        setStudents(students.map((s) => (s.id === savedStudent.id ? savedStudent : s)));
+      } else {
         setStudents([...students, savedStudent]);
       }
 
+      toast.success(editingStudent ? "Alumne actualitzat correctament" : "Alumne creat correctament");
       setShowModal(false);
     } catch (err) {
       console.error(err);
-      setError(
-        "Error en guardar: " + (err.response?.data?.error || err.message)
-      );
+      toast.error("Error desant: " + (err.response?.data?.error || err.message));
+    } finally {
+      setSavingStudent(false);
     }
+  };
+
+  // --- Gestió de foto de perfil ---
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error("Només es permeten imatges");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("La imatge no pot superar 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setProfilePhoto(ev.target.result);
+        setShowImageCropper(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCroppedImage = (croppedDataUrl) => {
+    setProfilePhotoPreview(croppedDataUrl);
+    setShowImageCropper(false);
+    toast.success("Foto retallada correctament");
+  };
+
+  // --- Gestió de documents ---
+  const handleDocumentUpload = (docType) => {
+    setUploadingDoc(docType);
+    docInputRef.current?.click();
+  };
+
+  const handleDocumentFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file && uploadingDoc) {
+      // Validar tipus de fitxer
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Només es permeten fitxers PDF o imatges (JPG, PNG)");
+        setUploadingDoc(null);
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("El fitxer no pot superar 10MB");
+        setUploadingDoc(null);
+        return;
+      }
+      setDocuments(prev => ({
+        ...prev,
+        [uploadingDoc]: {
+          file,
+          name: file.name,
+          type: file.type
+        }
+      }));
+      toast.success(`Document "${file.name}" carregat`);
+      setUploadingDoc(null);
+    }
+    e.target.value = '';
+  };
+
+  const removeDocument = (docType) => {
+    setDocuments(prev => ({
+      ...prev,
+      [docType]: null
+    }));
+    toast.success("Document eliminat");
+  };
+
+  const resetPhotoAndDocs = () => {
+    setProfilePhoto(null);
+    setProfilePhotoPreview(null);
+    setDocuments({
+      autoritzacio_imatge: null,
+      autoritzacio_sortida: null,
+      dni_front: null,
+      dni_back: null
+    });
   };
 
   // --- CSV Import / Export ---
@@ -303,10 +489,10 @@ const StudentManager = () => {
         }
 
         setStudents([...students, ...newStudents]);
-        alert(`S'han importat ${newStudents.length} alumnes correctament.`);
+        toast.success(`S'han importat ${newStudents.length} alumnes correctament.`);
       } catch (err) {
         console.error("Import Error", err);
-        alert("Error important CSV: " + err.message);
+        toast.error("Error important CSV: " + err.message);
       }
       // Reset input
       e.target.value = "";
@@ -322,17 +508,17 @@ const StudentManager = () => {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="space-y-6">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Users className="text-blue-600" /> Els meus alumnes
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <Users className="text-blue-600" size={24} /> Els meus alumnes
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="text-gray-500 mt-1 text-sm">
             Gestiona el teu llistat d'alumnes
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
           <input
             type="file"
             accept=".csv"
@@ -340,24 +526,24 @@ const StudentManager = () => {
             className="hidden"
             onChange={handleImportFile}
           />
-          <Button variant="secondary" onClick={handleDownloadTemplate}>
-            <div className="flex items-center gap-2">
-              <Download size={18} /> Descarregar Plantilla
+          <Button variant="secondary" onClick={handleDownloadTemplate} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Download size={16} /> <span className="hidden sm:inline">Plantilla</span>
             </div>
           </Button>
-          <Button variant="secondary" onClick={handleImportClick}>
-            <div className="flex items-center gap-2">
-              <Upload size={18} /> Importar CSV
+          <Button variant="secondary" onClick={handleImportClick} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Upload size={16} /> <span className="hidden sm:inline">Importar</span>
             </div>
           </Button>
-          <Button variant="secondary" onClick={handleExportCSV}>
-            <div className="flex items-center gap-2">
-              <Download size={18} /> Exportar CSV
+          <Button variant="secondary" onClick={handleExportCSV} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Download size={16} /> <span className="hidden sm:inline">Exportar</span>
             </div>
           </Button>
-          <Button onClick={handleCreate}>
-            <div className="flex items-center gap-2">
-              <Plus size={18} /> Nou alumne
+          <Button onClick={handleCreate} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Plus size={16} /> Nou
             </div>
           </Button>
         </div>
@@ -377,7 +563,7 @@ const StudentManager = () => {
         />
         <input
           type="text"
-          placeholder="Buscar por nombre o email..."
+          placeholder="Cerca per nom o correu..."
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -392,28 +578,22 @@ const StudentManager = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                    Nom complet
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                    Alumne
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                     Email
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                     Curs
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
                     Absentisme
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
-                    Acord Pedagògic
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
+                    Docs
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
-                    Autorització Movilitat
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
-                    Dret d'Imatge
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
                     Accions
                   </th>
                 </tr>
@@ -422,7 +602,7 @@ const StudentManager = () => {
                 {filteredStudents.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="8"
+                      colSpan="6"
                       className="px-6 py-8 text-center text-gray-500"
                     >
                       No s'han trobat alumnes.
@@ -431,50 +611,48 @@ const StudentManager = () => {
                 ) : (
                   filteredStudents.map((student) => (
                     <tr key={student.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 font-medium text-gray-900">
-                        {student.nombre_completo}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                            {student.photo_url ? (
+                              <img
+                                src={student.photo_url}
+                                alt={student.nombre_completo}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm font-medium">
+                                {student.nombre_completo?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
+                            )}
+                          </div>
+                          <span className="font-medium text-gray-900">
+                            {student.nombre_completo}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-500">
+                      <td className="px-4 py-3 text-gray-500 text-sm">
                         {student.email || "-"}
                       </td>
-                      <td className="px-6 py-4 text-gray-500">
+                      <td className="px-4 py-3 text-gray-500 text-sm">
                         {student.curso || "-"}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 py-3 text-center">
                         <span
-                          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            student.nivel_absentismo >= 4
-                              ? "bg-red-100 text-red-800"
-                              : student.nivel_absentismo >= 3
+                          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.nivel_absentismo >= 4
+                            ? "bg-red-100 text-red-800"
+                            : student.nivel_absentismo >= 3
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-green-100 text-green-800"
-                          }`}
+                            }`}
                         >
                           {student.nivel_absentismo || 1}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        {student.check_acuerdo_pedagogico ? (
-                          <span className="text-green-600">Sí</span>
-                        ) : (
-                          <span className="text-gray-400">No</span>
-                        )}
+                      <td className="px-4 py-3 text-center">
+                        <FileText size={18} className="inline text-gray-400" />
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        {student.check_autorizacion_movilidad ? (
-                          <span className="text-green-600">Sí</span>
-                        ) : (
-                          <span className="text-gray-400">No</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {student.check_derechos_imagen ? (
-                          <span className="text-green-600">Sí</span>
-                        ) : (
-                          <span className="text-gray-400">No</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => handleEdit(student)}
@@ -501,18 +679,51 @@ const StudentManager = () => {
 
       <Modal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => !savingStudent && setShowModal(false)}
         title={editingStudent ? "Editar Alumne" : "Nou Alumne"}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Cancelar
+            <Button variant="secondary" onClick={() => setShowModal(false)} disabled={savingStudent}>
+              Cancel·lar
             </Button>
-            <Button onClick={handleSave}>Guardar</Button>
+            <Button onClick={handleSave} disabled={savingStudent}>
+              {savingStudent ? "Desant..." : "Desar"}
+            </Button>
           </>
         }
       >
         <form className="space-y-6">
+          {/* Secció de foto de perfil */}
+          <div className="flex flex-col items-center pb-4 border-b">
+            <div className="relative">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-gray-200">
+                {profilePhotoPreview ? (
+                  <img
+                    src={profilePhotoPreview}
+                    alt="Foto de perfil"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <Camera size={40} />
+                  </div>
+                )}
+              </div>
+              <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
+                <Camera size={18} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoSelect}
+                />
+              </label>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              Fes clic a la icona per pujar una foto
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -541,7 +752,7 @@ const StudentManager = () => {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
-                placeholder="alumno@ejemplo.com"
+                placeholder="alumne@exemple.com"
               />
             </div>
 
@@ -578,59 +789,235 @@ const StudentManager = () => {
             </div>
           </div>
 
+          {/* Secció de dades del tutor/responsable */}
           <div className="border-t pt-4">
-            <h3 className="font-medium text-gray-900 mb-4">
-              Documentació i Permisos
+            <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <Users size={18} className="text-purple-600" />
+              Dades del Tutor/Responsable
             </h3>
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <p className="text-xs text-gray-500 mb-3">
+              Es notificarà al tutor per email en cas d'absència de l'alumne.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Nom complet del tutor
+                </label>
                 <input
-                  type="checkbox"
-                  className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
-                  checked={formData.check_acuerdo_pedagogico}
+                  type="text"
+                  className="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.tutor_nombre}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      check_acuerdo_pedagogico: e.target.checked,
-                    })
+                    setFormData({ ...formData, tutor_nombre: e.target.value })
                   }
+                  placeholder="Nom i cognoms del tutor"
                 />
-                <span className="text-gray-700">Acord Pedagògic Firmat</span>
-              </label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Email del tutor
+                </label>
+                <input
+                  type="email"
+                  className="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.tutor_email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, tutor_email: e.target.value })
+                  }
+                  placeholder="tutor@exemple.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Telèfon del tutor
+                </label>
+                <input
+                  type="tel"
+                  className="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.tutor_telefono}
+                  onChange={(e) =>
+                    setFormData({ ...formData, tutor_telefono: e.target.value })
+                  }
+                  placeholder="600 000 000"
+                />
+              </div>
+            </div>
+          </div>
 
-              <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
-                  checked={formData.check_autorizacion_movilidad}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      check_autorizacion_movilidad: e.target.checked,
-                    })
-                  }
-                />
-                <span className="text-gray-700">Autorització de Movilitat</span>
-              </label>
+          {/* Secció de documentació adjunta */}
+          <div className="border-t pt-4">
+            <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <FileText size={18} className="text-blue-600" />
+              Documents Adjunts
+            </h3>
+            <input
+              type="file"
+              accept=".pdf,image/jpeg,image/png"
+              ref={docInputRef}
+              className="hidden"
+              onChange={handleDocumentFileSelect}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Autorització Imatge */}
+              <div className={`border-2 rounded-lg p-3 transition-all ${
+                documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE')
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE') ? (
+                      <Check size={18} className="text-green-600" />
+                    ) : (
+                      <FileText size={18} className="text-gray-400" />
+                    )}
+                    <p className={`text-sm font-medium ${
+                      documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE')
+                        ? 'text-green-700' 
+                        : 'text-gray-700'
+                    }`}>Autorització Imatge</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => documents.autoritzacio_imatge ? removeDocument('autoritzacio_imatge') : handleDocumentUpload('autoritzacio_imatge')}
+                    className={`p-1.5 rounded transition-colors ${
+                      documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE')
+                        ? 'text-green-600 hover:bg-green-100' 
+                        : 'text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    {documents.autoritzacio_imatge ? <Edit size={16} /> : <Upload size={16} />}
+                  </button>
+                </div>
+              </div>
 
-              <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
-                  checked={formData.check_derechos_imagen}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      check_derechos_imagen: e.target.checked,
-                    })
-                  }
-                />
-                <span className="text-gray-700">Drets d'Imatge</span>
-              </label>
+              {/* Autorització Sortida */}
+              <div className={`border-2 rounded-lg p-3 transition-all ${
+                documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA')
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA') ? (
+                      <Check size={18} className="text-green-600" />
+                    ) : (
+                      <FileText size={18} className="text-gray-400" />
+                    )}
+                    <p className={`text-sm font-medium ${
+                      documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA')
+                        ? 'text-green-700' 
+                        : 'text-gray-700'
+                    }`}>Autorització Sortida</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => documents.autoritzacio_sortida ? removeDocument('autoritzacio_sortida') : handleDocumentUpload('autoritzacio_sortida')}
+                    className={`p-1.5 rounded transition-colors ${
+                      documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA')
+                        ? 'text-green-600 hover:bg-green-100' 
+                        : 'text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    {documents.autoritzacio_sortida ? <Edit size={16} /> : <Upload size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* DNI Frontal */}
+              <div className={`border-2 rounded-lg p-3 transition-all ${
+                documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT')
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT') ? (
+                      <Check size={18} className="text-green-600" />
+                    ) : (
+                      <FileText size={18} className="text-gray-400" />
+                    )}
+                    <p className={`text-sm font-medium ${
+                      documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT')
+                        ? 'text-green-700' 
+                        : 'text-gray-700'
+                    }`}>DNI Frontal</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => documents.dni_front ? removeDocument('dni_front') : handleDocumentUpload('dni_front')}
+                    className={`p-1.5 rounded transition-colors ${
+                      documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT')
+                        ? 'text-green-600 hover:bg-green-100' 
+                        : 'text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    {documents.dni_front ? <Edit size={16} /> : <Upload size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* DNI Posterior */}
+              <div className={`border-2 rounded-lg p-3 transition-all ${
+                documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK')
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK') ? (
+                      <Check size={18} className="text-green-600" />
+                    ) : (
+                      <FileText size={18} className="text-gray-400" />
+                    )}
+                    <p className={`text-sm font-medium ${
+                      documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK')
+                        ? 'text-green-700' 
+                        : 'text-gray-700'
+                    }`}>DNI Posterior</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => documents.dni_back ? removeDocument('dni_back') : handleDocumentUpload('dni_back')}
+                    className={`p-1.5 rounded transition-colors ${
+                      documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK')
+                        ? 'text-green-600 hover:bg-green-100' 
+                        : 'text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    {documents.dni_back ? <Edit size={16} /> : <Upload size={16} />}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </form>
       </Modal>
+
+      {/* Modal del cropper d'imatge */}
+      {showImageCropper && profilePhoto && (
+        <ImageCropper
+          image={profilePhoto}
+          onCrop={handleCroppedImage}
+          onCancel={() => {
+            setShowImageCropper(false);
+            setProfilePhoto(null);
+          }}
+          aspectRatio={1}
+        />
+      )}
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Eliminar"
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

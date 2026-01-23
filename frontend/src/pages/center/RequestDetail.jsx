@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { requestService } from "../../services/request.service";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
+import ConfirmModal from "../../components/common/ConfirmModal";
 
 const RequestDetail = () => {
   const { id } = useParams();
@@ -10,6 +12,14 @@ const RequestDetail = () => {
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null
+  });
 
   useEffect(() => {
     loadRequest();
@@ -27,15 +37,22 @@ const RequestDetail = () => {
     }
   };
 
-  const handleCancel = async () => {
-    if (!window.confirm("Estàs segur de voler cancel·lar aquesta sol·licitud?"))
-      return;
-    try {
-      await requestService.cancelRequest(id);
-      navigate("/center/requests");
-    } catch (err) {
-      alert("Error en cancel·lar: " + err.message);
-    }
+  const handleCancel = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Cancel·lar sol·licitud",
+      message: "Estàs segur de voler cancel·lar aquesta sol·licitud? Aquesta acció no es pot desfer.",
+      onConfirm: async () => {
+        try {
+          await requestService.cancelRequest(id);
+          toast.success("Sol·licitud cancel·lada correctament");
+          navigate("/center/requests");
+        } catch (err) {
+          toast.error("Error en cancel·lar: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   if (loading) return <div className="p-6">Carregant detalls...</div>;
@@ -48,7 +65,7 @@ const RequestDetail = () => {
   const teachers = request.request_teachers || [];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">
           Detall de Sol·licitud #{request.id}
@@ -66,11 +83,10 @@ const RequestDetail = () => {
           <div>
             <p className="text-sm text-gray-500">Estat</p>
             <span
-              className={`font-bold ${
-                request.status === "SUBMITTED"
+              className={`font-bold ${request.status === "SUBMITTED"
                   ? "text-blue-600"
                   : "text-gray-800"
-              }`}
+                }`}
             >
               {request.status}
             </span>
@@ -129,10 +145,10 @@ const RequestDetail = () => {
           ))}
           {(!request.teacher_preferences ||
             request.teacher_preferences.length === 0) && (
-            <p className="text-gray-500 italic">
-              Sense preferències registrades.
-            </p>
-          )}
+              <p className="text-gray-500 italic">
+                Sense preferències registrades.
+              </p>
+            )}
         </div>
       </Card>
 
@@ -179,6 +195,18 @@ const RequestDetail = () => {
           </Button>
         </div>
       )}
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant="danger"
+        confirmText="Cancel·lar sol·licitud"
+        cancelText="Tornar"
+      />
     </div>
   );
 };

@@ -165,6 +165,7 @@ const getCurrentPhase = async (req, res) => {
  * POST /api/enrollment/periods
  * Crea un nuevo período de matrícula (solo ADMIN)
  * Body: { name, phases: { solicitudes: { start, end }, ... } }
+ * Al crear un nuevo período, envía credenciales a todos los coordinadores
  */
 const createPeriod = async (req, res) => {
   if (req.user.role !== 'ADMIN') {
@@ -197,7 +198,22 @@ const createPeriod = async (req, res) => {
         phases?.ejecucion?.end || null
       ]
     );
-    res.status(201).json(result.rows[0]);
+
+    const newPeriod = result.rows[0];
+
+    // Enviar credenciales a todos los coordinadores
+    let emailResult = null;
+    try {
+      emailResult = await emailService.sendCredentialsToAllCoordinators(newPeriod);
+      console.log(`📧 Credenciales enviadas a coordinadores:`, emailResult);
+    } catch (emailError) {
+      console.error('Error enviando credenciales a coordinadores:', emailError.message);
+    }
+
+    res.status(201).json({
+      period: newPeriod,
+      credentials_sent: emailResult
+    });
   } catch (error) {
     res.status(500).json({ error: `Failed to create period: ${error.message}` });
   }

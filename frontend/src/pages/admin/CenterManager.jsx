@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, Upload, Download, Building2, Search, MapPin, Mail, Phone, School } from "lucide-react";
+import toast from "react-hot-toast";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import { centerService } from "../../services/center.service.js";
 
 const CenterManager = () => {
@@ -15,6 +17,15 @@ const CenterManager = () => {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "danger"
+  });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -54,7 +65,7 @@ const CenterManager = () => {
       setError(null);
     } catch (err) {
       setError(
-        "Error al cargar centros: " +
+        "Error carregant centres: " +
         (err.response?.data?.message || err.message)
       );
     } finally {
@@ -85,7 +96,7 @@ const CenterManager = () => {
       loadCenters();
     } catch (err) {
       setError(
-        "Error al guardar: " + (err.response?.data?.message || err.message)
+        "Error desant: " + (err.response?.data?.message || err.message)
       );
     }
   };
@@ -112,15 +123,22 @@ const CenterManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Estás seguro de eliminar este centro?")) return;
-    try {
-      await centerService.delete(id);
-      loadCenters();
-    } catch (err) {
-      setError(
-        "Error al eliminar: " + (err.response?.data?.message || err.message)
-      );
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar centre",
+      message: "Estàs segur d'eliminar aquest centre? Aquesta acció no es pot desfer.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await centerService.delete(id);
+          toast.success("Centre eliminat correctament");
+          loadCenters();
+        } catch (err) {
+          toast.error("Error eliminant: " + (err.response?.data?.message || err.message));
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleExport = async () => {
@@ -128,19 +146,19 @@ const CenterManager = () => {
       await centerService.exportCSV();
     } catch (err) {
       setError(
-        "Error al exportar: " + (err.response?.data?.message || err.message)
+        "Error exportant: " + (err.response?.data?.message || err.message)
       );
     }
   };
 
   const handleDownloadTemplate = () => {
     const headers = [
-      "Código",
-      "Nombre",
-      "Dirección",
-      "Teléfono",
+      "Codi",
+      "Nom",
+      "Adreça",
+      "Telèfon",
       "Email",
-      "Titularidad"
+      "Titularitat"
     ];
 
     // Example data based on a real school
@@ -179,7 +197,7 @@ const CenterManager = () => {
       loadCenters();
     } catch (err) {
       setError(
-        "Error al importar: " + (err.response?.data?.message || err.message)
+        "Error important: " + (err.response?.data?.message || err.message)
       );
     } finally {
       setImporting(false);
@@ -213,14 +231,14 @@ const CenterManager = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-          <School className="text-blue-600" size={28} /> Gestión de Centros
+          <School className="text-blue-600" size={28} /> Gestió de Centres
         </h1>
         <p className="text-gray-500 mt-1">
-          Administra los centros educativos, sus datos de contacto y detalles de facturación.
+          Administra els centres educatius, les seves dades de contacte i detalls de facturació.
         </p>
       </div>
 
@@ -228,11 +246,11 @@ const CenterManager = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
           <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-          <div className="text-xs font-semibold uppercase text-blue-800 tracking-wide mt-1">Total Centros</div>
+          <div className="text-xs font-semibold uppercase text-blue-800 tracking-wide mt-1">Total Centres</div>
         </div>
         <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
           <div className="text-2xl font-bold text-green-600">{stats.public}</div>
-          <div className="text-xs font-semibold uppercase text-green-800 tracking-wide mt-1">Públicos</div>
+          <div className="text-xs font-semibold uppercase text-green-800 tracking-wide mt-1">Públics</div>
         </div>
         <div className="bg-purple-50 rounded-xl p-4 text-center border border-purple-100">
           <div className="text-2xl font-bold text-purple-600">{stats.private}</div>
@@ -240,7 +258,7 @@ const CenterManager = () => {
         </div>
         <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-200">
           <div className="text-2xl font-bold text-gray-600">{stats.municipalities}</div>
-          <div className="text-xs font-semibold uppercase text-gray-500 tracking-wide mt-1">Municipios</div>
+          <div className="text-xs font-semibold uppercase text-gray-500 tracking-wide mt-1">Municipis</div>
         </div>
       </div>
 
@@ -250,7 +268,7 @@ const CenterManager = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Buscar por nombre, código o municipio..."
+            placeholder="Cerca per nom, codi o municipi..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -280,7 +298,7 @@ const CenterManager = () => {
           </Button>
           <Button onClick={handleCreate}>
             <div className="flex items-center gap-2">
-              <Plus size={18} /> Nuevo Centro
+              <Plus size={18} /> Nou Centre
             </div>
           </Button>
         </div>
@@ -310,12 +328,12 @@ const CenterManager = () => {
             <table className="w-full border-collapse bg-white text-left text-sm text-gray-500">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Código</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ubicación</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contacto</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Titularidad</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Acciones</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Codi</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nom</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ubicació</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contacte</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Titularitat</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Accions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 border-t border-gray-100">
@@ -355,8 +373,8 @@ const CenterManager = () => {
                     <td className="px-6 py-4">
                       {c.ownership_type && (
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${c.ownership_type.includes('Públic') || c.ownership_type.includes('Educació')
-                            ? 'bg-green-50 text-green-700 border-green-200'
-                            : 'bg-orange-50 text-orange-700 border-orange-200'
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-orange-50 text-orange-700 border-orange-200'
                           }`}>
                           {c.ownership_type.includes('Educació') ? 'Generalitat' : c.ownership_type.split(' ')[0]}
                         </span>
@@ -385,8 +403,8 @@ const CenterManager = () => {
                 {filteredCenters.length === 0 && (
                   <tr>
                     <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
-                      <p className="text-lg font-medium text-gray-900 mb-1">No se encontraron centros</p>
-                      <p>Prueba a ajustar los filtros de búsqueda</p>
+                      <p className="text-lg font-medium text-gray-900 mb-1">No s'han trobat centres</p>
+                      <p>Prova a ajustar els filtres de cerca</p>
                     </td>
                   </tr>
                 )}
@@ -394,7 +412,7 @@ const CenterManager = () => {
             </table>
           </div>
           <div className="bg-gray-50 border-t border-gray-100 px-6 py-3 text-xs text-gray-500 flex justify-between">
-            <span>Mostrando {filteredCenters.length} de {centers.length} centros</span>
+            <span>Mostrant {filteredCenters.length} de {centers.length} centres</span>
           </div>
         </div>
       )}
@@ -402,14 +420,14 @@ const CenterManager = () => {
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingCenter ? "Editar Centro" : "Nuevo Centro"}
+        title={editingCenter ? "Editar Centre" : "Nou Centre"}
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Cancelar
+              Cancel·lar
             </Button>
             <Button type="submit" form="center-form">
-              Guardar
+              Desar
             </Button>
           </>
         }
@@ -417,7 +435,7 @@ const CenterManager = () => {
         <form id="center-form" onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre *
+              Nom *
             </label>
             <input
               type="text"
@@ -427,12 +445,12 @@ const CenterManager = () => {
               }
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
               required
-              placeholder="Ej: Institut Pedralbes"
+              placeholder="Ex: Institut Pedralbes"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Código
+              Codi
             </label>
             <input
               type="text"
@@ -448,7 +466,7 @@ const CenterManager = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Municipio
+                Municipi
               </label>
               <input
                 type="text"
@@ -478,7 +496,7 @@ const CenterManager = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dirección
+              Adreça
             </label>
             <input
               type="text"
@@ -494,7 +512,7 @@ const CenterManager = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
+                Correu electrònic
               </label>
               <input
                 type="email"
@@ -508,7 +526,7 @@ const CenterManager = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Teléfono
+                Telèfon
               </label>
               <input
                 type="text"
@@ -524,7 +542,7 @@ const CenterManager = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Titularidad
+              Titularitat
             </label>
             <select
               value={formData.ownership_type}
@@ -534,12 +552,12 @@ const CenterManager = () => {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
             >
               <option value="">Seleccionar...</option>
-              <option value="Departament d'Educació i Formació Professional">Público (Generalitat)</option>
-              <option value="Corporacions Locals">Público (Municipal)</option>
-              <option value="Privat">Privado</option>
-              <option value="Fundacions">Fundación</option>
-              <option value="Ordes i Congregacions Catòlics">Religioso</option>
-              <option value="Societats Mercantils">Sociedad Mercantil</option>
+              <option value="Departament d'Educació i Formació Professional">Públic (Generalitat)</option>
+              <option value="Corporacions Locals">Públic (Municipal)</option>
+              <option value="Privat">Privat</option>
+              <option value="Fundacions">Fundació</option>
+              <option value="Ordes i Congregacions Catòlics">Religiós</option>
+              <option value="Societats Mercantils">Societat Mercantil</option>
               <option value="Cooperatives">Cooperativa</option>
             </select>
           </div>
@@ -552,7 +570,7 @@ const CenterManager = () => {
           setShowImportModal(false);
           setImportResult(null);
         }}
-        title="Importar Centros desde CSV"
+        title="Importar Centres des de CSV"
         footer={
           <>
             <Button
@@ -562,7 +580,7 @@ const CenterManager = () => {
                 setImportResult(null);
               }}
             >
-              Cerrar
+              Tancar
             </Button>
           </>
         }
@@ -571,10 +589,10 @@ const CenterManager = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
             <div className="text-sm text-gray-600">
               <p className="mb-2">
-                Arrastra un archivo CSV o haz clic para seleccionar.
+                Arrossega un fitxer CSV o fes clic per seleccionar.
               </p>
               <p>
-                El archivo debe contener las cabeceras: <code>Código</code>, <code>Nombre</code>, <code>Dirección</code>, <code>Teléfono</code>, <code>Email</code>, <code>Titularidad</code>.
+                El fitxer ha de contenir les capçaleres: <code>Codi</code>, <code>Nom</code>, <code>Adreça</code>, <code>Telèfon</code>, <code>Email</code>, <code>Titularitat</code>.
               </p>
             </div>
             <Button
@@ -583,7 +601,7 @@ const CenterManager = () => {
               className="whitespace-nowrap shrink-0"
             >
               <div className="flex items-center gap-2">
-                <Download size={16} /> Descargar Plantilla
+                <Download size={16} /> Descarregar Plantilla
               </div>
             </Button>
           </div>
@@ -605,12 +623,12 @@ const CenterManager = () => {
             />
             <p className="text-sm text-gray-600 mb-2">
               {dragActive
-                ? "Suelta el archivo aquí"
-                : "Arrastra el archivo CSV aquí"}
+                ? "Deixa anar el fitxer aquí"
+                : "Arrossega el fitxer CSV aquí"}
             </p>
             <label className="inline-block">
               <span className="text-blue-600 hover:text-blue-700 cursor-pointer underline">
-                o haz clic para seleccionar
+                o fes clic per seleccionar
               </span>
               <input
                 type="file"
@@ -625,7 +643,7 @@ const CenterManager = () => {
           {importing && (
             <div className="flex items-center justify-center py-4">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-              <span className="ml-3 text-gray-600">Importando...</span>
+              <span className="ml-3 text-gray-600">Important...</span>
             </div>
           )}
 
@@ -636,15 +654,27 @@ const CenterManager = () => {
               </p>
               {importResult.details && (
                 <div className="mt-2 text-sm text-green-700">
-                  <p>Total procesados: {importResult.details.total}</p>
-                  <p>Insertados: {importResult.details.inserted}</p>
-                  <p>Omitidos: {importResult.details.skipped}</p>
+                  <p>Total processats: {importResult.details.total}</p>
+                  <p>Inserits: {importResult.details.inserted}</p>
+                  <p>Omesos: {importResult.details.skipped}</p>
                 </div>
               )}
             </div>
           )}
         </div>
       </Modal>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Eliminar"
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

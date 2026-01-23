@@ -13,6 +13,7 @@ import client from "../../api/client";
 import toast from "react-hot-toast";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 
 const TeachersManager = () => {
   const [teachers, setTeachers] = useState([]);
@@ -27,6 +28,15 @@ const TeachersManager = () => {
     full_name: "",
     email: "",
     phone_number: "",
+  });
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "warning"
   });
 
   // Exportar/Importar
@@ -97,29 +107,42 @@ const TeachersManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Estàs segur que vols eliminar aquest professor?"))
-      return;
-    try {
-      await client.delete(`/teachers/${id}`);
-      toast.success("Professor eliminat");
-      loadTeachers();
-    } catch (error) {
-      console.error("Error deleting teacher:", error);
-      toast.error("Error eliminant professor");
-      setError("Error eliminant professor");
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar professor",
+      message: "Estàs segur que vols eliminar aquest professor? Aquesta acció no es pot desfer.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await client.delete(`/teachers/${id}`);
+          toast.success("Professor eliminat");
+          loadTeachers();
+        } catch (error) {
+          console.error("Error deleting teacher:", error);
+          toast.error("Error eliminant professor");
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleSendCredentials = async (teacher) => {
-    if (!window.confirm(`Vols enviar les credencials a ${teacher.full_name}?`)) return;
-
-    try {
-      await client.post(`/teachers/${teacher.id}/send-credentials`);
-      toast.success("Credencials enviades correctament");
-    } catch (error) {
-      console.error("Error sending credentials:", error);
-      toast.error(error.response?.data?.error || "Error enviant credencials");
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Enviar credencials",
+      message: `Vols enviar les credencials d'accés a ${teacher.full_name}?`,
+      variant: "info",
+      onConfirm: async () => {
+        try {
+          await client.post(`/teachers/${teacher.id}/send-credentials`);
+          toast.success("Credencials enviades correctament");
+        } catch (error) {
+          console.error("Error sending credentials:", error);
+          toast.error(error.response?.data?.error || "Error enviant credencials");
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // --- CSV Import / Export ---
@@ -240,17 +263,17 @@ const TeachersManager = () => {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="space-y-6">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Users className="text-blue-600" /> Gestió de Professors
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <Users className="text-blue-600" size={24} /> Gestió de Professors
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="text-gray-500 mt-1 text-sm">
             Administra l'equip docent del teu centre
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
           <input
             type="file"
             accept=".csv"
@@ -258,24 +281,24 @@ const TeachersManager = () => {
             className="hidden"
             onChange={handleImportFile}
           />
-          <Button variant="secondary" onClick={handleDownloadTemplate}>
-            <div className="flex items-center gap-2">
-              <Download size={18} /> Descarregar Plantilla
+          <Button variant="secondary" onClick={handleDownloadTemplate} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Download size={16} /> <span className="hidden sm:inline">Plantilla</span>
             </div>
           </Button>
-          <Button variant="secondary" onClick={handleImportClick}>
-            <div className="flex items-center gap-2">
-              <Upload size={18} /> Importar CSV
+          <Button variant="secondary" onClick={handleImportClick} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Upload size={16} /> <span className="hidden sm:inline">Importar</span>
             </div>
           </Button>
-          <Button variant="secondary" onClick={handleExportCSV}>
-            <div className="flex items-center gap-2">
-              <Download size={18} /> Exportar CSV
+          <Button variant="secondary" onClick={handleExportCSV} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Download size={16} /> <span className="hidden sm:inline">Exportar</span>
             </div>
           </Button>
-          <Button onClick={() => handleOpenModal()}>
-            <div className="flex items-center gap-2">
-              <Plus size={18} /> Afegir Professor
+          <Button onClick={() => handleOpenModal()} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Plus size={16} /> Afegir
             </div>
           </Button>
         </div>
@@ -449,6 +472,18 @@ const TeachersManager = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText={confirmModal.variant === "danger" ? "Eliminar" : "Enviar"}
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

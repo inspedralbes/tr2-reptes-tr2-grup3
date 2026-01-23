@@ -86,11 +86,57 @@ router.post("/", authenticate, createStudent);
 router.put("/:id", authenticate, updateStudent);
 
 // ==========================================
+// RUTES DE FOTO DE PERFIL
+// ==========================================
+
+// Configuració de Multer per a fotos de perfil
+const photoUploadDir = path.join(__dirname, "../../../uploads/photos");
+if (!fs.existsSync(photoUploadDir)) {
+  fs.mkdirSync(photoUploadDir, { recursive: true });
+}
+
+const photoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, photoUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `student_${req.params.id}_${uniqueSuffix}${ext}`);
+  },
+});
+
+const photoFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Només s'accepten imatges"), false);
+  }
+};
+
+const uploadPhoto = multer({
+  storage: photoStorage,
+  fileFilter: photoFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+// POST - Pujar foto de perfil
+router.post(
+  "/:id/photo",
+  authenticate,
+  uploadPhoto.single("photo"),
+  require("./controller").uploadStudentPhoto
+);
+
+// ==========================================
 // RUTES DE DOCUMENTS
 // ==========================================
 
 // GET - Llistar documents d'un alumne
 router.get("/:id/documents", authenticate, listDocuments);
+
+// GET - Descarregar document (requereix autenticació)
+router.get("/documents/:docId/download", authenticate, require("./controller").downloadDocument);
 
 // POST - Pujar document per a un alumne (US #16)
 router.post(

@@ -5,17 +5,19 @@
  * Sistema de fases: SOLICITUDES → ASIGNACION → PUBLICACION → EJECUCION
  */
 import { useState, useEffect } from "react";
-import { 
+import {
   Plus, Edit, Trash2, Calendar, Power, ChevronRight,
   Send, Cog, Eye, Rocket, Clock, Users, School, FileCheck,
   AlertTriangle, CheckCircle, Info, BarChart3, ArrowRight, ArrowLeft,
   PauseCircle, Activity
 } from "lucide-react";
+import toast from "react-hot-toast";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import Button from "../../components/ui/Button.jsx";
-import enrollmentService, { 
-  PHASES, PHASE_ORDER, PHASE_LABELS, PHASE_COLORS, 
-  STATUS_LABELS, STATUS_COLORS 
+import enrollmentService, {
+  PHASES, PHASE_ORDER, PHASE_LABELS, PHASE_COLORS,
+  STATUS_LABELS, STATUS_COLORS
 } from "../../services/enrollment.service";
 
 /**
@@ -74,6 +76,15 @@ const EnrollmentManager = () => {
   const [stats, setStats] = useState({});
   const [expandedPeriod, setExpandedPeriod] = useState(null);
 
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "warning"
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     phases: {
@@ -106,7 +117,7 @@ const EnrollmentManager = () => {
       }
       setError(null);
     } catch (err) {
-      setError("Error al cargar períodos: " + err.message);
+      setError("Error carregant períodes: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -177,42 +188,54 @@ const EnrollmentManager = () => {
       setShowModal(false);
       loadPeriods();
     } catch (err) {
-      setError("Error al guardar: " + err.message);
+      setError("Error desant: " + err.message);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Eliminar aquest període? Aquesta acció no es pot desfer.")) {
-      return;
-    }
-    try {
-      await enrollmentService.delete(id);
-      setSuccess("Període eliminat");
-      loadPeriods();
-    } catch (err) {
-      setError("Error al eliminar: " + err.message);
-    }
+  const handleDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar període",
+      message: "Eliminar aquest període? Aquesta acció no es pot desfer.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.delete(id);
+          toast.success("Període eliminat");
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error eliminant: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
-  const handleActivate = async (id) => {
-    if (!window.confirm("Activar aquest període? Es desactivaran els altres períodes actius.")) {
-      return;
-    }
-    try {
-      await enrollmentService.activate(id);
-      setSuccess("Període activat correctament");
-      loadPeriods();
-    } catch (err) {
-      setError("Error al activar: " + err.message);
-    }
+  const handleActivate = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Activar període",
+      message: "Activar aquest període? Es desactivaran els altres períodes actius.",
+      variant: "warning",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.activate(id);
+          toast.success("Període activat correctament");
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error activant: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
-  const handleAdvancePhase = async (id, currentPhase) => {
+  const handleAdvancePhase = (id, currentPhase) => {
     const currentIndex = PHASE_ORDER.indexOf(currentPhase);
     const nextPhase = PHASE_ORDER[currentIndex + 1];
-    
+
     if (!nextPhase) {
-      setError("Ja esteu a la fase final");
+      toast.error("Ja sou a la fase final");
       return;
     }
 
@@ -222,53 +245,68 @@ const EnrollmentManager = () => {
       [PHASES.EJECUCION]: "Això iniciarà l'execució dels tallers."
     };
 
-    if (!window.confirm(confirmMessages[nextPhase] + "\n\nAvançar a \"" + PHASE_LABELS[nextPhase] + "\"?")) {
-      return;
-    }
-
-    try {
-      await enrollmentService.advancePhase(id);
-      setSuccess("Fase avançada a: " + PHASE_LABELS[nextPhase]);
-      loadPeriods();
-    } catch (err) {
-      setError("Error al avançar fase: " + err.message);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Avançar fase",
+      message: confirmMessages[nextPhase] + " Avançar a \"" + PHASE_LABELS[nextPhase] + "\"?",
+      variant: "warning",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.advancePhase(id);
+          toast.success("Fase avançada a: " + PHASE_LABELS[nextPhase]);
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error avançant fase: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
-  const handleRegressPhase = async (id, currentPhase) => {
+  const handleRegressPhase = (id, currentPhase) => {
     const currentIndex = PHASE_ORDER.indexOf(currentPhase);
     const prevPhase = PHASE_ORDER[currentIndex - 1];
-    
+
     if (!prevPhase) {
-      setError("Ja esteu a la primera fase");
+      toast.error("Ja sou a la primera fase");
       return;
     }
 
-    if (!window.confirm("⚠️ ATENCIÓ: Retrocedir a la fase \"" + PHASE_LABELS[prevPhase] + "\"?\n\nAixò és per a testing. En producció pot causar inconsistències.")) {
-      return;
-    }
-
-    try {
-      await enrollmentService.advancePhase(id, prevPhase);
-      setSuccess("Fase retrocedida a: " + PHASE_LABELS[prevPhase]);
-      loadPeriods();
-    } catch (err) {
-      setError("Error al retrocedir fase: " + err.message);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "⚠️ Retrocedir fase",
+      message: "ATENCIÓ: Retrocedir a la fase \"" + PHASE_LABELS[prevPhase] + "\"? Això és per a testing. En producció pot causar inconsistències.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.advancePhase(id, prevPhase);
+          toast.success("Fase retrocedida a: " + PHASE_LABELS[prevPhase]);
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error retrocedint fase: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
-  const handleSetPhase = async (id, targetPhase) => {
-    if (!window.confirm("Canviar a la fase \"" + PHASE_LABELS[targetPhase] + "\"?")) {
-      return;
-    }
-
-    try {
-      await enrollmentService.advancePhase(id, targetPhase);
-      setSuccess("Fase canviada a: " + PHASE_LABELS[targetPhase]);
-      loadPeriods();
-    } catch (err) {
-      setError("Error al canviar fase: " + err.message);
-    }
+  const handleSetPhase = (id, targetPhase) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Canviar fase",
+      message: "Canviar a la fase \"" + PHASE_LABELS[targetPhase] + "\"?",
+      variant: "warning",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.advancePhase(id, targetPhase);
+          toast.success("Fase canviada a: " + PHASE_LABELS[targetPhase]);
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error canviant fase: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const renderEnhancedTimeline = (period) => {
@@ -279,12 +317,12 @@ const EnrollmentManager = () => {
       <div className="mt-6">
         <div className="relative">
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
+            <div
               className={config.bgColor + " h-full transition-all duration-500"}
               style={{ width: ((currentPhaseIndex + 1) / PHASE_ORDER.length) * 100 + "%" }}
             />
           </div>
-          
+
           <div className="flex justify-between mt-2">
             {PHASE_ORDER.map((phase, index) => {
               const phaseConfig = PHASE_CONFIG[phase];
@@ -340,12 +378,12 @@ const EnrollmentManager = () => {
               Fase Actual: {PHASE_LABELS[period.current_phase]}
             </h4>
             <p className="text-gray-600 text-sm mt-1">{config.description}</p>
-            
+
             <div className="mt-4">
               <p className="text-xs font-medium text-gray-500 uppercase mb-2">Accions disponibles en aquesta fase:</p>
               <div className="flex flex-wrap gap-2">
                 {config.actions.map((action, idx) => (
-                  <span 
+                  <span
                     key={idx}
                     className={"px-3 py-1.5 rounded-full text-xs font-medium " + config.lightBg + " " + config.textColor + " border " + config.borderColor}
                   >
@@ -362,7 +400,7 @@ const EnrollmentManager = () => {
 
   const renderPeriodStats = (period) => {
     const periodStats = stats[period.id] || {};
-    
+
     const statCards = [
       { label: 'Centres', value: periodStats.totalCenters || 0, icon: School, bgColor: 'bg-blue-50', borderColor: 'border-blue-100', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', valueColor: 'text-blue-700', labelColor: 'text-blue-600' },
       { label: 'Sol·licituds', value: periodStats.totalRequests || 0, icon: FileCheck, bgColor: 'bg-indigo-50', borderColor: 'border-indigo-100', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', valueColor: 'text-indigo-700', labelColor: 'text-indigo-600' },
@@ -371,7 +409,7 @@ const EnrollmentManager = () => {
     ];
 
     return (
-      <div className="grid grid-cols-4 gap-4 mt-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
         {statCards.map(({ label, value, icon: Icon, bgColor, borderColor, iconBg, iconColor, valueColor, labelColor }) => (
           <div key={label} className={bgColor + " rounded-xl p-4 border " + borderColor}>
             <div className="flex items-center gap-3">
@@ -444,7 +482,7 @@ const EnrollmentManager = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -454,7 +492,7 @@ const EnrollmentManager = () => {
             Gestió de Períodes
           </h1>
           <p className="text-gray-500 mt-2 max-w-xl">
-            Configura i controla els períodes d'inscripció. Cada període passa per 4 fases: 
+            Configura i controla els períodes d'inscripció. Cada període passa per 4 fases:
             Sol·licituds → Assignació → Publicació → Execució
           </p>
         </div>
@@ -495,20 +533,65 @@ const EnrollmentManager = () => {
           </Button>
         </div>
       ) : (
-        <div className="space-y-6">
-          {periods.map((period) => {
+        <div className="space-y-8">
+          {/* Agrupar períodos por año académico */}
+          {(() => {
+            // Extraer año del período (del nombre o de la fecha de creación)
+            const getAcademicYear = (period) => {
+              // Intentar extraer año del nombre (ej: "Enginy 2025-2026")
+              const yearMatch = period.name.match(/(\d{4})-(\d{4})/);
+              if (yearMatch) return `${yearMatch[1]}-${yearMatch[2]}`;
+              
+              // Si no, usar el año de creación
+              const created = new Date(period.created_at);
+              const month = created.getMonth();
+              const year = created.getFullYear();
+              // Si es antes de septiembre, es del curso anterior
+              if (month < 8) return `${year - 1}-${year}`;
+              return `${year}-${year + 1}`;
+            };
+
+            // Agrupar por año
+            const grouped = periods.reduce((acc, period) => {
+              const year = getAcademicYear(period);
+              if (!acc[year]) acc[year] = [];
+              acc[year].push(period);
+              return acc;
+            }, {});
+
+            // Ordenar años de más reciente a más antiguo
+            const sortedYears = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
+            return sortedYears.map((academicYear, yearIndex) => (
+              <div key={academicYear} className="space-y-4">
+                {/* Cabecera del año académico */}
+                <div className="flex items-center gap-4">
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${yearIndex === 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+                    <Calendar size={18} />
+                    <span className="font-bold text-lg">Curs {academicYear}</span>
+                    {yearIndex === 0 && (
+                      <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">Actual</span>
+                    )}
+                  </div>
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-sm text-gray-500">{grouped[academicYear].length} període(s)</span>
+                </div>
+
+                {/* Períodos de este año */}
+                <div className="space-y-4 pl-2 border-l-4 border-gray-200 ml-2">
+                  {grouped[academicYear].map((period) => {
             const isExpanded = expandedPeriod === period.id;
             const config = PHASE_CONFIG[period.current_phase];
-            
+
             return (
-              <div 
-                key={period.id} 
+              <div
+                key={period.id}
                 className={
                   "bg-white rounded-2xl shadow-sm border-2 overflow-hidden transition-all " +
                   (period.status === 'ACTIVE' ? "border-green-400 shadow-green-100" : "border-gray-200")
                 }
               >
-                <div 
+                <div
                   className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => {
                     setExpandedPeriod(isExpanded ? null : period.id);
@@ -539,7 +622,7 @@ const EnrollmentManager = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       {period.status === 'DRAFT' && (
                         <button
@@ -578,8 +661,8 @@ const EnrollmentManager = () => {
                       >
                         <Trash2 size={20} />
                       </button>
-                      <ChevronRight 
-                        size={24} 
+                      <ChevronRight
+                        size={24}
                         className={"text-gray-400 transition-transform " + (isExpanded ? "rotate-90" : "")}
                       />
                     </div>
@@ -591,12 +674,12 @@ const EnrollmentManager = () => {
                     {renderEnhancedTimeline(period)}
                     {renderCurrentPhaseInfo(period)}
                     {renderPeriodStats(period)}
-                    
+
                     <div className="mt-6 p-4 bg-gray-50 rounded-xl">
                       <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                         <Clock size={16} /> Dates del Període
                       </h4>
-                      <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                         {[
                           { label: 'Sol·licituds', start: period.phase_solicitudes_start, end: period.phase_solicitudes_end, phase: PHASES.SOLICITUDES },
                           { label: 'Assignació', start: null, end: null, phase: PHASES.ASIGNACION },
@@ -605,9 +688,9 @@ const EnrollmentManager = () => {
                         ].map(({ label, start, end, phase }) => {
                           const phaseConfig = PHASE_CONFIG[phase];
                           const isCurrent = period.current_phase === phase;
-                          
+
                           return (
-                            <div 
+                            <div
                               key={label}
                               className={
                                 "p-3 rounded-lg border text-center " +
@@ -632,6 +715,10 @@ const EnrollmentManager = () => {
               </div>
             );
           })}
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       )}
 
@@ -680,6 +767,18 @@ const EnrollmentManager = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Confirmar"
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

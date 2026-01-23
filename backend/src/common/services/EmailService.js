@@ -107,6 +107,125 @@ class EmailService {
     }
 
     // ========================================
+    // 1.5. CREDENCIALES DE COORDINADOR (NUEVO AÑO)
+    // ========================================
+    /**
+     * Envía credenciales a un coordinador cuando se crea un nuevo período
+     * @param {string} email - Email del coordinador
+     * @param {string} password - Contraseña generada
+     * @param {string} coordinatorName - Nombre del coordinador
+     * @param {string} schoolName - Nombre del centro educativo
+     * @param {string} periodName - Nombre del nuevo período
+     */
+    async sendCoordinatorCredentials(email, password, coordinatorName, schoolName, periodName) {
+        const subject = `Enginy ${periodName} - Credencials d'accés per a coordinadors`;
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                <h2 style="color: #2563eb;">Benvingut/da ${coordinatorName}!</h2>
+                <p>S'ha iniciat un nou any escolar al projecte <strong>Enginy</strong>.</p>
+                
+                ${schoolName ? `<p>Com a coordinador/a de <strong>${schoolName}</strong>, ja pots accedir a la plataforma per gestionar les sol·licituds de tallers del teu centre.</p>` : '<p>Ja pots accedir a la plataforma per gestionar les sol·licituds de tallers.</p>'}
+                
+                <div style="background-color: #dbeafe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+                    <h3 style="margin-top: 0; color: #1e40af;">Període: ${periodName}</h3>
+                </div>
+
+                <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #4b5563;">Les teves credencials:</h3>
+                    <p><strong>Usuari/Email:</strong> ${email}</p>
+                    <p><strong>Contrasenya:</strong> ${password}</p>
+                </div>
+
+                <a href="${this.appUrl}" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Accedir a Enginy</a>
+
+                <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
+                    Et recomanem canviar la contrasenya un cop hagis iniciat sessió.<br>
+                    Si tens qualsevol dubte, contacta amb l'administració d'Enginy.
+                </p>
+            </div>
+        `;
+
+        return this._sendEmail(email, subject, html);
+    }
+
+    /**
+     * Envía credenciales a TODOS los coordinadores de centros al crear un nuevo período
+     * Genera nueva contraseña para cada uno y la actualiza en la BD
+     * @param {Object} period - Datos del período creado
+     * @returns {Object} Resultados del envío
+     */
+    async sendCredentialsToAllCoordinators(period) {
+        const bcrypt = require('bcrypt');
+        
+        console.log(`📧 Enviando credenciales a coordinadores para período: ${period.name}`);
+
+        // Obtener todos los coordinadores con su centro
+        const coordsQuery = await db.query(`
+            SELECT u.id, u.email, u.full_name, s.name as school_name
+            FROM users u
+            LEFT JOIN schools s ON s.coordinator_user_id = u.id
+            WHERE u.role = 'CENTER_COORD' AND u.email IS NOT NULL
+        `);
+
+        const coordinators = coordsQuery.rows;
+        console.log(`📧 Total coordinadores encontrados: ${coordinators.length}`);
+
+        let sentCount = 0;
+        let errorCount = 0;
+        const results = [];
+
+        for (const coord of coordinators) {
+            try {
+                // Generar nueva contraseña
+                const newPassword = this._generatePassword();
+                const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+                // Actualizar contraseña en la BD
+                await db.query(
+                    'UPDATE users SET password_hash = $1 WHERE id = $2',
+                    [hashedPassword, coord.id]
+                );
+
+                // Enviar email
+                const emailResult = await this.sendCoordinatorCredentials(
+                    coord.email,
+                    newPassword,
+                    coord.full_name,
+                    coord.school_name,
+                    period.name
+                );
+
+                if (emailResult.success) {
+                    sentCount++;
+                    results.push({ email: coord.email, success: true });
+                } else {
+                    errorCount++;
+                    results.push({ email: coord.email, success: false, error: emailResult.error });
+                }
+            } catch (error) {
+                errorCount++;
+                results.push({ email: coord.email, success: false, error: error.message });
+                console.error(`❌ Error con coordinador ${coord.email}:`, error.message);
+            }
+        }
+
+        console.log(`📧 Credenciales coordinadores completado: ${sentCount} enviados, ${errorCount} errores`);
+        return { sent: sentCount, errors: errorCount, total: coordinators.length, details: results };
+    }
+
+    /**
+     * Genera una contraseña aleatoria segura
+     */
+    _generatePassword(length = 10) {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        let password = '';
+        for (let i = 0; i < length; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
+    }
+
+    // ========================================
     // 2. INICIO DE PERÍODO - EMAIL A TODOS
     // ========================================
     /**

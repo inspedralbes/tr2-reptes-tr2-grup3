@@ -37,3 +37,35 @@ Thumbs.db
 coverage/
 *.lcov
 .nyc_output/
+
+# Ignorar archivos subidos por usuarios
+backend/uploads/
+backend/uploads/**
+uploads/
+
+# Ignorar archivos de base de datos locales
+*.sql.backup
+*.dump
+
+# Ignorar archivos temporales
+*.tmp
+*.temp
+.cache/
+
+# Ignorar archivos de Docker
+*.log
+docker-compose.override.yml
+
+# Ignorar certificados SSL locales
+*.pem
+*.key
+*.crt
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/ssl/*.crt
+
+# Ignorar package-lock en desarrollo (opcional, descomentar si se desea)
+# package-lock.json
+
+# Ignorar archivos de migraciones aplicadas manualmente
+database/migrations/*.applied
