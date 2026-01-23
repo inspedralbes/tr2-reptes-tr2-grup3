@@ -11,8 +11,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
+      # Solo el esquema - datos de seed se insertan manualmente si es necesario
       - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
-      - ./database/insert.sql:/docker-entrypoint-initdb.d/02-insert.sql
       - postgres_data_prod:/var/lib/postgresql/data
     networks:
       - enginy_network_prod
@@ -40,6 +40,12 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
+      # Email (opcional - si no se configura, emails se loguean pero no envían)
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@enginy.cat}
     depends_on:
       postgres:
         condition: service_healthy
