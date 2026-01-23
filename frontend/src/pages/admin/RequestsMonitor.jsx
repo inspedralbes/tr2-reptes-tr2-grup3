@@ -50,7 +50,7 @@ const RequestsMonitor = () => {
       setWorkshops(workshopsRes.data);
     } catch (err) {
       setError(
-        "Error cargando solicitudes: " +
+        "Error carregant sol·licituds: " +
         (err.response?.data?.message || err.message)
       );
     } finally {
@@ -85,10 +85,10 @@ const RequestsMonitor = () => {
 
   const getStatusLabel = (status) => {
     const labels = {
-      DRAFT: "Borrador",
+      DRAFT: "Esborrany",
       SUBMITTED: "Enviada",
-      APPROVED: "Aprobada",
-      CANCELLED: "Cancelada",
+      APPROVED: "Aprovada",
+      CANCELLED: "Cancel·lada",
     };
     return labels[status] || status;
   };
@@ -107,10 +107,10 @@ const RequestsMonitor = () => {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
           <FileText className="text-blue-600" size={28} /> Monitor de
-          Solicitudes
+          Sol·licituds
         </h1>
         <p className="text-gray-500 mt-1">
-          Visualiza y gestiona todas las solicitudes entrantes de los centros.
+          Visualitza i gestiona totes les sol·licituds entrants dels centres.
         </p>
       </div>
 
@@ -120,11 +120,11 @@ const RequestsMonitor = () => {
           {/* Búsqueda */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-              <Search size={14} /> Buscar centro
+              <Search size={14} /> Cerca centre
             </label>
             <input
               type="text"
-              placeholder="Nombre del centro..."
+              placeholder="Nom del centre..."
               value={filters.search}
               onChange={(e) =>
                 setFilters({ ...filters, search: e.target.value })
@@ -136,7 +136,7 @@ const RequestsMonitor = () => {
           {/* Estado */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-              <Filter size={14} /> Estado
+              <Filter size={14} /> Estat
             </label>
             <select
               value={filters.status}
@@ -145,10 +145,10 @@ const RequestsMonitor = () => {
               }
               className="w-full border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Todos los estados</option>
-              <option value="SUBMITTED">Enviadas</option>
-              <option value="APPROVED">Aprobadas</option>
-              <option value="CANCELLED">Canceladas</option>
+              <option value="">Tots els estats</option>
+              <option value="SUBMITTED">Enviades</option>
+              <option value="APPROVED">Aprovades</option>
+              <option value="CANCELLED">Cancel·lades</option>
             </select>
           </div>
 
@@ -164,7 +164,7 @@ const RequestsMonitor = () => {
               }
               className="w-full border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Todos los talleres</option>
+              <option value="">Tots els tallers</option>
               {workshops.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.title}
@@ -181,7 +181,7 @@ const RequestsMonitor = () => {
               }
               className="w-full bg-gray-50 text-gray-600 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium flex items-center justify-center gap-2"
             >
-              <X size={16} /> Limpiar filtros
+              <X size={16} /> Netejar filtres
             </button>
           </div>
         </div>
@@ -194,7 +194,7 @@ const RequestsMonitor = () => {
             {requests.filter((r) => r.status === "SUBMITTED").length}
           </div>
           <div className="text-xs font-semibold uppercase text-blue-800 tracking-wide mt-1">
-            Enviadas
+            Enviades
           </div>
         </div>
         <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
@@ -202,7 +202,7 @@ const RequestsMonitor = () => {
             {requests.filter((r) => r.status === "APPROVED").length}
           </div>
           <div className="text-xs font-semibold uppercase text-green-800 tracking-wide mt-1">
-            Aprobadas
+            Aprovades
           </div>
         </div>
         <div className="bg-red-50 rounded-xl p-4 text-center border border-red-100">
@@ -210,7 +210,7 @@ const RequestsMonitor = () => {
             {requests.filter((r) => r.status === "CANCELLED").length}
           </div>
           <div className="text-xs font-semibold uppercase text-red-800 tracking-wide mt-1">
-            Canceladas
+            Cancel·lades
           </div>
         </div>
         <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-200">
@@ -241,25 +241,25 @@ const RequestsMonitor = () => {
                   ID
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Centro
+                  Centre
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Período
+                  Període
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Fecha envío
+                  Data enviament
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  1ª Vez
+                  1a Vegada
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Martes OK
+                  Dimarts OK
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Estado
+                  Estat
                 </th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Acciones
+                  Accions
                 </th>
               </tr>
             </thead>
@@ -270,7 +270,7 @@ const RequestsMonitor = () => {
                     colSpan="8"
                     className="px-6 py-12 text-center text-gray-500"
                   >
-                    No hay solicitudes que coincidan con los filtros
+                    No hi ha sol·licituds que coincideixin amb els filtres
                   </td>
                 </tr>
               ) : (
@@ -287,16 +287,16 @@ const RequestsMonitor = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-medium text-gray-900">
                         {req.school_name ||
-                          `Centro ${req.school_id?.slice(0, 8)}`}
+                          `Centre ${req.school_id?.slice(0, 8)}`}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {req.period_name ||
-                        `Período ${req.enrollment_period_id?.slice(0, 8)}`}
+                        `Període ${req.enrollment_period_id?.slice(0, 8)}`}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {req.submitted_at
-                        ? new Date(req.submitted_at).toLocaleDateString("es-ES")
+                        ? new Date(req.submitted_at).toLocaleDateString("ca-ES")
                         : "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -328,7 +328,7 @@ const RequestsMonitor = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center gap-1 transition-colors">
-                        <Eye size={16} /> Ver detalle
+                        <Eye size={16} /> Veure detall
                       </button>
                     </td>
                   </tr>
@@ -342,7 +342,7 @@ const RequestsMonitor = () => {
       {/* Paginación simple */}
       <div className="mt-4 flex justify-between items-center text-sm text-gray-500 px-1">
         <span>
-          Mostrando {filteredRequests.length} de {requests.length} solicitudes
+          Mostrant {filteredRequests.length} de {requests.length} sol·licituds
         </span>
       </div>
     </div>

@@ -248,7 +248,7 @@ const CenterDashboard = () => {
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold text-orange-800">
-                Documentació pendents
+                Documentació pendent
               </h3>
               <p className="text-orange-700">
                 Tens <strong>{stats.pendingDocuments}</strong> alumne(s) sense
@@ -326,19 +326,19 @@ const CenterDashboard = () => {
             }}
             disabled={stats.activePeriod?.current_phase !== 'PUBLICACION' && stats.activePeriod?.current_phase !== 'EJECUCION'}
             className={`group bg-white rounded-2xl shadow-sm p-6 text-left transition-all duration-300 border border-gray-100 ${stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
-                ? 'hover:shadow-xl hover:-translate-y-1 hover:border-orange-100'
-                : 'opacity-60 cursor-not-allowed'
+              ? 'hover:shadow-xl hover:-translate-y-1 hover:border-orange-100'
+              : 'opacity-60 cursor-not-allowed'
               }`}
           >
             <div className={`p-4 rounded-xl w-fit mb-4 transition-colors ${stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
-                ? 'bg-orange-50 text-orange-600 group-hover:bg-orange-600 group-hover:text-white'
-                : 'bg-gray-100 text-gray-400'
+              ? 'bg-orange-50 text-orange-600 group-hover:bg-orange-600 group-hover:text-white'
+              : 'bg-gray-100 text-gray-400'
               }`}>
               <Users size={32} />
             </div>
             <h3 className={`text-lg font-bold transition-colors ${stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
-                ? 'text-gray-900 group-hover:text-orange-700'
-                : 'text-gray-500'
+              ? 'text-gray-900 group-hover:text-orange-700'
+              : 'text-gray-500'
               }`}>
               Gestió Alumnes
             </h3>
@@ -389,19 +389,19 @@ const CenterDashboard = () => {
             }}
             disabled={stats.activePeriod?.current_phase !== 'PUBLICACION' && stats.activePeriod?.current_phase !== 'EJECUCION'}
             className={`group bg-white rounded-2xl shadow-sm p-6 text-left transition-all duration-300 border border-gray-100 ${stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
-                ? 'hover:shadow-xl hover:-translate-y-1 hover:border-teal-100'
-                : 'opacity-60 cursor-not-allowed'
+              ? 'hover:shadow-xl hover:-translate-y-1 hover:border-teal-100'
+              : 'opacity-60 cursor-not-allowed'
               }`}
           >
             <div className={`p-4 rounded-xl w-fit mb-4 transition-colors ${stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
-                ? 'bg-teal-50 text-teal-600 group-hover:bg-teal-600 group-hover:text-white'
-                : 'bg-gray-100 text-gray-400'
+              ? 'bg-teal-50 text-teal-600 group-hover:bg-teal-600 group-hover:text-white'
+              : 'bg-gray-100 text-gray-400'
               }`}>
               <CheckCircle size={32} />
             </div>
             <h3 className={`text-lg font-bold transition-colors ${stats.activePeriod?.current_phase === 'PUBLICACION' || stats.activePeriod?.current_phase === 'EJECUCION'
-                ? 'text-gray-900 group-hover:text-teal-700'
-                : 'text-gray-500'
+              ? 'text-gray-900 group-hover:text-teal-700'
+              : 'text-gray-500'
               }`}>
               Les Meves Assignacions
             </h3>

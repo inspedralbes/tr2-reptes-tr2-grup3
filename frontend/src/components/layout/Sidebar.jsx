@@ -87,13 +87,13 @@ const Sidebar = ({ isOpen, onClose }) => {
             {!isAuthenticated ? (
               <div>
                 <h3 className="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  Acceso
+                  Accés
                 </h3>
                 <NavLink to="/login" className={getLinkClass} onClick={handleNavClick}>
                   {({ isActive }) => (
                     <>
                       <LogOut size={20} className={getIconClass(isActive)} />
-                      <span>Iniciar Sesión</span>
+                      <span>Iniciar Sessió</span>
                     </>
                   )}
                 </NavLink>
@@ -104,14 +104,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {isAdmin && (
                   <div>
                     <h3 className="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                      Administración
+                      Administració
                     </h3>
                     <div className="space-y-1">
                       <NavLink to="/admin" end className={getLinkClass} onClick={handleNavClick}>
                         {({ isActive }) => (
                           <>
                             <LayoutDashboard size={20} className={getIconClass(isActive)} />
-                            <span>Panel de Control</span>
+                            <span>Tauler de Control</span>
                           </>
                         )}
                       </NavLink>
@@ -119,7 +119,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         {({ isActive }) => (
                           <>
                             <CalendarDays size={20} className={getIconClass(isActive)} />
-                            <span>Convocatorias</span>
+                            <span>Convocatòries</span>
                           </>
                         )}
                       </NavLink>
@@ -127,7 +127,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         {({ isActive }) => (
                           <>
                             <BookOpen size={20} className={getIconClass(isActive)} />
-                            <span>Catálogo</span>
+                            <span>Catàleg</span>
                           </>
                         )}
                       </NavLink>
@@ -135,7 +135,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         {({ isActive }) => (
                           <>
                             <Briefcase size={20} className={getIconClass(isActive)} />
-                            <span>Proveedores</span>
+                            <span>Proveïdors</span>
                           </>
                         )}
                       </NavLink>
@@ -143,7 +143,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         {({ isActive }) => (
                           <>
                             <Building2 size={20} className={getIconClass(isActive)} />
-                            <span>Centros</span>
+                            <span>Centres</span>
                           </>
                         )}
                       </NavLink>
@@ -151,7 +151,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         {({ isActive }) => (
                           <>
                             <FileText size={20} className={getIconClass(isActive)} />
-                            <span>Solicitudes</span>
+                            <span>Sol·licituds</span>
                           </>
                         )}
                       </NavLink>
@@ -159,7 +159,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         {({ isActive }) => (
                           <>
                             <Target size={20} className={getIconClass(isActive)} />
-                            <span>Asignación</span>
+                            <span>Assignació</span>
                           </>
                         )}
                       </NavLink>

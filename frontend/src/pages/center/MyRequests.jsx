@@ -121,7 +121,7 @@ const MyRequests = () => {
                   </span>
                   <span className="text-gray-500 text-sm flex items-center gap-1">
                     <Clock className="w-4 h-4" /> Enviada el{" "}
-                    {new Date(req.submitted_at).toLocaleDateString("es-ES")}
+                    {new Date(req.submitted_at).toLocaleDateString("ca-ES")}
                   </span>
                 </div>
                 {req.status === "SUBMITTED" && (
@@ -196,10 +196,10 @@ const MyRequests = () => {
                                     {s.absentismo > 0 && (
                                       <span
                                         className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] text-white font-bold ${s.absentismo >= 4
-                                            ? "bg-red-500"
-                                            : s.absentismo >= 2
-                                              ? "bg-yellow-500"
-                                              : "bg-green-500"
+                                          ? "bg-red-500"
+                                          : s.absentismo >= 2
+                                            ? "bg-yellow-500"
+                                            : "bg-green-500"
                                           }`}
                                         title="Nivell d'absentisme"
                                       >

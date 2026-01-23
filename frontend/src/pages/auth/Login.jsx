@@ -54,7 +54,7 @@ const Login = () => {
     } catch (err) {
       console.error("Login error:", err);
       setError(
-        err.response?.data?.error || err.message || "Error de autenticación"
+        err.response?.data?.error || err.message || "Error d'autenticació"
       );
     }
   };
@@ -111,7 +111,7 @@ const Login = () => {
                   <code className="text-gray-900 font-mono">jordi.lopez@baixeras.cat</code>
                 </div>
                 <p className="text-center text-gray-400 mt-2">
-                  Password: <code className="font-mono text-gray-600">admin123</code>
+                  Contrasenya: <code className="font-mono text-gray-600">admin123</code>
                 </p>
               </div>
             </div>

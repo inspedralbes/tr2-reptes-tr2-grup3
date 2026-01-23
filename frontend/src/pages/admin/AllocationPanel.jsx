@@ -65,7 +65,7 @@ const AllocationPanel = () => {
         setSelectedPeriod(data[0].id);
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al cargar períodos: ' + err.message });
+      setMessage({ type: 'error', text: 'Error carregant períodes: ' + err.message });
     }
   };
 
@@ -139,7 +139,7 @@ const AllocationPanel = () => {
       setEditingAllocation(null);
       loadAllocations();
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al actualitzar: ' + err.message });
+      setMessage({ type: 'error', text: 'Error actualitzant: ' + err.message });
     }
   };
 
@@ -154,7 +154,7 @@ const AllocationPanel = () => {
       setMessage({ type: 'success', text: '✅ Totes les assignacions han estat aprovades (PUBLISHED)' });
       loadAllocations();
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al publicar: ' + err.message });
+      setMessage({ type: 'error', text: 'Error publicant: ' + err.message });
     } finally {
       setPublishingAll(false);
     }
@@ -296,8 +296,8 @@ const AllocationPanel = () => {
           </div>
           {currentPhase && (
             <span className={`px-3 py-2 rounded-xl text-xs font-semibold ${currentPhase === 'ASIGNACION'
-                ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                : 'bg-gray-100 text-gray-600 border border-gray-200'
+              ? 'bg-amber-100 text-amber-700 border border-amber-200'
+              : 'bg-gray-100 text-gray-600 border border-gray-200'
               }`}>
               {currentPhase}
             </span>
@@ -319,7 +319,7 @@ const AllocationPanel = () => {
                 <div className={`flex items-center gap-2 ${item.done ? 'text-green-600' : item.active ? 'text-blue-600' : 'text-gray-400'
                   }`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${item.done ? 'bg-green-500 text-white' :
-                      item.active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
+                    item.active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
                     }`}>
                     {item.done ? <Check size={16} /> : <item.icon size={16} />}
                   </div>
@@ -410,8 +410,8 @@ const AllocationPanel = () => {
       {/* Message */}
       {message && (
         <div className={`p-4 rounded-xl flex items-center gap-3 ${message.type === 'error'
-            ? 'bg-red-50 text-red-800 border border-red-200'
-            : 'bg-green-50 text-green-800 border border-green-200'
+          ? 'bg-red-50 text-red-800 border border-red-200'
+          : 'bg-green-50 text-green-800 border border-green-200'
           }`}>
           {message.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
           <span className="font-medium flex-1">{message.text}</span>
@@ -433,8 +433,8 @@ const AllocationPanel = () => {
             <button
               key={tab.key}
               className={`flex-1 py-3.5 text-sm font-medium text-center transition-all relative ${activeTab === tab.key
-                  ? 'text-blue-600 bg-white'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                ? 'text-blue-600 bg-white'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                 }`}
               onClick={() => setActiveTab(tab.key)}
             >
@@ -633,8 +633,8 @@ const AllocationPanel = () => {
                                 <h4 className="font-semibold text-gray-900">{workshop.title}</h4>
                                 <div className="flex items-center gap-3 mt-1">
                                   <span className={`text-xs px-2 py-0.5 rounded-full ${workshop.day === 'TUESDAY'
-                                      ? 'bg-blue-100 text-blue-700'
-                                      : 'bg-purple-100 text-purple-700'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-purple-100 text-purple-700'
                                     }`}>
                                     {workshop.day === 'TUESDAY' ? 'Dimarts' : 'Dijous'}
                                   </span>
@@ -687,10 +687,10 @@ const AllocationPanel = () => {
                                   <div
                                     key={school.id}
                                     className={`flex items-center justify-between p-3 rounded-xl border transition-all ${editingAllocation?.id === school.id
-                                        ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
-                                        : school.status === 'PROVISIONAL'
-                                          ? 'border-amber-200 bg-amber-50 hover:border-amber-300'
-                                          : 'border-green-200 bg-green-50 hover:border-green-300'
+                                      ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
+                                      : school.status === 'PROVISIONAL'
+                                        ? 'border-amber-200 bg-amber-50 hover:border-amber-300'
+                                        : 'border-green-200 bg-green-50 hover:border-green-300'
                                       }`}
                                   >
                                     <div className="flex items-center gap-3">
@@ -702,8 +702,8 @@ const AllocationPanel = () => {
                                         <span className="font-medium text-gray-800">{school.school_name}</span>
                                         <div className="flex items-center gap-2 mt-0.5">
                                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${school.status === 'PROVISIONAL'
-                                              ? 'bg-amber-100 text-amber-700'
-                                              : 'bg-green-100 text-green-700'
+                                            ? 'bg-amber-100 text-amber-700'
+                                            : 'bg-green-100 text-green-700'
                                             }`}>
                                             {school.status === 'PROVISIONAL' ? '🟡 Provisional' : '✅ Aprovat'}
                                           </span>
@@ -895,10 +895,10 @@ const AllocationPanel = () => {
                                   <div
                                     key={workshop.id}
                                     className={`flex items-center justify-between p-3 rounded-xl border transition-all ${editingAllocation?.id === workshop.id
-                                        ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
-                                        : workshop.status === 'PROVISIONAL'
-                                          ? 'border-amber-200 bg-amber-50 hover:border-amber-300'
-                                          : 'border-green-200 bg-green-50 hover:border-green-300'
+                                      ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-200'
+                                      : workshop.status === 'PROVISIONAL'
+                                        ? 'border-amber-200 bg-amber-50 hover:border-amber-300'
+                                        : 'border-green-200 bg-green-50 hover:border-green-300'
                                       }`}
                                   >
                                     <div className="flex items-center gap-3">
@@ -910,14 +910,14 @@ const AllocationPanel = () => {
                                         <span className="font-medium text-gray-800">{workshop.workshop_title}</span>
                                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                           <span className={`text-xs px-2 py-0.5 rounded-full ${workshop.day_of_week === 'TUESDAY'
-                                              ? 'bg-blue-100 text-blue-700'
-                                              : 'bg-purple-100 text-purple-700'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-purple-100 text-purple-700'
                                             }`}>
                                             {workshop.day_of_week === 'TUESDAY' ? 'Dimarts' : 'Dijous'}
                                           </span>
                                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${workshop.status === 'PROVISIONAL'
-                                              ? 'bg-amber-100 text-amber-700'
-                                              : 'bg-green-100 text-green-700'
+                                            ? 'bg-amber-100 text-amber-700'
+                                            : 'bg-green-100 text-green-700'
                                             }`}>
                                             {workshop.status === 'PROVISIONAL' ? '🟡 Provisional' : '✅ Aprovat'}
                                           </span>
@@ -1260,8 +1260,8 @@ const AllocationPanel = () => {
                               )}
 
                               <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${workshopsWithoutTeacher === 0
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-amber-100 text-amber-700'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-amber-100 text-amber-700'
                                 }`}>
                                 {workshopsWithTeacher}/{center.workshops.length} coberts
                               </div>

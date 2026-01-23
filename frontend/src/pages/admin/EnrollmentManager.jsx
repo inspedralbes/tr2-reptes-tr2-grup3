@@ -106,7 +106,7 @@ const EnrollmentManager = () => {
       }
       setError(null);
     } catch (err) {
-      setError("Error al cargar períodos: " + err.message);
+      setError("Error carregant períodes: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -177,7 +177,7 @@ const EnrollmentManager = () => {
       setShowModal(false);
       loadPeriods();
     } catch (err) {
-      setError("Error al guardar: " + err.message);
+      setError("Error desant: " + err.message);
     }
   };
 
@@ -190,7 +190,7 @@ const EnrollmentManager = () => {
       setSuccess("Període eliminat");
       loadPeriods();
     } catch (err) {
-      setError("Error al eliminar: " + err.message);
+      setError("Error eliminant: " + err.message);
     }
   };
 
@@ -203,7 +203,7 @@ const EnrollmentManager = () => {
       setSuccess("Període activat correctament");
       loadPeriods();
     } catch (err) {
-      setError("Error al activar: " + err.message);
+      setError("Error activant: " + err.message);
     }
   };
 
@@ -212,7 +212,7 @@ const EnrollmentManager = () => {
     const nextPhase = PHASE_ORDER[currentIndex + 1];
 
     if (!nextPhase) {
-      setError("Ja esteu a la fase final");
+      setError("Ja sou a la fase final");
       return;
     }
 
@@ -231,7 +231,7 @@ const EnrollmentManager = () => {
       setSuccess("Fase avançada a: " + PHASE_LABELS[nextPhase]);
       loadPeriods();
     } catch (err) {
-      setError("Error al avançar fase: " + err.message);
+      setError("Error avançant fase: " + err.message);
     }
   };
 
@@ -240,7 +240,7 @@ const EnrollmentManager = () => {
     const prevPhase = PHASE_ORDER[currentIndex - 1];
 
     if (!prevPhase) {
-      setError("Ja esteu a la primera fase");
+      setError("Ja sou a la primera fase");
       return;
     }
 
@@ -253,7 +253,7 @@ const EnrollmentManager = () => {
       setSuccess("Fase retrocedida a: " + PHASE_LABELS[prevPhase]);
       loadPeriods();
     } catch (err) {
-      setError("Error al retrocedir fase: " + err.message);
+      setError("Error retrocedint fase: " + err.message);
     }
   };
 
@@ -267,7 +267,7 @@ const EnrollmentManager = () => {
       setSuccess("Fase canviada a: " + PHASE_LABELS[targetPhase]);
       loadPeriods();
     } catch (err) {
-      setError("Error al canviar fase: " + err.message);
+      setError("Error canviant fase: " + err.message);
     }
   };
 

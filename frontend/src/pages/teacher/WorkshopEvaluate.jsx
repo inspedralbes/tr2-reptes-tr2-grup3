@@ -32,14 +32,14 @@ const WorkshopEvaluate = () => {
   // MOCK DATA: Competencias
   const COMPETENCIES = {
     technical: [
-      { id: "tech_knowledge", label: "Conocimientos técnicos recibidos" },
-      { id: "tech_skills", label: "Habilidad en la ejecución práctica" },
-      { id: "tech_safety", label: "Cumplimiento de normas de seguridad" },
+      { id: "tech_knowledge", label: "Coneixements tècnics rebuts" },
+      { id: "tech_skills", label: "Habilitat en l'execució pràctica" },
+      { id: "tech_safety", label: "Compliment de normes de seguretat" },
     ],
     transversal: [
-      { id: "teamwork", label: "Colaboración y trabajo en equipo" },
-      { id: "proactivity", label: "Iniciativa y proactividad" },
-      { id: "respect", label: "Actitud y respeto hacia compañeros" },
+      { id: "teamwork", label: "Col·laboració i treball en equip" },
+      { id: "proactivity", label: "Iniciativa i proactivitat" },
+      { id: "respect", label: "Actitud i respecte cap als companys" },
     ],
   };
 
@@ -98,7 +98,7 @@ const WorkshopEvaluate = () => {
     setSaving(true);
     setTimeout(() => {
       setSaving(false);
-      toast.success("Evaluaciones guardadas correctamente");
+      toast.success("Avaluacions guardades correctament");
       setTimeout(() => navigate("/teacher"), 1000);
     }, 1500);
   };
@@ -136,8 +136,8 @@ const WorkshopEvaluate = () => {
               key={star}
               onClick={() => updateScore(studentId, compId, star)}
               className={`h-10 w-10 sm:h-9 sm:w-12 rounded-lg transition-all duration-200 flex items-center justify-center ${score >= star
-                  ? (type === 'tech' ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200')
-                  : 'bg-gray-50 text-gray-300 hover:bg-gray-100'
+                ? (type === 'tech' ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200')
+                : 'bg-gray-50 text-gray-300 hover:bg-gray-100'
                 }`}
             >
               <Star size={20} fill={score >= star ? "currentColor" : "none"} />
@@ -169,8 +169,8 @@ const WorkshopEvaluate = () => {
               <ArrowLeft size={24} />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-gray-900 leading-tight">Evaluación de Taller</h1>
-              <p className="text-xs text-gray-500">Robótica e IA Aplicada</p>
+              <h1 className="text-lg font-bold text-gray-900 leading-tight">Avaluació de Taller</h1>
+              <p className="text-xs text-gray-500">Robòtica i IA Aplicada</p>
             </div>
           </div>
         </div>
@@ -203,7 +203,7 @@ const WorkshopEvaluate = () => {
                 <div className="text-right flex flex-col items-end">
                   {Number(userAvg) > 0 && (
                     <div className={`px-2 py-0.5 rounded-full text-xs font-bold mb-1 ${Number(userAvg) >= 4 ? 'bg-green-100 text-green-700' : Number(userAvg) >= 3 ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      Media: {userAvg}
+                      Mitjana: {userAvg}
                     </div>
                   )}
                   {isExpanded ? <ChevronUp className="text-gray-400" size={20} /> : <ChevronDown className="text-gray-400" size={20} />}
@@ -218,7 +218,7 @@ const WorkshopEvaluate = () => {
                     <div>
                       <div className="flex items-center gap-2 mb-4 text-indigo-700">
                         <Zap size={18} />
-                        <h4 className="font-bold text-sm uppercase tracking-wide">Competencias Técnicas</h4>
+                        <h4 className="font-bold text-sm uppercase tracking-wide">Competències Tècniques</h4>
                       </div>
                       {COMPETENCIES.technical.map(c => (
                         <ScoreComponent key={c.id} studentId={student.id} compId={c.id} label={c.label} type="tech" />
@@ -229,7 +229,7 @@ const WorkshopEvaluate = () => {
                     <div>
                       <div className="flex items-center gap-2 mb-4 text-emerald-700">
                         <Award size={18} />
-                        <h4 className="font-bold text-sm uppercase tracking-wide">Competencias Transversales</h4>
+                        <h4 className="font-bold text-sm uppercase tracking-wide">Competències Transversals</h4>
                       </div>
                       {COMPETENCIES.transversal.map(c => (
                         <ScoreComponent key={c.id} studentId={student.id} compId={c.id} label={c.label} type="soft" />
@@ -241,12 +241,12 @@ const WorkshopEvaluate = () => {
                   <div>
                     <div className="flex items-center gap-2 mb-2 text-gray-700">
                       <MessageSquare size={16} />
-                      <label className="font-bold text-sm">Observaciones y Comentarios</label>
+                      <label className="font-bold text-sm">Observacions i Comentaris</label>
                     </div>
                     <textarea
                       value={evaluations[student.id]?.comments || ""}
                       onChange={(e) => updateComments(student.id, e.target.value)}
-                      placeholder="Escribe aquí notas sobre el desempeño del alumno..."
+                      placeholder="Escriu aquí notes sobre l'acompliment de l'alumne..."
                       className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-3 px-4 min-h-[80px]"
                     ></textarea>
                   </div>
@@ -270,7 +270,7 @@ const WorkshopEvaluate = () => {
             ) : (
               <>
                 <Save size={20} />
-                Guardar Todas las Evaluaciones
+                Guardar Totes les Avaluacions
               </>
             )}
           </button>

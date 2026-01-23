@@ -21,7 +21,7 @@ const Navbar = ({ onMenuClick, isSidebarOpen }) => {
             <button
               onClick={onMenuClick}
               className="lg:hidden flex items-center justify-center w-10 h-10 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
-              aria-label={isSidebarOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-label={isSidebarOpen ? "Tancar menú" : "Obrir menú"}
             >
               {isSidebarOpen ? <ChevronLeft size={24} /> : <Menu size={24} />}
             </button>
@@ -49,7 +49,7 @@ const Navbar = ({ onMenuClick, isSidebarOpen }) => {
             <button
               onClick={logout}
               className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              title="Cerrar sesión"
+              title="Tancar sessió"
             >
               <LogOut size={18} />
             </button>

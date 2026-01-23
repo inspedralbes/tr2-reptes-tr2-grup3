@@ -131,7 +131,7 @@ const StudentManager = () => {
       await studentsService.delete(id);
       setStudents(students.filter((s) => s.id !== id));
     } catch (err) {
-      alert("Error en eliminar: " + (err.response?.data?.error || err.message));
+      alert("Error eliminant: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -172,7 +172,7 @@ const StudentManager = () => {
     } catch (err) {
       console.error(err);
       setError(
-        "Error en guardar: " + (err.response?.data?.error || err.message)
+        "Error desant: " + (err.response?.data?.error || err.message)
       );
     }
   };
@@ -377,7 +377,7 @@ const StudentManager = () => {
         />
         <input
           type="text"
-          placeholder="Buscar por nombre o email..."
+          placeholder="Cerca per nom o correu..."
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -505,9 +505,9 @@ const StudentManager = () => {
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Cancelar
+              Cancel·lar
             </Button>
-            <Button onClick={handleSave}>Guardar</Button>
+            <Button onClick={handleSave}>Desar</Button>
           </>
         }
       >
@@ -540,7 +540,7 @@ const StudentManager = () => {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
-                placeholder="alumno@ejemplo.com"
+                placeholder="alumne@exemple.com"
               />
             </div>
 

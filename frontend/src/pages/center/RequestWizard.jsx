@@ -32,7 +32,7 @@ const RequestWizard = () => {
 
   // Editing State
   const [editingRequest, setEditingRequest] = useState(null);
-  
+
   // Auto-skip step 1 when there's only one active period
   const [autoSelectedPeriod, setAutoSelectedPeriod] = useState(false);
 
@@ -258,7 +258,7 @@ const RequestWizard = () => {
           ...prev,
           enrollment_period_id: activePeriodsInSolicitudes[0].id,
         }));
-        
+
         // If there's only one period, auto-skip step 1 and go to step 2
         if (activePeriodsInSolicitudes.length === 1) {
           setAutoSelectedPeriod(true);
@@ -266,7 +266,7 @@ const RequestWizard = () => {
         }
       }
     } catch (err) {
-      setError("Error al cargar datos: " + err.message);
+      setError("Error carregant dades: " + err.message);
     }
   };
 
@@ -593,37 +593,32 @@ const RequestWizard = () => {
       <Card>
         <div className="flex justify-between items-center mb-2">
           <span
-            className={`px-3 py-1 rounded ${
-              step >= 1 ? "bg-blue-500 text-white" : "bg-gray-200"
-            }`}
+            className={`px-3 py-1 rounded ${step >= 1 ? "bg-blue-500 text-white" : "bg-gray-200"
+              }`}
           >
             1. Dades Centre
           </span>
           <div className="flex-1 h-1 bg-gray-200 mx-2">
             <div
-              className={`h-full bg-blue-500 transition-all ${
-                step >= 2 ? "w-full" : "w-0"
-              }`}
+              className={`h-full bg-blue-500 transition-all ${step >= 2 ? "w-full" : "w-0"
+                }`}
             ></div>
           </div>
           <span
-            className={`px-3 py-1 rounded ${
-              step >= 2 ? "bg-blue-500 text-white" : "bg-gray-200"
-            }`}
+            className={`px-3 py-1 rounded ${step >= 2 ? "bg-blue-500 text-white" : "bg-gray-200"
+              }`}
           >
             2. Tallers ({totalStudents}/12)
           </span>
           <div className="flex-1 h-1 bg-gray-200 mx-2">
             <div
-              className={`h-full bg-blue-500 transition-all ${
-                step >= 3 ? "w-full" : "w-0"
-              }`}
+              className={`h-full bg-blue-500 transition-all ${step >= 3 ? "w-full" : "w-0"
+                }`}
             ></div>
           </div>
           <span
-            className={`px-3 py-1 rounded ${
-              step >= 3 ? "bg-blue-500 text-white" : "bg-gray-200"
-            }`}
+            className={`px-3 py-1 rounded ${step >= 3 ? "bg-blue-500 text-white" : "bg-gray-200"
+              }`}
           >
             3. Preferències
           </span>
@@ -707,9 +702,8 @@ const RequestWizard = () => {
                 Selecciona els tallers i els alumnes.
               </p>
               <p
-                className={`text-sm font-bold mt-1 ${
-                  totalStudents >= 12 ? "text-red-600" : "text-blue-600"
-                }`}
+                className={`text-sm font-bold mt-1 ${totalStudents >= 12 ? "text-red-600" : "text-blue-600"
+                  }`}
               >
                 Total alumnes: {totalStudents}/12 (Màxim 12)
               </p>
@@ -887,28 +881,28 @@ const RequestWizard = () => {
                     })}
                   {(!item.selected_students ||
                     item.selected_students.length < 4) && (
-                    <button
-                      onClick={() => {
-                        const current = item.selected_students || [];
-                        if (current.length < 4) {
-                          if (totalStudents >= 12) {
-                            toast.error(
-                              "Has assolit el límit de 12 alumnes totals."
-                            );
-                            return;
+                      <button
+                        onClick={() => {
+                          const current = item.selected_students || [];
+                          if (current.length < 4) {
+                            if (totalStudents >= 12) {
+                              toast.error(
+                                "Has assolit el límit de 12 alumnes totals."
+                              );
+                              return;
+                            }
+                            const updated = [...selectedItems];
+                            updated[index].selected_students = [...current, ""];
+                            updated[index].requested_students =
+                              updated[index].selected_students.length;
+                            setSelectedItems(updated);
                           }
-                          const updated = [...selectedItems];
-                          updated[index].selected_students = [...current, ""];
-                          updated[index].requested_students =
-                            updated[index].selected_students.length;
-                          setSelectedItems(updated);
-                        }
-                      }}
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      + Afegir alumne
-                    </button>
-                  )}
+                        }}
+                        className="text-sm text-blue-600 hover:underline"
+                      >
+                        + Afegir alumne
+                      </button>
+                    )}
                 </div>
               </div>
             ))}
@@ -975,10 +969,10 @@ const RequestWizard = () => {
                     ed?.day_of_week === "TUESDAY"
                       ? "Dimarts"
                       : ed?.day_of_week === "THURSDAY"
-                      ? "Dijous"
-                      : item.day === "TUESDAY"
-                      ? "Dimarts"
-                      : "Dijous";
+                        ? "Dijous"
+                        : item.day === "TUESDAY"
+                          ? "Dimarts"
+                          : "Dijous";
                   const time = ed?.start_time || item.start_time;
 
                   return (
@@ -1157,7 +1151,7 @@ const RequestWizard = () => {
                                       pIdx < maxSlots && // Only check valid visible slots
                                       pIdx !== prefIdx &&
                                       p.workshop_edition_id ===
-                                        item.workshop_edition_id
+                                      item.workshop_edition_id
                                   );
 
                                   return (
@@ -1194,8 +1188,8 @@ const RequestWizard = () => {
               {loading
                 ? "Enviant..."
                 : editingRequest
-                ? "✓ Actualitzar Sol·licitud"
-                : "✓ Enviar Sol·licitud"}
+                  ? "✓ Actualitzar Sol·licitud"
+                  : "✓ Enviar Sol·licitud"}
             </Button>
           </div>
         </Card>
