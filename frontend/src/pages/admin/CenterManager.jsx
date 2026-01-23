@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, Upload, Download, Building2, Search, MapPin, Mail, Phone, School } from "lucide-react";
+import toast from "react-hot-toast";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import { centerService } from "../../services/center.service.js";
 
 const CenterManager = () => {
@@ -15,6 +17,15 @@ const CenterManager = () => {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "danger"
+  });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -112,15 +123,22 @@ const CenterManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Estàs segur d'eliminar aquest centre?")) return;
-    try {
-      await centerService.delete(id);
-      loadCenters();
-    } catch (err) {
-      setError(
-        "Error eliminant: " + (err.response?.data?.message || err.message)
-      );
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar centre",
+      message: "Estàs segur d'eliminar aquest centre? Aquesta acció no es pot desfer.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await centerService.delete(id);
+          toast.success("Centre eliminat correctament");
+          loadCenters();
+        } catch (err) {
+          toast.error("Error eliminant: " + (err.response?.data?.message || err.message));
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleExport = async () => {
@@ -645,6 +663,18 @@ const CenterManager = () => {
           )}
         </div>
       </Modal>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Eliminar"
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

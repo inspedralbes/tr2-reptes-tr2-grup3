@@ -15,6 +15,7 @@ const teachersRoutes = require('./modules/teachers/routes');
 const sessionsRoutes = require('./modules/sessions/routes');
 const providersRoutes = require('./modules/providers/routes');
 const centersRoutes = require('./modules/centers/routes');
+const emailsRoutes = require('./modules/emails/routes');
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.use('/api/teachers', teachersRoutes);
 app.use('/api/sessions', sessionsRoutes);
 app.use('/api/providers', providersRoutes);
 app.use('/api/centers', centersRoutes);
+app.use('/api/emails', emailsRoutes);
 
 
 module.exports = app;

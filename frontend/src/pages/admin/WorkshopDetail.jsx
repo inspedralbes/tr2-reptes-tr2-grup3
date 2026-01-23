@@ -6,7 +6,9 @@
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import client from "../../api/client";
+import ConfirmModal from "../../components/common/ConfirmModal";
 
 // const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
@@ -20,6 +22,15 @@ const WorkshopDetail = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "warning"
+  });
 
   useEffect(() => {
     loadData();
@@ -100,15 +111,23 @@ const WorkshopDetail = () => {
   /**
    * Eliminar assignació d'un professor
    */
-  const handleRemoveAssignment = async (assignmentId) => {
-    if (!window.confirm("Eliminar aquest professor del taller?")) return;
-
-    try {
-      await client.delete(`/teachers/assign/${assignmentId}`);
-      loadData();
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    }
+  const handleRemoveAssignment = (assignmentId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar professor",
+      message: "Estàs segur d'eliminar aquest professor del taller?",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await client.delete(`/teachers/assign/${assignmentId}`);
+          toast.success("Professor eliminat del taller");
+          loadData();
+        } catch (err) {
+          toast.error(err.response?.data?.message || err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   /**
@@ -122,10 +141,10 @@ const WorkshopDetail = () => {
       const res = await client.post(`/sessions/generate/${editionId}`, {});
 
       const data = res.data;
-      alert(`Sessions generades: ${data.sessions?.length || 0}`);
+      toast.success(`Sessions generades: ${data.sessions?.length || 0}`);
       loadData();
     } catch (err) {
-      setError(err.response?.data?.message || err.message);
+      toast.error(err.response?.data?.message || err.message);
     }
   };
 
@@ -370,6 +389,18 @@ const WorkshopDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Eliminar"
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

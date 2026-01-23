@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, Filter, Layers, Wrench, Sparkles, Search } from "lucide-react";
+import toast from "react-hot-toast";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import { listWorkshops, createWorkshop, updateWorkshop, deleteWorkshop } from "../../api/catalog.js";
 
 /**
@@ -17,6 +19,15 @@ const CatalogManager = () => {
   const [editingWorkshop, setEditingWorkshop] = useState(null);
   const [filterAmbit, setFilterAmbit] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "danger"
+  });
 
   // Formulario
   const [formData, setFormData] = useState({
@@ -84,13 +95,22 @@ const CatalogManager = () => {
 
   // Manejar eliminación
   const handleDelete = async (id) => {
-    if (!window.confirm('Estàs segur d\'eliminar aquest taller?')) return;
-    try {
-      await deleteWorkshop(id);
-      loadWorkshops();
-    } catch (err) {
-      setError('Error al eliminar: ' + err.message);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar taller",
+      message: "Estàs segur d'eliminar aquest taller? Aquesta acció no es pot desfer.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await deleteWorkshop(id);
+          toast.success("Taller eliminat correctament");
+          loadWorkshops();
+        } catch (err) {
+          toast.error('Error al eliminar: ' + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // Ámbitos disponibles
@@ -325,6 +345,18 @@ const CatalogManager = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Eliminar"
+        cancelText="Cancel·lar"
+      />
     </div >
   );
 };

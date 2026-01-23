@@ -6,8 +6,10 @@ import {
   UserCheck, GraduationCap, Building, Filter, ArrowUpDown, Layers,
   MapPin, Phone, Mail, User, BookOpen
 } from "lucide-react";
+import toast from "react-hot-toast";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import {
   listEnrollmentPeriods,
   getDemandSummary,
@@ -42,6 +44,15 @@ const AllocationPanel = () => {
   const [viewMode, setViewMode] = useState('workshop'); // 'workshop' | 'center'
   const [sortBy, setSortBy] = useState('name'); // 'name' | 'students' | 'status'
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'PROVISIONAL' | 'PUBLISHED'
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "warning"
+  });
 
   useEffect(() => {
     loadPeriods();
@@ -87,7 +98,7 @@ const AllocationPanel = () => {
     }
   };
 
-  const handleRunAllocation = async () => {
+  const handleRunAllocation = () => {
     const period = periods.find(p => p.id === selectedPeriod);
     if (period && period.current_phase !== 'ASIGNACION') {
       setMessage({
@@ -102,23 +113,31 @@ const AllocationPanel = () => {
       ? "Ja existeixen assignacions. Vols eliminar-les i tornar a executar l'algoritme?"
       : "Executar l'algoritme d'assignació? Això processarà totes les sol·licituds.";
 
-    if (!window.confirm(confirmMsg)) return;
-
-    try {
-      setLoading(true);
-      setMessage(null);
-      const result = await runAllocation(selectedPeriod, hasExisting);
-      setMessage({
-        type: 'success',
-        text: `✅ Assignació completada: ${result.allocations_created || 0} assignacions creades, ${result.total_students_allocated || 0} alumnes assignats`
-      });
-      loadAllocations();
-      setActiveTab('places');
-    } catch (err) {
-      setMessage({ type: 'error', text: "Error en assignació: " + (err.response?.data?.error || err.message) });
-    } finally {
-      setLoading(false);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Executar algoritme",
+      message: confirmMsg,
+      variant: hasExisting ? "danger" : "warning",
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          setMessage(null);
+          const result = await runAllocation(selectedPeriod, hasExisting);
+          toast.success(`Assignació completada: ${result.allocations_created || 0} assignacions creades`);
+          setMessage({
+            type: 'success',
+            text: `✅ Assignació completada: ${result.allocations_created || 0} assignacions creades, ${result.total_students_allocated || 0} alumnes assignats`
+          });
+          loadAllocations();
+          setActiveTab('places');
+        } catch (err) {
+          toast.error("Error en assignació: " + (err.response?.data?.error || err.message));
+        } finally {
+          setLoading(false);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleEditAllocation = (allocation) => {
@@ -143,21 +162,27 @@ const AllocationPanel = () => {
     }
   };
 
-  const handlePublishAll = async () => {
-    if (!window.confirm("Aprovar totes les assignacions provisionals? Els centres no les veuran fins que canviïs a la fase PUBLICACIÓ.")) {
-      return;
-    }
-
-    try {
-      setPublishingAll(true);
-      await publishAllocations(selectedPeriod);
-      setMessage({ type: 'success', text: '✅ Totes les assignacions han estat aprovades (PUBLISHED)' });
-      loadAllocations();
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Error publicant: ' + err.message });
-    } finally {
-      setPublishingAll(false);
-    }
+  const handlePublishAll = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Aprovar assignacions",
+      message: "Aprovar totes les assignacions provisionals? Els centres no les veuran fins que canviïs a la fase PUBLICACIÓ.",
+      variant: "warning",
+      onConfirm: async () => {
+        try {
+          setPublishingAll(true);
+          await publishAllocations(selectedPeriod);
+          toast.success("Totes les assignacions han estat aprovades");
+          setMessage({ type: 'success', text: '✅ Totes les assignacions han estat aprovades (PUBLISHED)' });
+          loadAllocations();
+        } catch (err) {
+          toast.error('Error publicant: ' + err.message);
+        } finally {
+          setPublishingAll(false);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const toggleExpand = (key) => {
@@ -305,7 +330,7 @@ const AllocationPanel = () => {
         </div>
       </div>
 
-      {/* Workflow Progress */}
+      {/* Workflow Progress + Info Banner */}
       <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl p-4 border border-slate-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -354,6 +379,33 @@ const AllocationPanel = () => {
           </div>
         </div>
       </div>
+
+      {/* Banner informativo para admin cuando hay asignaciones */}
+      {currentPhase === 'ASIGNACION' && allocations.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-4">
+          <div className="p-2 bg-blue-100 rounded-lg shrink-0">
+            <Edit3 className="text-blue-600" size={20} />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-semibold text-blue-900">Pots modificar les assignacions</h4>
+            <p className="text-sm text-blue-700 mt-1">
+              L'algoritme ha generat les assignacions automàtiques. Ara pots revisar-les i ajustar manualment 
+              el nombre de places de cada centre fent clic al botó <Edit3 size={14} className="inline mx-1" /> d'edició.
+              Un cop estiguis conforme, aprova les assignacions per passar a la fase de publicació.
+            </p>
+            <div className="flex gap-4 mt-3 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-amber-400"></span>
+                <span className="text-blue-800"><strong>Provisional:</strong> pendent de revisió</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-green-400"></span>
+                <span className="text-blue-800"><strong>Aprovat:</strong> confirmat per publicar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -1329,6 +1381,18 @@ const AllocationPanel = () => {
           )}
         </div>
       </div>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Confirmar"
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

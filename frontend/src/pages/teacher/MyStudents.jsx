@@ -230,8 +230,18 @@ const MyStudents = () => {
                 {/* Info del alumno */}
                 <div className="p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
-                      {student.student_name?.charAt(0) || '?'}
+                    <div className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 overflow-hidden">
+                      {student.photo_url ? (
+                        <img 
+                          src={student.photo_url} 
+                          alt={student.student_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                          {student.student_name?.charAt(0) || '?'}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-gray-900 text-lg">{student.student_name}</h3>

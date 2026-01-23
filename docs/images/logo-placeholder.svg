@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="90" fill="url(#grad1)" />
+  
+  <!-- Graduation cap -->
+  <path d="M100 45 L35 80 L100 115 L165 80 Z" fill="#ffffff" />
+  <rect x="95" y="115" width="10" height="30" fill="#ffffff" />
+  <ellipse cx="100" cy="145" rx="25" ry="8" fill="#ffffff" />
+  
+  <!-- Gear -->
+  <g transform="translate(140, 140) scale(0.5)">
+    <path d="M50 30 L55 10 L65 10 L70 30 L90 35 L100 20 L110 30 L95 45 L100 65 L120 70 L120 80 L100 85 L95 105 L110 120 L100 130 L90 115 L70 120 L65 140 L55 140 L50 120 L30 115 L20 130 L10 120 L25 105 L20 85 L0 80 L0 70 L20 65 L25 45 L10 30 L20 20 L30 35 Z" fill="#fbbf24" />
+    <circle cx="60" cy="75" r="25" fill="url(#grad1)" />
+  </g>
+  
+  <!-- Text -->
+  <text x="100" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1e40af">Enginy</text>
+</svg>

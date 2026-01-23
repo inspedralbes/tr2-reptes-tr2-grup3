@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400">
+  <style>
+    .title { font: bold 18px sans-serif; fill: #1f2937; }
+    .phase-box { fill: #ffffff; stroke: #3b82f6; stroke-width: 2; rx: 10; }
+    .phase-active { fill: #dbeafe; }
+    .phase-label { font: bold 14px sans-serif; fill: #1e40af; }
+    .phase-desc { font: 11px sans-serif; fill: #6b7280; }
+    .arrow { fill: none; stroke: #3b82f6; stroke-width: 2; marker-end: url(#arrowhead); }
+    .role-tag { font: bold 10px sans-serif; }
+    .admin { fill: #dc2626; }
+    .center { fill: #16a34a; }
+    .teacher { fill: #2563eb; }
+  </style>
+  
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="900" height="400" fill="#f9fafb" />
+  
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" class="title">FASES DEL SISTEMA ENGINY</text>
+  
+  <!-- Phase 1: SOLICITUDES -->
+  <g transform="translate(50, 70)">
+    <rect class="phase-box" width="180" height="140" />
+    <text x="90" y="30" text-anchor="middle" class="phase-label">1. SOL·LICITUDS</text>
+    <line x1="20" y1="45" x2="160" y2="45" stroke="#e5e7eb" stroke-width="1" />
+    <text x="90" y="65" text-anchor="middle" class="phase-desc">Centres sol·liciten</text>
+    <text x="90" y="80" text-anchor="middle" class="phase-desc">places per tallers</text>
+    
+    <rect x="40" y="95" width="100" height="25" rx="12" fill="#dcfce7" />
+    <text x="90" y="112" text-anchor="middle" class="role-tag center">CENTER_COORD</text>
+  </g>
+  
+  <!-- Arrow 1-2 -->
+  <path class="arrow" d="M240 140 L280 140" />
+  
+  <!-- Phase 2: ASIGNACION -->
+  <g transform="translate(270, 70)">
+    <rect class="phase-box" width="180" height="140" />
+    <text x="90" y="30" text-anchor="middle" class="phase-label">2. ASSIGNACIÓ</text>
+    <line x1="20" y1="45" x2="160" y2="45" stroke="#e5e7eb" stroke-width="1" />
+    <text x="90" y="65" text-anchor="middle" class="phase-desc">Admin executa</text>
+    <text x="90" y="80" text-anchor="middle" class="phase-desc">l'algoritme</text>
+    
+    <rect x="40" y="95" width="100" height="25" rx="12" fill="#fee2e2" />
+    <text x="90" y="112" text-anchor="middle" class="role-tag admin">ADMIN</text>
+  </g>
+  
+  <!-- Arrow 2-3 -->
+  <path class="arrow" d="M460 140 L500 140" />
+  
+  <!-- Phase 3: PUBLICACION -->
+  <g transform="translate(490, 70)">
+    <rect class="phase-box" width="180" height="140" />
+    <text x="90" y="30" text-anchor="middle" class="phase-label">3. PUBLICACIÓ</text>
+    <line x1="20" y1="45" x2="160" y2="45" stroke="#e5e7eb" stroke-width="1" />
+    <text x="90" y="65" text-anchor="middle" class="phase-desc">Centres confirmen</text>
+    <text x="90" y="80" text-anchor="middle" class="phase-desc">alumnes nominalment</text>
+    
+    <rect x="40" y="95" width="100" height="25" rx="12" fill="#dcfce7" />
+    <text x="90" y="112" text-anchor="middle" class="role-tag center">CENTER_COORD</text>
+  </g>
+  
+  <!-- Arrow 3-4 -->
+  <path class="arrow" d="M680 140 L720 140" />
+  
+  <!-- Phase 4: EJECUCION -->
+  <g transform="translate(710, 70)">
+    <rect class="phase-box" width="180" height="140" />
+    <text x="90" y="30" text-anchor="middle" class="phase-label">4. EXECUCIÓ</text>
+    <line x1="20" y1="45" x2="160" y2="45" stroke="#e5e7eb" stroke-width="1" />
+    <text x="90" y="65" text-anchor="middle" class="phase-desc">Professors passen</text>
+    <text x="90" y="80" text-anchor="middle" class="phase-desc">llista i avaluen</text>
+    
+    <rect x="40" y="95" width="100" height="25" rx="12" fill="#dbeafe" />
+    <text x="90" y="112" text-anchor="middle" class="role-tag teacher">TEACHER</text>
+  </g>
+  
+  <!-- Actions per phase -->
+  <g transform="translate(50, 240)">
+    <rect width="180" height="130" fill="#f3f4f6" rx="8" />
+    <text x="90" y="20" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">Accions:</text>
+    <text x="15" y="40" font-size="10" fill="#4b5563">• Explorar catàleg</text>
+    <text x="15" y="55" font-size="10" fill="#4b5563">• Crear sol·licituds</text>
+    <text x="15" y="70" font-size="10" fill="#4b5563">• Gestionar alumnes</text>
+    <text x="15" y="85" font-size="10" fill="#4b5563">• Assignar professors</text>
+    <text x="15" y="100" font-size="10" fill="#4b5563">• Enviar sol·licituds</text>
+  </g>
+  
+  <g transform="translate(270, 240)">
+    <rect width="180" height="130" fill="#f3f4f6" rx="8" />
+    <text x="90" y="20" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">Accions:</text>
+    <text x="15" y="40" font-size="10" fill="#4b5563">• Revisar sol·licituds</text>
+    <text x="15" y="55" font-size="10" fill="#4b5563">• Executar algoritme</text>
+    <text x="15" y="70" font-size="10" fill="#4b5563">• Veure resultats</text>
+    <text x="15" y="85" font-size="10" fill="#4b5563">• Ajustar manualment</text>
+    <text x="15" y="100" font-size="10" fill="#4b5563">• Publicar resultats</text>
+  </g>
+  
+  <g transform="translate(490, 240)">
+    <rect width="180" height="130" fill="#f3f4f6" rx="8" />
+    <text x="90" y="20" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">Accions:</text>
+    <text x="15" y="40" font-size="10" fill="#4b5563">• Veure assignacions</text>
+    <text x="15" y="55" font-size="10" fill="#4b5563">• Confirmar alumnes</text>
+    <text x="15" y="70" font-size="10" fill="#4b5563">• Pujar documentació</text>
+    <text x="15" y="85" font-size="10" fill="#4b5563">• Descarregar resum</text>
+    <text x="15" y="100" font-size="10" fill="#4b5563">• Notificar professors</text>
+  </g>
+  
+  <g transform="translate(710, 240)">
+    <rect width="180" height="130" fill="#f3f4f6" rx="8" />
+    <text x="90" y="20" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">Accions:</text>
+    <text x="15" y="40" font-size="10" fill="#4b5563">• Veure sessions</text>
+    <text x="15" y="55" font-size="10" fill="#4b5563">• Passar llista</text>
+    <text x="15" y="70" font-size="10" fill="#4b5563">• Registrar assistència</text>
+    <text x="15" y="85" font-size="10" fill="#4b5563">• Avaluar tallers</text>
+    <text x="15" y="100" font-size="10" fill="#4b5563">• Generar informes</text>
+  </g>
+</svg>

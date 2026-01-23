@@ -321,8 +321,16 @@ const WorkshopAttendance = () => {
                   <div className="p-4">
                     {/* INFO ALUMNO */}
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`h-12 w-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold shadow-sm shrink-0`}>
-                        {initials}
+                      <div className={`h-12 w-12 rounded-full overflow-hidden ${!student.photo_url ? avatarColor : 'bg-gray-100'} flex items-center justify-center text-white font-bold shadow-sm shrink-0`}>
+                        {student.photo_url ? (
+                          <img 
+                            src={student.photo_url} 
+                            alt={student.student_name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          initials
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-gray-900 truncate">{student.student_name}</h3>

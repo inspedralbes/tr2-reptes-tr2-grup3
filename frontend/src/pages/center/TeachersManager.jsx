@@ -13,6 +13,7 @@ import client from "../../api/client";
 import toast from "react-hot-toast";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 
 const TeachersManager = () => {
   const [teachers, setTeachers] = useState([]);
@@ -27,6 +28,15 @@ const TeachersManager = () => {
     full_name: "",
     email: "",
     phone_number: "",
+  });
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "warning"
   });
 
   // Exportar/Importar
@@ -97,29 +107,42 @@ const TeachersManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Estàs segur que vols eliminar aquest professor?"))
-      return;
-    try {
-      await client.delete(`/teachers/${id}`);
-      toast.success("Professor eliminat");
-      loadTeachers();
-    } catch (error) {
-      console.error("Error deleting teacher:", error);
-      toast.error("Error eliminant professor");
-      setError("Error eliminant professor");
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar professor",
+      message: "Estàs segur que vols eliminar aquest professor? Aquesta acció no es pot desfer.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await client.delete(`/teachers/${id}`);
+          toast.success("Professor eliminat");
+          loadTeachers();
+        } catch (error) {
+          console.error("Error deleting teacher:", error);
+          toast.error("Error eliminant professor");
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleSendCredentials = async (teacher) => {
-    if (!window.confirm(`Vols enviar les credencials a ${teacher.full_name}?`)) return;
-
-    try {
-      await client.post(`/teachers/${teacher.id}/send-credentials`);
-      toast.success("Credencials enviades correctament");
-    } catch (error) {
-      console.error("Error sending credentials:", error);
-      toast.error(error.response?.data?.error || "Error enviant credencials");
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Enviar credencials",
+      message: `Vols enviar les credencials d'accés a ${teacher.full_name}?`,
+      variant: "info",
+      onConfirm: async () => {
+        try {
+          await client.post(`/teachers/${teacher.id}/send-credentials`);
+          toast.success("Credencials enviades correctament");
+        } catch (error) {
+          console.error("Error sending credentials:", error);
+          toast.error(error.response?.data?.error || "Error enviant credencials");
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // --- CSV Import / Export ---
@@ -449,6 +472,18 @@ const TeachersManager = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText={confirmModal.variant === "danger" ? "Eliminar" : "Enviar"}
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

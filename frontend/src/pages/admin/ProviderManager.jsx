@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, Truck, Search, MapPin, Mail, Building } from "lucide-react";
+import toast from "react-hot-toast";
 import Card from "../../components/ui/Card.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import { providerService } from "../../services/provider.service.js";
 
 const ProviderManager = () => {
@@ -11,6 +13,15 @@ const ProviderManager = () => {
     const [error, setError] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [editingProvider, setEditingProvider] = useState(null);
+
+    // Modal de confirmación
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: null,
+        variant: "danger"
+    });
 
     const [formData, setFormData] = useState({
         name: '',
@@ -76,13 +87,22 @@ const ProviderManager = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Estàs segur d\'eliminar aquest proveïdor?')) return;
-        try {
-            await providerService.delete(id);
-            loadProviders();
-        } catch (err) {
-            setError('Error al eliminar: ' + (err.response?.data?.message || err.message));
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: "Eliminar proveïdor",
+            message: "Estàs segur d'eliminar aquest proveïdor? Aquesta acció no es pot desfer.",
+            variant: "danger",
+            onConfirm: async () => {
+                try {
+                    await providerService.delete(id);
+                    toast.success("Proveïdor eliminat correctament");
+                    loadProviders();
+                } catch (err) {
+                    toast.error('Error al eliminar: ' + (err.response?.data?.message || err.message));
+                }
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            }
+        });
     };
 
     return (
@@ -268,6 +288,18 @@ const ProviderManager = () => {
                     </div>
                 </form>
             </Modal>
+
+            {/* Modal de confirmación */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                variant={confirmModal.variant}
+                confirmText="Eliminar"
+                cancelText="Cancel·lar"
+            />
         </div>
     );
 };

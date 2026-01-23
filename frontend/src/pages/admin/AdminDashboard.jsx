@@ -18,14 +18,14 @@ import {
   Megaphone,
   Lock,
   PauseCircle,
-  BarChart3,
   Users,
   Briefcase,
   Building2,
+  Mail,
+  GraduationCap,
 } from "lucide-react";
 
 import client from "../../api/client";
-// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -340,6 +340,79 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Sección Informativa de Envío de Emails */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <Mail size={24} className="text-blue-600" /> Enviament Automàtic de Credencials
+        </h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <p className="text-gray-600 mb-6">
+            Les credencials s'envien automàticament en els moments següents del flux de treball:
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Info Coordinadores */}
+            <div className="border border-blue-200 rounded-xl p-5 bg-blue-50/50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Users size={24} className="text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Coordinadors de Centre</h3>
+                  <p className="text-sm text-gray-500">Credencials d'accés a la plataforma</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-blue-100">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold text-blue-700">Quan s'envia:</span> Automàticament al <strong>crear un nou període</strong> (nou curs escolar).
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Es genera una nova contrasenya per a cada coordinador registrat.
+                </p>
+              </div>
+            </div>
+
+            {/* Info Profesores */}
+            <div className="border border-green-200 rounded-xl p-5 bg-green-50/50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <GraduationCap size={24} className="text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Professors Assignats</h3>
+                  <p className="text-sm text-gray-500">Credencials per passar llista</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-green-100">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold text-green-700">Quan s'envia:</span> Automàticament al <strong>avançar a fase EXECUCIÓ</strong>.
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Es creen comptes per als professors assignats als tallers del període.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Estado actual */}
+          {stats.activePeriod && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-2 text-gray-700">
+                <Clock size={18} />
+                <span className="font-medium">Estat actual:</span>
+                <span className="text-gray-600">
+                  Període <strong>{stats.activePeriod.name}</strong> en fase <strong>{stats.activePeriod.current_phase}</strong>
+                </span>
+              </div>
+              {stats.activePeriod.current_phase === 'EJECUCION' && (
+                <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                  <CheckCircle size={14} /> Els professors ja han rebut les seves credencials.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Alertas/Acciones pendientes */}
       {stats.activePeriod?.current_phase === "ASIGNACION" && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-sm">
@@ -364,6 +437,7 @@ const AdminDashboard = () => {
           </button>
         </div>
       )}
+
     </div>
   );
 };

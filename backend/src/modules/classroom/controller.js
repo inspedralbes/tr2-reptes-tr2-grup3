@@ -100,6 +100,7 @@ const getStudentsForEdition = async (req, res) => {
         s.id as student_id,
         s.nombre_completo as student_name,
         s.curso as course,
+        s.photo_url,
         a.school_id,
         sch.name as school_name
       FROM allocations a
@@ -135,7 +136,8 @@ const getStudentsForEdition = async (req, res) => {
             student_name: `Alumno ${i} - ${alloc.school_name}`,
             course: '3º ESO',
             school_id: alloc.school_id,
-            school_name: alloc.school_name
+            school_name: alloc.school_name,
+            photo_url: null
           });
         }
       });
@@ -148,7 +150,8 @@ const getStudentsForEdition = async (req, res) => {
       student_name: r.student_name,
       course: r.course,
       school_id: r.school_id,
-      school_name: r.school_name
+      school_name: r.school_name,
+      photo_url: r.photo_url
     })));
   } catch (err) {
     console.error('Error obteniendo alumnos:', err);

@@ -11,7 +11,9 @@ import {
   AlertTriangle, CheckCircle, Info, BarChart3, ArrowRight, ArrowLeft,
   PauseCircle, Activity
 } from "lucide-react";
+import toast from "react-hot-toast";
 import Modal from "../../components/common/Modal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import Button from "../../components/ui/Button.jsx";
 import enrollmentService, {
   PHASES, PHASE_ORDER, PHASE_LABELS, PHASE_COLORS,
@@ -73,6 +75,15 @@ const EnrollmentManager = () => {
   const [editingPeriod, setEditingPeriod] = useState(null);
   const [stats, setStats] = useState({});
   const [expandedPeriod, setExpandedPeriod] = useState(null);
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    variant: "warning"
+  });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -181,38 +192,50 @@ const EnrollmentManager = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Eliminar aquest període? Aquesta acció no es pot desfer.")) {
-      return;
-    }
-    try {
-      await enrollmentService.delete(id);
-      setSuccess("Període eliminat");
-      loadPeriods();
-    } catch (err) {
-      setError("Error eliminant: " + err.message);
-    }
+  const handleDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Eliminar període",
+      message: "Eliminar aquest període? Aquesta acció no es pot desfer.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.delete(id);
+          toast.success("Període eliminat");
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error eliminant: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
-  const handleActivate = async (id) => {
-    if (!window.confirm("Activar aquest període? Es desactivaran els altres períodes actius.")) {
-      return;
-    }
-    try {
-      await enrollmentService.activate(id);
-      setSuccess("Període activat correctament");
-      loadPeriods();
-    } catch (err) {
-      setError("Error activant: " + err.message);
-    }
+  const handleActivate = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Activar període",
+      message: "Activar aquest període? Es desactivaran els altres períodes actius.",
+      variant: "warning",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.activate(id);
+          toast.success("Període activat correctament");
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error activant: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
-  const handleAdvancePhase = async (id, currentPhase) => {
+  const handleAdvancePhase = (id, currentPhase) => {
     const currentIndex = PHASE_ORDER.indexOf(currentPhase);
     const nextPhase = PHASE_ORDER[currentIndex + 1];
 
     if (!nextPhase) {
-      setError("Ja sou a la fase final");
+      toast.error("Ja sou a la fase final");
       return;
     }
 
@@ -222,53 +245,68 @@ const EnrollmentManager = () => {
       [PHASES.EJECUCION]: "Això iniciarà l'execució dels tallers."
     };
 
-    if (!window.confirm(confirmMessages[nextPhase] + "\n\nAvançar a \"" + PHASE_LABELS[nextPhase] + "\"?")) {
-      return;
-    }
-
-    try {
-      await enrollmentService.advancePhase(id);
-      setSuccess("Fase avançada a: " + PHASE_LABELS[nextPhase]);
-      loadPeriods();
-    } catch (err) {
-      setError("Error avançant fase: " + err.message);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Avançar fase",
+      message: confirmMessages[nextPhase] + " Avançar a \"" + PHASE_LABELS[nextPhase] + "\"?",
+      variant: "warning",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.advancePhase(id);
+          toast.success("Fase avançada a: " + PHASE_LABELS[nextPhase]);
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error avançant fase: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
-  const handleRegressPhase = async (id, currentPhase) => {
+  const handleRegressPhase = (id, currentPhase) => {
     const currentIndex = PHASE_ORDER.indexOf(currentPhase);
     const prevPhase = PHASE_ORDER[currentIndex - 1];
 
     if (!prevPhase) {
-      setError("Ja sou a la primera fase");
+      toast.error("Ja sou a la primera fase");
       return;
     }
 
-    if (!window.confirm("⚠️ ATENCIÓ: Retrocedir a la fase \"" + PHASE_LABELS[prevPhase] + "\"?\n\nAixò és per a testing. En producció pot causar inconsistències.")) {
-      return;
-    }
-
-    try {
-      await enrollmentService.advancePhase(id, prevPhase);
-      setSuccess("Fase retrocedida a: " + PHASE_LABELS[prevPhase]);
-      loadPeriods();
-    } catch (err) {
-      setError("Error retrocedint fase: " + err.message);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "⚠️ Retrocedir fase",
+      message: "ATENCIÓ: Retrocedir a la fase \"" + PHASE_LABELS[prevPhase] + "\"? Això és per a testing. En producció pot causar inconsistències.",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.advancePhase(id, prevPhase);
+          toast.success("Fase retrocedida a: " + PHASE_LABELS[prevPhase]);
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error retrocedint fase: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
-  const handleSetPhase = async (id, targetPhase) => {
-    if (!window.confirm("Canviar a la fase \"" + PHASE_LABELS[targetPhase] + "\"?")) {
-      return;
-    }
-
-    try {
-      await enrollmentService.advancePhase(id, targetPhase);
-      setSuccess("Fase canviada a: " + PHASE_LABELS[targetPhase]);
-      loadPeriods();
-    } catch (err) {
-      setError("Error canviant fase: " + err.message);
-    }
+  const handleSetPhase = (id, targetPhase) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Canviar fase",
+      message: "Canviar a la fase \"" + PHASE_LABELS[targetPhase] + "\"?",
+      variant: "warning",
+      onConfirm: async () => {
+        try {
+          await enrollmentService.advancePhase(id, targetPhase);
+          toast.success("Fase canviada a: " + PHASE_LABELS[targetPhase]);
+          loadPeriods();
+        } catch (err) {
+          toast.error("Error canviant fase: " + err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const renderEnhancedTimeline = (period) => {
@@ -495,8 +533,53 @@ const EnrollmentManager = () => {
           </Button>
         </div>
       ) : (
-        <div className="space-y-6">
-          {periods.map((period) => {
+        <div className="space-y-8">
+          {/* Agrupar períodos por año académico */}
+          {(() => {
+            // Extraer año del período (del nombre o de la fecha de creación)
+            const getAcademicYear = (period) => {
+              // Intentar extraer año del nombre (ej: "Enginy 2025-2026")
+              const yearMatch = period.name.match(/(\d{4})-(\d{4})/);
+              if (yearMatch) return `${yearMatch[1]}-${yearMatch[2]}`;
+              
+              // Si no, usar el año de creación
+              const created = new Date(period.created_at);
+              const month = created.getMonth();
+              const year = created.getFullYear();
+              // Si es antes de septiembre, es del curso anterior
+              if (month < 8) return `${year - 1}-${year}`;
+              return `${year}-${year + 1}`;
+            };
+
+            // Agrupar por año
+            const grouped = periods.reduce((acc, period) => {
+              const year = getAcademicYear(period);
+              if (!acc[year]) acc[year] = [];
+              acc[year].push(period);
+              return acc;
+            }, {});
+
+            // Ordenar años de más reciente a más antiguo
+            const sortedYears = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
+            return sortedYears.map((academicYear, yearIndex) => (
+              <div key={academicYear} className="space-y-4">
+                {/* Cabecera del año académico */}
+                <div className="flex items-center gap-4">
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${yearIndex === 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+                    <Calendar size={18} />
+                    <span className="font-bold text-lg">Curs {academicYear}</span>
+                    {yearIndex === 0 && (
+                      <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">Actual</span>
+                    )}
+                  </div>
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-sm text-gray-500">{grouped[academicYear].length} període(s)</span>
+                </div>
+
+                {/* Períodos de este año */}
+                <div className="space-y-4 pl-2 border-l-4 border-gray-200 ml-2">
+                  {grouped[academicYear].map((period) => {
             const isExpanded = expandedPeriod === period.id;
             const config = PHASE_CONFIG[period.current_phase];
 
@@ -632,6 +715,10 @@ const EnrollmentManager = () => {
               </div>
             );
           })}
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       )}
 
@@ -680,6 +767,18 @@ const EnrollmentManager = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmText="Confirmar"
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

@@ -58,6 +58,23 @@ const studentsService = {
   },
 
   /**
+   * Sube la foto de perfil del alumno
+   * @param {string} id - ID del alumno
+   * @param {Blob} photoBlob - Imagen en formato Blob
+   */
+  uploadPhoto: async (id, photoBlob) => {
+    const formData = new FormData();
+    formData.append("photo", photoBlob, "photo.jpg");
+
+    const response = await client.post(`/students/${id}/photo`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+  /**
    * Sube un documento para el alumno
    */
   uploadDocument: async (id, file, type) => {
@@ -70,6 +87,14 @@ const studentsService = {
         "Content-Type": "multipart/form-data",
       },
     });
+    return response.data;
+  },
+
+  /**
+   * Lista los documentos de un alumno
+   */
+  getDocuments: async (id) => {
+    const response = await client.get(`/students/${id}/documents`);
     return response.data;
   },
 

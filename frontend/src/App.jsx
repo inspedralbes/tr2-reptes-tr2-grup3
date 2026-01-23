@@ -27,9 +27,9 @@ import RequestWizard from "./pages/center/RequestWizard.jsx";
 import MyAllocations from "./pages/center/MyAllocations.jsx";
 import MyRequests from "./pages/center/MyRequests.jsx";
 import RequestDetail from "./pages/center/RequestDetail.jsx";
-import NominalConfirmation from "./pages/center/NominalConfirmation.jsx";
 import StudentManager from "./pages/center/StudentManager.jsx";
 import TeachersManager from "./pages/center/TeachersManager.jsx";
+import NominalConfirmation from "./pages/center/NominalConfirmation.jsx";
 
 // ZONA PROFESOR
 import TeacherDashboard from "./pages/teacher/TeacherDashboard.jsx";
@@ -106,7 +106,7 @@ function App() {
               <Route path="/center/catalog" element={<ProtectedRoute><CatalogBrowser /></ProtectedRoute>} />
               <Route path="/center/request" element={<ProtectedRoute><RequestWizard /></ProtectedRoute>} />
               <Route path="/center/allocations" element={<ProtectedRoute><MyAllocations /></ProtectedRoute>} />
-              <Route path="/center/allocations/:allocationId/confirm" element={<ProtectedRoute><NominalConfirmation /></ProtectedRoute>} />
+              <Route path="/center/allocation/:allocationId/confirm" element={<ProtectedRoute><NominalConfirmation /></ProtectedRoute>} />
               <Route path="/center/requests" element={<ProtectedRoute><MyRequests /></ProtectedRoute>} />
               <Route path="/center/request/:id" element={<ProtectedRoute><RequestDetail /></ProtectedRoute>} />
               <Route path="/center/teachers" element={<ProtectedRoute><TeachersManager /></ProtectedRoute>} />

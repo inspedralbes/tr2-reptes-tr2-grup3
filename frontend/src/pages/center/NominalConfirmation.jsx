@@ -6,7 +6,9 @@
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import client from "../../api/client";
+import ConfirmModal from "../../components/common/ConfirmModal";
 
 const NominalConfirmation = () => {
   const { allocationId } = useParams();
@@ -17,6 +19,14 @@ const NominalConfirmation = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [uploadingFor, setUploadingFor] = useState(null);
+
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null
+  });
 
   useEffect(() => {
     loadAllocationData();
@@ -93,86 +103,31 @@ const NominalConfirmation = () => {
   };
 
   // Confirmar toda la asignación (cambiar estado a ACCEPTED)
-  const handleConfirmGlobal = async () => {
-    if (
-      !window.confirm(
-        "Estàs segur que vols confirmar aquesta assignació? No podràs modificar-la després."
-      )
-    ) {
-      return;
-    }
+  const handleConfirmGlobal = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Confirmar assignació",
+      message: "Estàs segur que vols confirmar aquesta assignació? No podràs modificar-la després.",
+      onConfirm: async () => {
+        try {
+          // Mapeamos al formato que espera el backend
+          const studentPayload = students.map((s) => ({
+            name: s.nombre_completo || s.full_name,
+            idalu: s.idalu,
+          }));
 
-    try {
-      // Enviamos la lista actual de estudiantes para confirmar
-      // El backend espera { students: [{name, idalu, ...}] } pero en este caso ya están creados y vinculados.
-      // Si el backend lo permite, podemos adaptar o simplemente re-enviar los datos básicos.
-      // Dado que el backend actual de confirmAllocation (PUT) intenta crear estudiantes si no existen,
-      // debemos asegurarnos de que maneja estudiantes existentes o que simplemente actualiza el estado.
-      // Revisando el controlador:
-      // 1. UPDATE allocations SET status='ACCEPTED'
-      // 2. Loop students -> INSERT INTO students (si no existe ID?)
-      //    Wait, el controlador hace INSERT siempre. Eso podría duplicar si no se maneja bien o fallar.
-      //    Pero ya tenemos los estudiantes creados.
-      //    Lo ideal sería un endpoint solo para cambiar el 'status' si ya están asignados.
-      //    O modificar el controlador para que no intente recrear si ya están.
-      //
-      //    PARA EVITAR RIESGOS: Pasamos los estudiantes tal cual. El controlador hace:
-      //    INSERT INTO students ... RETURNING id
-      //    Esto es problemático si el controlador NO chequea existencia.
-      //    Mirando el controlador: hace INSERT ciego.
-      //
-      //    SOLUCIÓN RAPIDA:
-      //    Si el usuario pidió "Simplemente confirmar", asumo que todos los docs están subidos.
-      //    El endpoint `confirmAllocation` actual es destructivo/auditivo (crea estudiantes).
-      //
-      //    Sin embargo, el usuario YA TIENE los estudiantes asignados en la BD (allocation_students).
-      //    Si llamo a `confirmAllocation` con estos estudiantes, intentará insertarlos de nuevo en `students` y `allocation_students`.
-      //    Esto fallará por constraints (email unique? idalu unique? allocation_students unique pair?).
-      //
-      //    Por tanto, necesitamos un endpoint que SOLO cambie el status a ACCEPTED.
-      //    O usamos el mismo endpoint pero le enviamos una lista VACÍA? No, valida length > 0.
+          await client.put(`/allocation/${allocationId}/confirm`, {
+            students: studentPayload,
+          });
 
-      //    Voy a asumir que debo enviar los datos y el backend (que NO voy a tocar en este paso si puedo evitarlo)
-      //    fallará si intento duplicar.
-      //
-      //    WAIT. El usuario dijo "Ya deberían estar dentro".
-      //    Entonces mi backend fix (`insert.sql`) ya los puso.
-      //    Si llamo a `confirmAllocation` va a explotar duplicados.
-      //
-      //    Mejor estrategia: Crear un NUEVO endpoint o modificar el existente para soportar "Solo cambiar estado".
-      //
-      //    PERO como no quiero tocar backend ahora si no es 100% necesario y arriesgado:
-      //    El endpoint confirmAllocation hace: UPDATE allocations SET status='ACCEPTED'.
-      //    LUEGO itera estudiantes.
-      //    Si falla el loop de estudiantes, hace ROLLBACK.
-      //
-      //    Así que NECESITO modificar el backend para que `confirmAllocation` sea idempotente o soporte "solo confirmar".
-
-      //    Como el usuario quiere "Confirmar los alumnos ya asignados", lo lógico es que el botón simplemente valide que todo ok y llame a un endpoint.
-      //    Voy a enviar la lista de estudiantes existente. Y modificaré el backend para que use ON CONFLICT o chequee existencia.
-      //
-      //    Ah, el controlador dice:
-      //    `INSERT INTO students ...`
-      //    `INSERT INTO allocation_students ...`
-      //    Definitivamente fallará si ya existen.
-
-      //    PERO VOY A IMPLEMENTAR EL FRONTEND PRIMERO Y LUEGO MODIFICARÉ EL BACKEND UNA VEZ MÁS RAPIDO.
-
-      // Mapeamos al formato que espera el backend
-      const studentPayload = students.map((s) => ({
-        name: s.nombre_completo || s.full_name,
-        idalu: s.idalu,
-        // Si pasamos ID, quizás podríamos modificar backend para usarlo
-      }));
-
-      await client.put(`/allocation/${allocationId}/confirm`, {
-        students: studentPayload,
-      });
-
-      navigate("/center/allocations");
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    }
+          toast.success("Assignació confirmada correctament");
+          navigate("/center/allocations");
+        } catch (err) {
+          toast.error(err.response?.data?.message || err.message);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   if (loading) {
@@ -298,6 +253,18 @@ const NominalConfirmation = () => {
           </button>
         </div>
       )}
+
+      {/* Modal de confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant="success"
+        confirmText="Confirmar"
+        cancelText="Cancel·lar"
+      />
     </div>
   );
 };

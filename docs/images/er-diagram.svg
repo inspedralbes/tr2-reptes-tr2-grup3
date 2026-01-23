@@ -1,0 +1,278 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" width="1000" height="700">
+  <style>
+    .title { font: bold 14px sans-serif; fill: #1f2937; }
+    .table { fill: #ffffff; stroke: #d1d5db; stroke-width: 1; }
+    .table-header { fill: #f3f4f6; }
+    .table-name { font: bold 11px sans-serif; fill: #1f2937; }
+    .column { font: 9px monospace; fill: #374151; }
+    .pk { fill: #fbbf24; }
+    .fk { fill: #60a5fa; }
+    .relation { fill: none; stroke: #6b7280; stroke-width: 1; }
+    .enum-box { fill: #f0fdf4; stroke: #22c55e; stroke-width: 1; rx: 4; }
+    .enum-title { font: bold 10px sans-serif; fill: #166534; }
+    .enum-value { font: 8px monospace; fill: #374151; }
+  </style>
+  
+  <defs>
+    <marker id="crow" markerWidth="12" markerHeight="8" refX="12" refY="4" orient="auto">
+      <path d="M0,0 L12,4 L0,8" fill="none" stroke="#6b7280" stroke-width="1" />
+    </marker>
+    <marker id="one" markerWidth="12" markerHeight="8" refX="0" refY="4" orient="auto">
+      <line x1="3" y1="0" x2="3" y2="8" stroke="#6b7280" stroke-width="1" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1000" height="700" fill="#f9fafb" />
+  
+  <!-- Title -->
+  <text x="500" y="25" text-anchor="middle" class="title">DIAGRAMA ENTITAT-RELACIÓ - ENGINY</text>
+  
+  <!-- USERS Table -->
+  <g transform="translate(30, 50)">
+    <rect class="table" width="140" height="130" />
+    <rect class="table-header" width="140" height="25" />
+    <text x="70" y="17" text-anchor="middle" class="table-name">users</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <text x="15" y="58" class="column">email VARCHAR</text>
+    <text x="15" y="73" class="column">password_hash</text>
+    <text x="15" y="88" class="column">role ENUM</text>
+    <circle cx="15" cy="100" r="4" class="fk" />
+    <text x="25" y="103" class="column">school_id FK</text>
+    <text x="15" y="118" class="column">created_at</text>
+  </g>
+  
+  <!-- SCHOOLS Table -->
+  <g transform="translate(220, 50)">
+    <rect class="table" width="140" height="130" />
+    <rect class="table-header" width="140" height="25" />
+    <text x="70" y="17" text-anchor="middle" class="table-name">schools</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <text x="15" y="58" class="column">name VARCHAR</text>
+    <text x="15" y="73" class="column">code VARCHAR</text>
+    <text x="15" y="88" class="column">address TEXT</text>
+    <text x="15" y="103" class="column">district VARCHAR</text>
+    <text x="15" y="118" class="column">phone, email</text>
+  </g>
+  
+  <!-- Relation users -> schools -->
+  <path class="relation" d="M170 100 L220 100" marker-end="url(#one)" marker-start="url(#crow)" />
+  
+  <!-- TEACHERS Table -->
+  <g transform="translate(410, 50)">
+    <rect class="table" width="140" height="115" />
+    <rect class="table-header" width="140" height="25" />
+    <text x="70" y="17" text-anchor="middle" class="table-name">teachers</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <circle cx="15" cy="55" r="4" class="fk" />
+    <text x="25" y="58" class="column">school_id FK</text>
+    <text x="15" y="73" class="column">name VARCHAR</text>
+    <text x="15" y="88" class="column">email VARCHAR</text>
+    <text x="15" y="103" class="column">phone VARCHAR</text>
+  </g>
+  
+  <!-- Relation teachers -> schools -->
+  <path class="relation" d="M360 100 L410 70" marker-end="url(#one)" marker-start="url(#crow)" />
+  
+  <!-- STUDENTS Table -->
+  <g transform="translate(410, 190)">
+    <rect class="table" width="140" height="130" />
+    <rect class="table-header" width="140" height="25" />
+    <text x="70" y="17" text-anchor="middle" class="table-name">students</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <circle cx="15" cy="55" r="4" class="fk" />
+    <text x="25" y="58" class="column">school_id FK</text>
+    <text x="15" y="73" class="column">name VARCHAR</text>
+    <text x="15" y="88" class="column">birth_date DATE</text>
+    <text x="15" y="103" class="column">grade VARCHAR</text>
+    <text x="15" y="118" class="column">group_name</text>
+  </g>
+  
+  <!-- Relation students -> schools -->
+  <path class="relation" d="M360 115 L370 115 L370 220 L410 220" marker-end="url(#one)" marker-start="url(#crow)" />
+  
+  <!-- PROVIDERS Table -->
+  <g transform="translate(600, 50)">
+    <rect class="table" width="140" height="115" />
+    <rect class="table-header" width="140" height="25" />
+    <text x="70" y="17" text-anchor="middle" class="table-name">providers</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <text x="15" y="58" class="column">name VARCHAR</text>
+    <text x="15" y="73" class="column">description TEXT</text>
+    <text x="15" y="88" class="column">contact_email</text>
+    <text x="15" y="103" class="column">phone, address</text>
+  </g>
+  
+  <!-- WORKSHOPS Table -->
+  <g transform="translate(790, 50)">
+    <rect class="table" width="150" height="130" />
+    <rect class="table-header" width="150" height="25" />
+    <text x="75" y="17" text-anchor="middle" class="table-name">workshops</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <circle cx="15" cy="55" r="4" class="fk" />
+    <text x="25" y="58" class="column">provider_id FK</text>
+    <text x="15" y="73" class="column">title VARCHAR</text>
+    <text x="15" y="88" class="column">description TEXT</text>
+    <text x="15" y="103" class="column">target_audience</text>
+    <text x="15" y="118" class="column">duration_minutes</text>
+  </g>
+  
+  <!-- Relation workshops -> providers -->
+  <path class="relation" d="M740 100 L790 80" marker-end="url(#one)" marker-start="url(#crow)" />
+  
+  <!-- WORKSHOP_EDITIONS Table -->
+  <g transform="translate(790, 210)">
+    <rect class="table" width="150" height="145" />
+    <rect class="table-header" width="150" height="25" />
+    <text x="75" y="17" text-anchor="middle" class="table-name">workshop_editions</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <circle cx="15" cy="55" r="4" class="fk" />
+    <text x="25" y="58" class="column">workshop_id FK</text>
+    <circle cx="15" cy="70" r="4" class="fk" />
+    <text x="25" y="73" class="column">period_id FK</text>
+    <text x="15" y="88" class="column">day_of_week ENUM</text>
+    <text x="15" y="103" class="column">start_time TIME</text>
+    <text x="15" y="118" class="column">end_time TIME</text>
+    <text x="15" y="133" class="column">max_capacity INT</text>
+  </g>
+  
+  <!-- Relation editions -> workshops -->
+  <path class="relation" d="M865 180 L865 210" marker-end="url(#crow)" marker-start="url(#one)" />
+  
+  <!-- ENROLLMENT_PERIODS Table -->
+  <g transform="translate(600, 210)">
+    <rect class="table" width="150" height="130" />
+    <rect class="table-header" width="150" height="25" />
+    <text x="75" y="17" text-anchor="middle" class="table-name">enrollment_periods</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <text x="15" y="58" class="column">name VARCHAR</text>
+    <text x="15" y="73" class="column">start_date DATE</text>
+    <text x="15" y="88" class="column">end_date DATE</text>
+    <text x="15" y="103" class="column">current_phase ENUM</text>
+    <text x="15" y="118" class="column">status ENUM</text>
+  </g>
+  
+  <!-- Relation editions -> periods -->
+  <path class="relation" d="M750 280 L790 280" marker-end="url(#crow)" marker-start="url(#one)" />
+  
+  <!-- REQUESTS Table -->
+  <g transform="translate(220, 380)">
+    <rect class="table" width="160" height="175" />
+    <rect class="table-header" width="160" height="25" />
+    <text x="80" y="17" text-anchor="middle" class="table-name">requests</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <circle cx="15" cy="55" r="4" class="fk" />
+    <text x="25" y="58" class="column">school_id FK</text>
+    <circle cx="15" cy="70" r="4" class="fk" />
+    <text x="25" y="73" class="column">edition_id FK</text>
+    <circle cx="15" cy="85" r="4" class="fk" />
+    <text x="25" y="88" class="column">teacher_id FK</text>
+    <text x="15" y="103" class="column">students_count INT</text>
+    <text x="15" y="118" class="column">preference ENUM</text>
+    <text x="15" y="133" class="column">status ENUM</text>
+    <text x="15" y="148" class="column">created_at</text>
+    <text x="15" y="163" class="column">submitted_at</text>
+  </g>
+  
+  <!-- Relations for requests -->
+  <path class="relation" d="M290 180 L290 380" marker-end="url(#crow)" marker-start="url(#one)" />
+  <path class="relation" d="M380 445 L480 120 L550 120" marker-end="url(#one)" marker-start="url(#crow)" />
+  <path class="relation" d="M380 430 L700 350 L790 300" marker-end="url(#one)" marker-start="url(#crow)" />
+  
+  <!-- ALLOCATIONS Table -->
+  <g transform="translate(450, 420)">
+    <rect class="table" width="150" height="130" />
+    <rect class="table-header" width="150" height="25" />
+    <text x="75" y="17" text-anchor="middle" class="table-name">allocations</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <circle cx="15" cy="55" r="4" class="fk" />
+    <text x="25" y="58" class="column">request_id FK</text>
+    <circle cx="15" cy="70" r="4" class="fk" />
+    <text x="25" y="73" class="column">edition_id FK</text>
+    <text x="15" y="88" class="column">assigned_seats INT</text>
+    <text x="15" y="103" class="column">status ENUM</text>
+    <text x="15" y="118" class="column">created_at</text>
+  </g>
+  
+  <!-- Relation allocations -> requests -->
+  <path class="relation" d="M380 480 L450 480" marker-end="url(#crow)" marker-start="url(#one)" />
+  
+  <!-- ALLOCATION_STUDENTS Table -->
+  <g transform="translate(450, 570)">
+    <rect class="table" width="150" height="70" />
+    <rect class="table-header" width="150" height="25" />
+    <text x="75" y="17" text-anchor="middle" class="table-name">allocation_students</text>
+    <circle cx="15" cy="40" r="4" class="fk" />
+    <text x="25" y="43" class="column">allocation_id FK</text>
+    <circle cx="15" cy="55" r="4" class="fk" />
+    <text x="25" y="58" class="column">student_id FK</text>
+  </g>
+  
+  <!-- Relation allocation_students -->
+  <path class="relation" d="M525 550 L525 570" marker-end="url(#crow)" marker-start="url(#one)" />
+  <path class="relation" d="M450 610 L400 280 L410 255" marker-end="url(#one)" marker-start="url(#crow)" />
+  
+  <!-- WORKSHOP_SESSIONS Table -->
+  <g transform="translate(670, 420)">
+    <rect class="table" width="150" height="115" />
+    <rect class="table-header" width="150" height="25" />
+    <text x="75" y="17" text-anchor="middle" class="table-name">workshop_sessions</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <circle cx="15" cy="55" r="4" class="fk" />
+    <text x="25" y="58" class="column">edition_id FK</text>
+    <circle cx="15" cy="70" r="4" class="fk" />
+    <text x="25" y="73" class="column">teacher_id FK</text>
+    <text x="15" y="88" class="column">session_date DATE</text>
+    <text x="15" y="103" class="column">status ENUM</text>
+  </g>
+  
+  <!-- ATTENDANCE_LOGS Table -->
+  <g transform="translate(670, 560)">
+    <rect class="table" width="150" height="100" />
+    <rect class="table-header" width="150" height="25" />
+    <text x="75" y="17" text-anchor="middle" class="table-name">attendance_logs</text>
+    <circle cx="15" cy="40" r="5" class="pk" />
+    <text x="25" y="43" class="column">id SERIAL</text>
+    <circle cx="15" cy="55" r="4" class="fk" />
+    <text x="25" y="58" class="column">session_id FK</text>
+    <circle cx="15" cy="70" r="4" class="fk" />
+    <text x="25" y="73" class="column">student_id FK</text>
+    <text x="15" y="88" class="column">status, notes</text>
+  </g>
+  
+  <!-- Relation attendance -> sessions -->
+  <path class="relation" d="M745 535 L745 560" marker-end="url(#crow)" marker-start="url(#one)" />
+  
+  <!-- ENUMS Legend -->
+  <g transform="translate(30, 380)">
+    <rect class="enum-box" width="150" height="110" />
+    <text x="75" y="15" text-anchor="middle" class="enum-title">ENUMS</text>
+    <text x="10" y="32" class="enum-value">user_role_enum:</text>
+    <text x="20" y="44" class="enum-value">ADMIN, CENTER_COORD</text>
+    <text x="10" y="58" class="enum-value">phase_enum:</text>
+    <text x="20" y="70" class="enum-value">SOLICITUDES, ASIGNACION</text>
+    <text x="20" y="82" class="enum-value">PUBLICACION, EJECUCION</text>
+    <text x="10" y="96" class="enum-value">day_enum:</text>
+    <text x="20" y="108" class="enum-value">TUESDAY, THURSDAY</text>
+  </g>
+  
+  <!-- Legend -->
+  <g transform="translate(30, 510)">
+    <text x="0" y="0" font-size="10" font-weight="bold" fill="#374151">Llegenda:</text>
+    <circle cx="10" cy="18" r="5" class="pk" />
+    <text x="20" y="22" font-size="9" fill="#6b7280">Primary Key</text>
+    <circle cx="80" cy="18" r="4" class="fk" />
+    <text x="90" y="22" font-size="9" fill="#6b7280">Foreign Key</text>
+  </g>
+</svg>
