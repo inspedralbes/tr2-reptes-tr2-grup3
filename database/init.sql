@@ -4,7 +4,11 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ==========================================
 -- ENUMS (Tipos de datos fijos)
 -- ==========================================
-CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CENTER_COORD');
+-- ADMIN: Administrador del sistema
+-- CENTER_COORD: Coordinador de centro educativo
+-- NOTA: Los profesores acompañantes están en tabla 'teachers' (no en users)
+--       Al hacer login obtienen rol virtual 'TEACHER' para el frontend
+CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'CENTER_COORD', 'TEACHER');
 CREATE TYPE period_status_enum AS ENUM ('DRAFT', 'ACTIVE', 'CLOSED');
 CREATE TYPE period_phase_enum AS ENUM (
     'SOLICITUDES',      -- Centros pueden enviar solicitudes
@@ -76,13 +80,16 @@ CREATE TABLE schools (
     ownership_type VARCHAR(100)
 );
 
--- Nueva tabla para Profesores (Sin login)
+-- Tabla para Profesores Acompañantes del Centro
+-- Estos profesores van con los alumnos a los talleres y pueden pasar lista
 CREATE TABLE teachers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
     full_name VARCHAR(255) NOT NULL,
-    email VARCHAR(255),
+    email VARCHAR(255) UNIQUE, -- Email único para login
     phone_number VARCHAR(50),
+    password_hash VARCHAR(255), -- Para poder hacer login y pasar lista
+    user_id UUID REFERENCES users(id), -- Vinculación con cuenta de usuario (se crea al pasar a EJECUCION)
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -91,6 +98,11 @@ CREATE TABLE students (
     email VARCHAR(255) UNIQUE, -- Email del alumno
     nombre_completo VARCHAR(255) NOT NULL,
     curso VARCHAR(20) CHECK (curso IN ('3 ESO', '4 ESO')),
+    
+    -- Datos del tutor/responsable legal
+    tutor_nombre VARCHAR(255),
+    tutor_email VARCHAR(255), -- Email del tutor para notificaciones de ausencias
+    tutor_telefono VARCHAR(50),
     
     -- Checklists de documentación (0 = No, 1 = Sí)
     check_acuerdo_pedagogico SMALLINT DEFAULT 0,
@@ -339,3 +351,20 @@ CREATE INDEX idx_student_grades_edition ON student_grades(workshop_edition_id);
 CREATE INDEX idx_survey_responses_survey ON survey_responses(survey_id);
 CREATE INDEX idx_requests_period ON requests(enrollment_period_id);
 CREATE INDEX idx_requests_school ON requests(school_id);
+
+-- ==========================================
+-- ZONA PROFESOR: Notas personales sobre alumnos
+-- ==========================================
+CREATE TABLE teacher_student_notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    teacher_id UUID NOT NULL REFERENCES teachers(id),
+    student_id UUID NOT NULL REFERENCES students(id),
+    workshop_edition_id UUID NOT NULL REFERENCES workshop_editions(id),
+    note TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(teacher_id, student_id, workshop_edition_id)
+);
+
+CREATE INDEX idx_teacher_notes_teacher ON teacher_student_notes(teacher_id);
+CREATE INDEX idx_teacher_notes_student ON teacher_student_notes(student_id);

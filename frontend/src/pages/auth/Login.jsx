@@ -102,7 +102,7 @@ const Login = () => {
           <p>Usuarios de prueba:</p>
           <p>admin@enginy.cat / admin123</p>
           <p>coord1@escola1.cat / admin123</p>
-          <p>teacher@enginy.cat / admin123</p>
+          <p>teacher_test@test.cat / admin123</p>
         </div>
       </Card>
     </div>

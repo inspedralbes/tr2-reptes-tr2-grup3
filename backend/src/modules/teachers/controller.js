@@ -132,6 +132,12 @@ const assignTeacher = async (req, res) => {
         .json({ error: "Ja hi ha 2 referents assignats a aquest taller" });
     }
 
+    // =========================================================================
+    // LOGICA AUTOMATICA: Crear Usuario y Enviar Email (ELIMINADA)
+    // =========================================================================
+    // Ara es fa manualment des del botó "Enviar Credencials"
+    // =========================================================================
+
     // Assignar
     const result = await db.query(
       `INSERT INTO workshop_assigned_teachers (workshop_edition_id, teacher_id, is_main_referent)
@@ -383,6 +389,78 @@ const remove = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/teachers/:id/send-credentials
+ * Enviar credencials manualment a un professor
+ */
+const sendCredentials = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // 1. Obtener datos del profesor
+    const teacherCheck = await db.query(
+      "SELECT id, full_name, email, user_id FROM teachers WHERE id = $1",
+      [id]
+    );
+
+    if (teacherCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Professor no trobat" });
+    }
+
+    const teacher = teacherCheck.rows[0];
+
+    if (!teacher.email) {
+      return res.status(400).json({ error: "El professor no té email" });
+    }
+
+    // 2. Comprovar si té usuari
+    let userId = teacher.user_id;
+    let generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-2); // Random ~10 chars
+
+    // Si NO tiene usuario, CREARLO
+    if (!userId) {
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+      // Insertar usuario
+      const newUser = await db.query(
+        "INSERT INTO users (full_name, email, password_hash, role) VALUES ($1, $2, $3, 'TEACHER') RETURNING id",
+        [teacher.full_name, teacher.email, hashedPassword]
+      );
+      userId = newUser.rows[0].id;
+
+      // Vincular usuario al profesor
+      await db.query(
+        "UPDATE teachers SET user_id = $1 WHERE id = $2",
+        [userId, id]
+      );
+    } else {
+      // Si YA tiene usuario, ACTUALIZAR password para enviarle uno nuevo
+      // Opcional: Podríamos no cambiarlo, pero si enviamos credenciales, mejor que funcionen las que enviamos.
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+      await db.query(
+        "UPDATE users SET password_hash = $1 WHERE id = $2",
+        [hashedPassword, userId]
+      );
+    }
+
+    // 3. Enviar Email
+    const emailService = require('../../common/services/EmailService');
+    const sent = await emailService.sendTeacherCredentials(teacher.email, generatedPassword, teacher.full_name);
+
+    if (sent) {
+      res.json({ message: "Credencials enviades correctament" });
+    } else {
+      res.status(500).json({ error: "Error enviant el correu" });
+    }
+
+  } catch (error) {
+    res.status(500).json({ error: `Error enviant credencials: ${error.message}` });
+  }
+};
+
 module.exports = {
   getCandidates,
   getAssignedTeachers,
@@ -394,4 +472,5 @@ module.exports = {
   create,
   update,
   remove,
+  sendCredentials,
 };

@@ -5,6 +5,7 @@ const db = require("../../config/db");
  * Crea una nueva solicitud de taller por parte de un centro
  * Solo CENTER_COORD puede hacer esto
  * Body incluye: items (talleres) y teacher_preferences (referentes)
+ * NOTA: enrollment_period_id es opcional, se usa el período activo automáticamente
  */
 const createRequest = async (req, res) => {
   // Validar rol: solo centros pueden solicitar
@@ -12,7 +13,7 @@ const createRequest = async (req, res) => {
     return res.status(403).json({ error: "Only centers can create requests" });
   }
 
-  const {
+  let {
     enrollment_period_id,
     school_id,
     is_first_time_participation,
@@ -22,10 +23,23 @@ const createRequest = async (req, res) => {
     request_teachers,
   } = req.body;
 
+  // Si no se especifica periodo, usar el período activo
+  if (!enrollment_period_id) {
+    const activePeriod = await db.query(
+      "SELECT id FROM enrollment_periods WHERE status = 'ACTIVE' LIMIT 1"
+    );
+    if (activePeriod.rows.length === 0) {
+      return res.status(400).json({
+        error: "No hi ha cap període d'inscripció actiu",
+      });
+    }
+    enrollment_period_id = activePeriod.rows[0].id;
+  }
+
   // Validaciones
-  if (!enrollment_period_id || !school_id || !items || items.length === 0) {
+  if (!school_id || !items || items.length === 0) {
     return res.status(400).json({
-      error: "enrollment_period_id, school_id, and items are required",
+      error: "school_id and items are required",
     });
   }
 

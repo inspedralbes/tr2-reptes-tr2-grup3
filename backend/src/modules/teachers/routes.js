@@ -24,6 +24,9 @@ router.post('/', isAuthenticated, isCenterCoord, teacherController.create);
 router.put('/:id', isAuthenticated, isCenterCoord, teacherController.update);
 router.delete('/:id', isAuthenticated, isCenterCoord, teacherController.remove);
 
+// POST - Enviar credencials manualment
+router.post('/:id/send-credentials', isAuthenticated, isCenterCoord, teacherController.sendCredentials);
+
 // GET - Obtenir candidats per a un taller (profes que ho van demanar) - Post-publicació
 router.get('/candidates/:workshopEditionId', authenticate, canManageTeachers, teacherController.getCandidates);
 

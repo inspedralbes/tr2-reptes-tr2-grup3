@@ -1,5 +1,25 @@
 name: CI/CD Pipeline - Enginy
 
+# ===========================================
+# SECRETS NECESARIOS EN GITHUB:
+# ===========================================
+# SSH_HOST        - IP o dominio del servidor
+# SSH_USER        - Usuario SSH (ej: root, deploy)
+# SSH_KEY         - Clave privada SSH (sin passphrase)
+# POSTGRES_USER   - Usuario de PostgreSQL
+# POSTGRES_PASSWORD - Contraseña de PostgreSQL
+# POSTGRES_DB     - Nombre de la base de datos
+# JWT_SECRET      - Secreto para tokens JWT
+# VITE_API_URL    - URL de la API (ej: https://enginy.cat/api)
+#
+# OPCIONALES (para emails):
+# SMTP_HOST       - Servidor SMTP (ej: smtp.gmail.com)
+# SMTP_PORT       - Puerto SMTP (default: 587)
+# SMTP_USER       - Usuario SMTP
+# SMTP_PASS       - Contraseña SMTP
+# EMAIL_FROM      - Email remitente (default: noreply@enginy.cat)
+# ===========================================
+
 on:
   push:
     branches: [main]
@@ -7,6 +27,9 @@ on:
     branches: [main]
 
 jobs:
+  # =========================================
+  # JOB 1: Verificar que las imágenes compilan
+  # =========================================
   verify-build:
     name: Verify Build (CI)
     runs-on: ubuntu-latest
@@ -19,10 +42,15 @@ jobs:
           VITE_API_URL: "http://localhost:3000/api"
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-          JWT_SECRET: test
-        run: docker compose -f docker-compose.prod.yml build
+          POSTGRES_DB: test_db
+          JWT_SECRET: test_secret_key_for_ci
+        run: |
+          docker compose -f docker-compose.prod.yml build --no-cache
+          echo "✅ Build successful!"
 
+  # =========================================
+  # JOB 2: Deploy a producción (solo en main)
+  # =========================================
   deploy:
     name: Deploy to Production (CD)
     needs: verify-build
@@ -36,37 +64,50 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
+          # Variables requeridas
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          # Variables opcionales para email
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,JWT_SECRET,VITE_API_URL
+          envs: POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,JWT_SECRET,VITE_API_URL,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM
           script: |
+            set -e
+            
             PROJECT_DIR="/var/www/html/enginy"
             REPO_URL="https://github.com/inspedralbes/tr2-reptes-tr2-grup3.git"
+            BRANCH="main"
 
-            # 1. Asegurar que el directorio existe y entrar
+            echo "🚀 Starting deployment..."
+
+            # 1. Asegurar que el directorio existe
             mkdir -p $PROJECT_DIR
             cd $PROJECT_DIR || exit 1
 
-            # 2. Lógica: Clonar si es nuevo, o Down+Pull si ya existe
+            # 2. Clonar o actualizar repositorio
             if [ ! -d ".git" ]; then
-                echo "⚠️ Project not found. Cloning from $REPO_URL..."
-                git clone $REPO_URL .
+                echo "📦 Cloning repository..."
+                git clone -b $BRANCH $REPO_URL .
             else
-                echo "✅ Project found. Stopping services and updating..."
-                docker compose -f docker-compose.prod.yml down || true
-                git pull origin main
+                echo "📥 Updating repository..."
+                docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+                git fetch origin
+                git reset --hard origin/$BRANCH
             fi
 
-            # 3. Generar archivo de entorno
-            echo "Generating .env file from secrets..."
-            cat <<EOF > .env
+            # 3. Generar archivo .env
+            echo "⚙️ Generating .env file..."
+            cat > .env << EOF
             NODE_ENV=production
             POSTGRES_USER=$POSTGRES_USER
             POSTGRES_PASSWORD=$POSTGRES_PASSWORD
@@ -75,12 +116,30 @@ jobs:
             POSTGRES_PORT=5432
             JWT_SECRET=$JWT_SECRET
             VITE_API_URL=$VITE_API_URL
+            SMTP_HOST=$SMTP_HOST
+            SMTP_PORT=${SMTP_PORT:-587}
+            SMTP_USER=$SMTP_USER
+            SMTP_PASS=$SMTP_PASS
+            EMAIL_FROM=${EMAIL_FROM:-noreply@enginy.cat}
             EOF
 
-            # 4. Build and start services
+            # 4. Build de imágenes
+            echo "🔨 Building Docker images..."
             docker compose -f docker-compose.prod.yml build
+
+            # 5. Iniciar servicios
+            echo "🐳 Starting services..."
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            # 5. Show status
-            echo "✅ Deployment completed!"
+            # 6. Esperar y verificar
+            echo "⏳ Waiting for services..."
+            sleep 15
+
+            echo "📊 Service status:"
             docker compose -f docker-compose.prod.yml ps
+
+            # 7. Limpiar
+            echo "🧹 Cleaning up..."
+            docker image prune -f
+
+            echo "✅ Deployment completed!"

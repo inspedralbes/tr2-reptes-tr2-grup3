@@ -2,147 +2,145 @@
  * WorkshopEvaluate.jsx
  *
  * ZONA PROFESOR: Evaluar Alumnos
- * Formulario para puntuar competencias técnicas y transversales (1-5)
- * Diseño "Mobile First"
+ * Formulario para puntuar competencias técnicas y transversales
+ * Diseño PREMIUM con datos MOCK
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import client from "../../api/client";
-
-// const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+import {
+  ArrowLeft,
+  Save,
+  ChevronDown,
+  ChevronUp,
+  Star,
+  MessageSquare,
+  Award,
+  Zap
+} from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 const WorkshopEvaluate = () => {
   const { editionId } = useParams();
   const navigate = useNavigate();
 
-  const [students, setStudents] = useState([]);
-  const [evaluations, setEvaluations] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [evaluations, setEvaluations] = useState({});
   const [expandedStudent, setExpandedStudent] = useState(null);
 
-  // Competencias a evaluar
-  const competencies = {
+  // MOCK DATA: Competencias
+  const COMPETENCIES = {
     technical: [
-      { id: "tech_knowledge", label: "Conocimientos técnicos" },
-      { id: "tech_skills", label: "Habilidades prácticas" },
-      { id: "tech_problem_solving", label: "Resolución de problemas" },
+      { id: "tech_knowledge", label: "Conocimientos técnicos recibidos" },
+      { id: "tech_skills", label: "Habilidad en la ejecución práctica" },
+      { id: "tech_safety", label: "Cumplimiento de normas de seguridad" },
     ],
     transversal: [
-      { id: "teamwork", label: "Trabajo en equipo" },
-      { id: "communication", label: "Comunicación" },
-      { id: "responsibility", label: "Responsabilidad" },
-      { id: "creativity", label: "Creatividad" },
+      { id: "teamwork", label: "Colaboración y trabajo en equipo" },
+      { id: "proactivity", label: "Iniciativa y proactividad" },
+      { id: "respect", label: "Actitud y respeto hacia compañeros" },
     ],
   };
 
+  // MOCK DATA: Alumnos
+  const MOCK_STUDENTS = [
+    { id: "st1", name: "Marc Rojano", school: "Institut Pedralbes", avatar_color: "bg-blue-500", initials: "MR" },
+    { id: "st2", name: "Lucía García", school: "Institut Tecnològic", avatar_color: "bg-pink-500", initials: "LG" },
+    { id: "st3", name: "Ahmed Benali", school: "Escuela del Trabajo", avatar_color: "bg-green-500", initials: "AB" },
+    { id: "st4", name: "Sofía Martí", school: "Institut Pedralbes", avatar_color: "bg-purple-500", initials: "SM" },
+    { id: "st5", name: "Joan Vila", school: "Institut Joan Miró", avatar_color: "bg-orange-500", initials: "JV" },
+  ];
+
   useEffect(() => {
-    loadStudents();
-  }, [editionId]);
-
-  /**
-   * Carga los alumnos del taller
-   */
-  /**
-   * Carga los alumnos del taller
-   */
-  const loadStudents = async () => {
-    try {
-      setLoading(true);
-
-      const res = await client.get(`/classroom/students/${editionId}`);
-      const data = res.data;
-      setStudents(data);
-
-      // Inicializar evaluaciones vacías
+    setTimeout(() => {
+      setStudents(MOCK_STUDENTS);
+      // Inicializar evaluaciones
       const initialEvals = {};
-      data.forEach((s) => {
+      MOCK_STUDENTS.forEach(s => {
         initialEvals[s.id] = {
+          // Puntuaciones aleatorias iniciales para demo (o vacías)
           tech_knowledge: 0,
           tech_skills: 0,
-          tech_problem_solving: 0,
+          tech_safety: 0,
           teamwork: 0,
-          communication: 0,
-          responsibility: 0,
-          creativity: 0,
-          comments: "",
+          proactivity: 0,
+          respect: 0,
+          comments: ""
         };
       });
       setEvaluations(initialEvals);
-    } catch (err) {
-      console.error("Error cargando alumnos:", err);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, 600);
+  }, []);
 
-  /**
-   * Actualiza una puntuación
-   */
   const updateScore = (studentId, competencyId, score) => {
-    setEvaluations((prev) => ({
+    setEvaluations(prev => ({
       ...prev,
       [studentId]: {
         ...prev[studentId],
-        [competencyId]: score,
-      },
+        [competencyId]: score
+      }
     }));
   };
 
-  /**
-   * Actualiza comentarios
-   */
-  const updateComments = (studentId, comments) => {
-    setEvaluations((prev) => ({
+  const updateComments = (studentId, value) => {
+    setEvaluations(prev => ({
       ...prev,
       [studentId]: {
         ...prev[studentId],
-        comments,
-      },
+        comments: value
+      }
     }));
   };
 
-  /**
-   * Guarda las evaluaciones
-   */
-  const saveEvaluations = async () => {
+  const handleSave = () => {
     setSaving(true);
-    try {
-      await client.post(`/classroom/evaluations/${editionId}`, { evaluations });
-
-      alert("✅ Evaluaciones guardadas correctamente");
-      navigate("/teacher");
-    } catch (err) {
-      alert(
-        "❌ Error guardando evaluaciones: " +
-          (err.response?.data?.message || err.message)
-      );
-    } finally {
+    setTimeout(() => {
       setSaving(false);
-    }
+      toast.success("Evaluaciones guardadas correctamente");
+      setTimeout(() => navigate("/teacher"), 1000);
+    }, 1500);
   };
 
-  /**
-   * Componente de puntuación con estrellas
-   */
-  const ScoreSelector = ({ studentId, competencyId, label }) => {
-    const currentScore = evaluations[studentId]?.[competencyId] || 0;
+  const getStudentAverage = (studentId) => {
+    const evalData = evaluations[studentId];
+    if (!evalData) return 0;
+
+    // Solo contar las keys numéricas > 0
+    const scores = Object.entries(evalData)
+      .filter(([key, val]) => typeof val === 'number')
+      .map(([_, val]) => val);
+
+    const filledScores = scores.filter(s => s > 0);
+    if (filledScores.length === 0) return 0;
+
+    const sum = filledScores.reduce((a, b) => a + b, 0);
+    return (sum / filledScores.length).toFixed(1);
+  };
+
+  const ScoreComponent = ({ studentId, compId, label, type }) => {
+    const score = evaluations[studentId]?.[compId] || 0;
 
     return (
-      <div className="mb-3">
-        <label className="text-sm text-gray-600 block mb-1">{label}</label>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((score) => (
+      <div className="mb-4">
+        <div className="flex justify-between mb-1.5">
+          <label className="text-sm font-medium text-gray-700">{label}</label>
+          <span className={`text-sm font-bold ${score > 0 ? 'text-indigo-600' : 'text-gray-300'}`}>
+            {score > 0 ? score : '-'} / 5
+          </span>
+        </div>
+        <div className="flex gap-1 justify-between sm:justify-start">
+          {[1, 2, 3, 4, 5].map((star) => (
             <button
-              key={score}
-              onClick={() => updateScore(studentId, competencyId, score)}
-              className={`w-10 h-10 rounded-lg font-bold transition ${
-                currentScore >= score
-                  ? "bg-yellow-400 text-yellow-900"
-                  : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-              }`}
+              key={star}
+              onClick={() => updateScore(studentId, compId, star)}
+              className={`h-10 w-10 sm:h-9 sm:w-12 rounded-lg transition-all duration-200 flex items-center justify-center ${score >= star
+                  ? (type === 'tech' ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200')
+                  : 'bg-gray-50 text-gray-300 hover:bg-gray-100'
+                }`}
             >
-              {score <= currentScore ? "★" : "☆"}
+              <Star size={20} fill={score >= star ? "currentColor" : "none"} />
             </button>
           ))}
         </div>
@@ -150,159 +148,134 @@ const WorkshopEvaluate = () => {
     );
   };
 
-  /**
-   * Calcula la media de un alumno
-   */
-  const getStudentAverage = (studentId) => {
-    const eval_ = evaluations[studentId];
-    if (!eval_) return 0;
-
-    const scores = Object.values(eval_).filter(
-      (v) => typeof v === "number" && v > 0
-    );
-    if (scores.length === 0) return 0;
-
-    return (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-gray-500">Cargando alumnos...</p>
+  if (loading) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="animate-pulse flex flex-col items-center">
+        <div className="h-12 w-12 bg-gray-200 rounded-full mb-4"></div>
+        <div className="h-4 w-32 bg-gray-200 rounded"></div>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 sticky top-0 z-10">
-        <button
-          onClick={() => navigate("/teacher")}
-          className="text-blue-200 hover:text-white mb-2"
-        >
-          ← Volver
-        </button>
-        <h1 className="text-xl font-bold">⭐ Evaluar Alumnos</h1>
-        <p className="text-blue-200 text-sm mt-1">
-          Puntúa del 1 al 5 las competencias de cada alumno
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50/50 pb-32">
+      <Toaster position="bottom-center" />
 
-      {/* Lista de alumnos */}
-      <div className="p-4">
-        {students.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center">
-            <div className="text-5xl mb-4">👥</div>
-            <p className="text-gray-500">No hay alumnos para evaluar</p>
+      {/* HEADER */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm backdrop-blur-md bg-white/80">
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate("/teacher")} className="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors">
+              <ArrowLeft size={24} />
+            </button>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900 leading-tight">Evaluación de Taller</h1>
+              <p className="text-xs text-gray-500">Robótica e IA Aplicada</p>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {students.map((student) => (
-              <div
-                key={student.id}
-                className="bg-white rounded-xl shadow-sm overflow-hidden"
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+        {students.map((student) => {
+          const isExpanded = expandedStudent === student.id;
+          const userAvg = getStudentAverage(student.id);
+
+          return (
+            <div
+              key={student.id}
+              className={`bg-white rounded-2xl shadow-sm border transition-all duration-300 overflow-hidden ${isExpanded ? 'border-indigo-200 ring-2 ring-indigo-50 shadow-md' : 'border-gray-200 hover:border-gray-300'}`}
+            >
+              {/* CARD HEADER (CLICK TO EXPAND) */}
+              <button
+                onClick={() => setExpandedStudent(isExpanded ? null : student.id)}
+                className="w-full text-left p-4 flex items-center gap-4 focus:outline-none"
               >
-                {/* Cabecera del alumno (clickeable) */}
-                <button
-                  onClick={() =>
-                    setExpandedStudent(
-                      expandedStudent === student.id ? null : student.id
-                    )
-                  }
-                  className="w-full p-4 flex items-center gap-3 text-left"
-                >
-                  {/* Avatar */}
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                    {student.full_name?.charAt(0) || "?"}
-                  </div>
+                <div className={`h-12 w-12 rounded-full ${student.avatar_color} flex items-center justify-center text-white font-bold shadow-sm shrink-0`}>
+                  {student.initials}
+                </div>
 
-                  {/* Info */}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800">
-                      {student.full_name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {student.school_name || "Centro"}
-                    </p>
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-900 text-lg leading-tight">{student.name}</h3>
+                  <p className="text-xs text-gray-500">{student.school}</p>
+                </div>
 
-                  {/* Media */}
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {getStudentAverage(student.id)}
+                <div className="text-right flex flex-col items-end">
+                  {Number(userAvg) > 0 && (
+                    <div className={`px-2 py-0.5 rounded-full text-xs font-bold mb-1 ${Number(userAvg) >= 4 ? 'bg-green-100 text-green-700' : Number(userAvg) >= 3 ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      Media: {userAvg}
                     </div>
-                    <div className="text-xs text-gray-400">Media</div>
+                  )}
+                  {isExpanded ? <ChevronUp className="text-gray-400" size={20} /> : <ChevronDown className="text-gray-400" size={20} />}
+                </div>
+              </button>
+
+              {/* EXPANDED CONTENT */}
+              {isExpanded && (
+                <div className="px-5 pb-6 pt-2 border-t border-gray-100 bg-gray-50/30">
+                  <div className="grid md:grid-cols-2 gap-8 mb-6">
+                    {/* COLUMNA TECNICA */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-4 text-indigo-700">
+                        <Zap size={18} />
+                        <h4 className="font-bold text-sm uppercase tracking-wide">Competencias Técnicas</h4>
+                      </div>
+                      {COMPETENCIES.technical.map(c => (
+                        <ScoreComponent key={c.id} studentId={student.id} compId={c.id} label={c.label} type="tech" />
+                      ))}
+                    </div>
+
+                    {/* COLUMNA TRANSVERSAL */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-4 text-emerald-700">
+                        <Award size={18} />
+                        <h4 className="font-bold text-sm uppercase tracking-wide">Competencias Transversales</h4>
+                      </div>
+                      {COMPETENCIES.transversal.map(c => (
+                        <ScoreComponent key={c.id} studentId={student.id} compId={c.id} label={c.label} type="soft" />
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Indicador expandir */}
-                  <span className="text-gray-400">
-                    {expandedStudent === student.id ? "▲" : "▼"}
-                  </span>
-                </button>
-
-                {/* Formulario de evaluación (expandible) */}
-                {expandedStudent === student.id && (
-                  <div className="px-4 pb-4 border-t">
-                    {/* Competencias técnicas */}
-                    <h4 className="font-semibold text-gray-700 mt-4 mb-3">
-                      🔧 Competencias Técnicas
-                    </h4>
-                    {competencies.technical.map((comp) => (
-                      <ScoreSelector
-                        key={comp.id}
-                        studentId={student.id}
-                        competencyId={comp.id}
-                        label={comp.label}
-                      />
-                    ))}
-
-                    {/* Competencias transversales */}
-                    <h4 className="font-semibold text-gray-700 mt-4 mb-3">
-                      🤝 Competencias Transversales
-                    </h4>
-                    {competencies.transversal.map((comp) => (
-                      <ScoreSelector
-                        key={comp.id}
-                        studentId={student.id}
-                        competencyId={comp.id}
-                        label={comp.label}
-                      />
-                    ))}
-
-                    {/* Comentarios */}
-                    <h4 className="font-semibold text-gray-700 mt-4 mb-2">
-                      💬 Comentarios
-                    </h4>
+                  {/* COMENTARIOS */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2 text-gray-700">
+                      <MessageSquare size={16} />
+                      <label className="font-bold text-sm">Observaciones y Comentarios</label>
+                    </div>
                     <textarea
                       value={evaluations[student.id]?.comments || ""}
-                      onChange={(e) =>
-                        updateComments(student.id, e.target.value)
-                      }
-                      placeholder="Observaciones sobre el alumno..."
-                      rows={3}
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                    />
+                      onChange={(e) => updateComments(student.id, e.target.value)}
+                      placeholder="Escribe aquí notas sobre el desempeño del alumno..."
+                      className="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-3 px-4 min-h-[80px]"
+                    ></textarea>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </main>
 
-      {/* Botón flotante de guardar */}
-      {students.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg">
+      {/* FOOTER SAVE */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-gray-200 z-40 shadow-lg">
+        <div className="max-w-3xl mx-auto">
           <button
-            onClick={saveEvaluations}
+            onClick={handleSave}
             disabled={saving}
-            className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl py-4 font-bold text-lg shadow-indigo-200 shadow-lg hover:shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
           >
-            {saving ? "Guardando..." : "💾 Guardar Evaluaciones"}
+            {saving ? (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            ) : (
+              <>
+                <Save size={20} />
+                Guardar Todas las Evaluaciones
+              </>
+            )}
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -13,7 +13,8 @@ router.get('/', authenticate, listRequests);
 router.get('/:id', authenticate, getRequestById);
 
 // POST - Crear nueva solicitud (CENTER_COORD) - Solo en fase SOLICITUDES
-router.post('/', authenticate, canCreateRequests, requireFields(['enrollment_period_id', 'school_id', 'items']), createRequest);
+// NOTA: enrollment_period_id es opcional, se usa el período activo automáticamente
+router.post('/', authenticate, canCreateRequests, requireFields(['school_id', 'items']), createRequest);
 
 // PUT - Actualizar solicitud (CENTER_COORD) - Solo en fase SOLICITUDES
 router.put('/:id', authenticate, canCreateRequests, updateRequest);

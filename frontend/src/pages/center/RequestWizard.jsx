@@ -32,6 +32,9 @@ const RequestWizard = () => {
 
   // Editing State
   const [editingRequest, setEditingRequest] = useState(null);
+  
+  // Auto-skip step 1 when there's only one active period
+  const [autoSelectedPeriod, setAutoSelectedPeriod] = useState(false);
 
   // Paso 1: Datos del centro
   const [formData, setFormData] = useState({
@@ -244,11 +247,23 @@ const RequestWizard = () => {
       setAvailableStudents(studentsData);
       setAvailableTeachers(teachersRes.data);
 
-      if (periodsData.length > 0 && !editingRequest) {
+      // Filter active periods in SOLICITUDES phase
+      const activePeriodsInSolicitudes = periodsData.filter(
+        (p) => p.status === "ACTIVE" && p.current_phase === "SOLICITUDES"
+      );
+
+      if (activePeriodsInSolicitudes.length > 0 && !editingRequest) {
+        // Auto-select the first (and usually only) active period
         setFormData((prev) => ({
           ...prev,
-          enrollment_period_id: periodsData[0].id,
+          enrollment_period_id: activePeriodsInSolicitudes[0].id,
         }));
+        
+        // If there's only one period, auto-skip step 1 and go to step 2
+        if (activePeriodsInSolicitudes.length === 1) {
+          setAutoSelectedPeriod(true);
+          setStep(2);
+        }
       }
     } catch (err) {
       setError("Error al cargar datos: " + err.message);
@@ -633,30 +648,42 @@ const RequestWizard = () => {
                 <p>Ja heu enviat una sol·licitud per a aquest període.</p>
               </div>
             )}
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Període d'inscripció *
-              </label>
-              <select
-                value={formData.enrollment_period_id}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    enrollment_period_id: e.target.value,
-                  })
-                }
-                className="w-full border rounded px-3 py-2"
-                required
-                disabled={!!editingRequest}
-              >
-                <option value="">Seleccionar...</option>
-                {periods.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {periods.length === 1 && autoSelectedPeriod && (
+              <div className="p-4 bg-blue-50 text-blue-800 rounded border border-blue-200">
+                <p className="font-medium">
+                  📅 Període actiu: <strong>{periods[0].name}</strong>
+                </p>
+                <p className="text-sm mt-1">
+                  Només hi ha un període d'inscripció obert.
+                </p>
+              </div>
+            )}
+            {periods.length > 1 && (
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Període d'inscripció *
+                </label>
+                <select
+                  value={formData.enrollment_period_id}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      enrollment_period_id: e.target.value,
+                    })
+                  }
+                  className="w-full border rounded px-3 py-2"
+                  required
+                  disabled={!!editingRequest}
+                >
+                  <option value="">Seleccionar...</option>
+                  {periods.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="flex justify-end">
               <Button
                 onClick={() => setStep(2)}

@@ -33,6 +33,7 @@ import TeachersManager from "./pages/center/TeachersManager.jsx";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard.jsx";
 import WorkshopAttendance from "./pages/teacher/WorkshopAttendance.jsx";
 import WorkshopEvaluate from "./pages/teacher/WorkshopEvaluate.jsx";
+import MyStudents from "./pages/teacher/MyStudents.jsx";
 
 function App() {
   const location = useLocation();
@@ -190,7 +191,15 @@ function App() {
               }
             />
             <Route
-              path="/teacher/workshop/:sessionId"
+              path="/teacher/students"
+              element={
+                <ProtectedRoute>
+                  <MyStudents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/attendance/:sessionId"
               element={
                 <ProtectedRoute>
                   <WorkshopAttendance />

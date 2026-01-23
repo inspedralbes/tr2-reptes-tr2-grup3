@@ -1,5 +1,7 @@
 const db = require('../../config/db');
 const sessionsService = require('../sessions/service');
+const emailService = require('../../common/services/EmailService');
+const teachersService = require('../teachers/service');
 
 /**
  * Constantes de fases disponibles
@@ -384,10 +386,35 @@ const advancePhase = async (req, res) => {
       }
     }
 
+    // Si avanzamos a EJECUCION, crear cuentas para profesores asignados
+    let teacherAccountsResult = null;
+    if (newPhase === PHASES.EJECUCION) {
+      try {
+        teacherAccountsResult = await teachersService.createAccountsForAssignedTeachers(id);
+        console.log(`👨‍🏫 Cuentas de profesores creadas:`, teacherAccountsResult);
+      } catch (teacherError) {
+        console.error('Error creando cuentas de profesores:', teacherError.message);
+      }
+    }
+
+    // Enviar notificación de cambio de fase a coordinadores
+    let emailResult = null;
+    try {
+      emailResult = await emailService.sendPhaseChangeNotification(
+        result.rows[0],
+        period.current_phase
+      );
+      console.log(`📧 Emails de cambio de fase enviados:`, emailResult);
+    } catch (emailError) {
+      console.error('Error enviando emails de cambio de fase:', emailError.message);
+    }
+
     res.json({
       message: `Fase avanzada a ${newPhase}`,
       period: result.rows[0],
-      sessions_generated: sessionsResult
+      sessions_generated: sessionsResult,
+      teacher_accounts: teacherAccountsResult,
+      emails_sent: emailResult
     });
   } catch (error) {
     res.status(500).json({ error: `Failed to advance phase: ${error.message}` });

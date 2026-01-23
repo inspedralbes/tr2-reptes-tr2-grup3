@@ -7,6 +7,7 @@ import {
   Users,
   Download,
   Upload,
+  Mail,
 } from "lucide-react";
 import client from "../../api/client";
 import toast from "react-hot-toast";
@@ -106,6 +107,18 @@ const TeachersManager = () => {
       console.error("Error deleting teacher:", error);
       toast.error("Error eliminant professor");
       setError("Error eliminant professor");
+    }
+  };
+
+  const handleSendCredentials = async (teacher) => {
+    if (!window.confirm(`Vols enviar les credencials a ${teacher.full_name}?`)) return;
+
+    try {
+      await client.post(`/teachers/${teacher.id}/send-credentials`);
+      toast.success("Credencials enviades correctament");
+    } catch (error) {
+      console.error("Error sending credentials:", error);
+      toast.error(error.response?.data?.error || "Error enviant credencials");
     }
   };
 
@@ -345,6 +358,13 @@ const TeachersManager = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleSendCredentials(teacher)}
+                          title="Enviar credencials"
+                          className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full transition-colors"
+                        >
+                          <Mail size={18} />
+                        </button>
                         <button
                           onClick={() => handleOpenModal(teacher)}
                           className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors"

@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { 
   Plus, Edit, Trash2, Calendar, Power, ChevronRight,
   Send, Cog, Eye, Rocket, Clock, Users, School, FileCheck,
-  AlertTriangle, CheckCircle, Info, BarChart3, ArrowRight,
+  AlertTriangle, CheckCircle, Info, BarChart3, ArrowRight, ArrowLeft,
   PauseCircle, Activity
 } from "lucide-react";
 import Modal from "../../components/common/Modal.jsx";
@@ -232,6 +232,28 @@ const EnrollmentManager = () => {
       loadPeriods();
     } catch (err) {
       setError("Error al avançar fase: " + err.message);
+    }
+  };
+
+  const handleRegressPhase = async (id, currentPhase) => {
+    const currentIndex = PHASE_ORDER.indexOf(currentPhase);
+    const prevPhase = PHASE_ORDER[currentIndex - 1];
+    
+    if (!prevPhase) {
+      setError("Ja esteu a la primera fase");
+      return;
+    }
+
+    if (!window.confirm("⚠️ ATENCIÓ: Retrocedir a la fase \"" + PHASE_LABELS[prevPhase] + "\"?\n\nAixò és per a testing. En producció pot causar inconsistències.")) {
+      return;
+    }
+
+    try {
+      await enrollmentService.advancePhase(id, prevPhase);
+      setSuccess("Fase retrocedida a: " + PHASE_LABELS[prevPhase]);
+      loadPeriods();
+    } catch (err) {
+      setError("Error al retrocedir fase: " + err.message);
     }
   };
 
@@ -525,6 +547,15 @@ const EnrollmentManager = () => {
                           className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors text-sm font-medium"
                         >
                           <Power size={16} /> Activar
+                        </button>
+                      )}
+                      {period.status === 'ACTIVE' && period.current_phase !== PHASES.SOLICITUDES && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRegressPhase(period.id, period.current_phase); }}
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-colors text-sm font-medium"
+                          title="Retrocedir fase (testing)"
+                        >
+                          <ArrowLeft size={16} /> Retrocedir
                         </button>
                       )}
                       {period.status === 'ACTIVE' && period.current_phase !== PHASES.EJECUCION && (
