@@ -48,7 +48,7 @@ const RequestDetail = () => {
   const teachers = request.request_teachers || [];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">
           Detall de Sol·licitud #{request.id}
@@ -66,11 +66,10 @@ const RequestDetail = () => {
           <div>
             <p className="text-sm text-gray-500">Estat</p>
             <span
-              className={`font-bold ${
-                request.status === "SUBMITTED"
+              className={`font-bold ${request.status === "SUBMITTED"
                   ? "text-blue-600"
                   : "text-gray-800"
-              }`}
+                }`}
             >
               {request.status}
             </span>
@@ -129,10 +128,10 @@ const RequestDetail = () => {
           ))}
           {(!request.teacher_preferences ||
             request.teacher_preferences.length === 0) && (
-            <p className="text-gray-500 italic">
-              Sense preferències registrades.
-            </p>
-          )}
+              <p className="text-gray-500 italic">
+                Sense preferències registrades.
+              </p>
+            )}
         </div>
       </Card>
 

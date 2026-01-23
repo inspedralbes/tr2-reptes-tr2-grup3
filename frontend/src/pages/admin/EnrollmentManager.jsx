@@ -5,7 +5,7 @@
  * Sistema de fases: SOLICITUDES → ASIGNACION → PUBLICACION → EJECUCION
  */
 import { useState, useEffect } from "react";
-import { 
+import {
   Plus, Edit, Trash2, Calendar, Power, ChevronRight,
   Send, Cog, Eye, Rocket, Clock, Users, School, FileCheck,
   AlertTriangle, CheckCircle, Info, BarChart3, ArrowRight, ArrowLeft,
@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 import Modal from "../../components/common/Modal.jsx";
 import Button from "../../components/ui/Button.jsx";
-import enrollmentService, { 
-  PHASES, PHASE_ORDER, PHASE_LABELS, PHASE_COLORS, 
-  STATUS_LABELS, STATUS_COLORS 
+import enrollmentService, {
+  PHASES, PHASE_ORDER, PHASE_LABELS, PHASE_COLORS,
+  STATUS_LABELS, STATUS_COLORS
 } from "../../services/enrollment.service";
 
 /**
@@ -210,7 +210,7 @@ const EnrollmentManager = () => {
   const handleAdvancePhase = async (id, currentPhase) => {
     const currentIndex = PHASE_ORDER.indexOf(currentPhase);
     const nextPhase = PHASE_ORDER[currentIndex + 1];
-    
+
     if (!nextPhase) {
       setError("Ja esteu a la fase final");
       return;
@@ -238,7 +238,7 @@ const EnrollmentManager = () => {
   const handleRegressPhase = async (id, currentPhase) => {
     const currentIndex = PHASE_ORDER.indexOf(currentPhase);
     const prevPhase = PHASE_ORDER[currentIndex - 1];
-    
+
     if (!prevPhase) {
       setError("Ja esteu a la primera fase");
       return;
@@ -279,12 +279,12 @@ const EnrollmentManager = () => {
       <div className="mt-6">
         <div className="relative">
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
+            <div
               className={config.bgColor + " h-full transition-all duration-500"}
               style={{ width: ((currentPhaseIndex + 1) / PHASE_ORDER.length) * 100 + "%" }}
             />
           </div>
-          
+
           <div className="flex justify-between mt-2">
             {PHASE_ORDER.map((phase, index) => {
               const phaseConfig = PHASE_CONFIG[phase];
@@ -340,12 +340,12 @@ const EnrollmentManager = () => {
               Fase Actual: {PHASE_LABELS[period.current_phase]}
             </h4>
             <p className="text-gray-600 text-sm mt-1">{config.description}</p>
-            
+
             <div className="mt-4">
               <p className="text-xs font-medium text-gray-500 uppercase mb-2">Accions disponibles en aquesta fase:</p>
               <div className="flex flex-wrap gap-2">
                 {config.actions.map((action, idx) => (
-                  <span 
+                  <span
                     key={idx}
                     className={"px-3 py-1.5 rounded-full text-xs font-medium " + config.lightBg + " " + config.textColor + " border " + config.borderColor}
                   >
@@ -362,7 +362,7 @@ const EnrollmentManager = () => {
 
   const renderPeriodStats = (period) => {
     const periodStats = stats[period.id] || {};
-    
+
     const statCards = [
       { label: 'Centres', value: periodStats.totalCenters || 0, icon: School, bgColor: 'bg-blue-50', borderColor: 'border-blue-100', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', valueColor: 'text-blue-700', labelColor: 'text-blue-600' },
       { label: 'Sol·licituds', value: periodStats.totalRequests || 0, icon: FileCheck, bgColor: 'bg-indigo-50', borderColor: 'border-indigo-100', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', valueColor: 'text-indigo-700', labelColor: 'text-indigo-600' },
@@ -371,7 +371,7 @@ const EnrollmentManager = () => {
     ];
 
     return (
-      <div className="grid grid-cols-4 gap-4 mt-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
         {statCards.map(({ label, value, icon: Icon, bgColor, borderColor, iconBg, iconColor, valueColor, labelColor }) => (
           <div key={label} className={bgColor + " rounded-xl p-4 border " + borderColor}>
             <div className="flex items-center gap-3">
@@ -444,7 +444,7 @@ const EnrollmentManager = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -454,7 +454,7 @@ const EnrollmentManager = () => {
             Gestió de Períodes
           </h1>
           <p className="text-gray-500 mt-2 max-w-xl">
-            Configura i controla els períodes d'inscripció. Cada període passa per 4 fases: 
+            Configura i controla els períodes d'inscripció. Cada període passa per 4 fases:
             Sol·licituds → Assignació → Publicació → Execució
           </p>
         </div>
@@ -499,16 +499,16 @@ const EnrollmentManager = () => {
           {periods.map((period) => {
             const isExpanded = expandedPeriod === period.id;
             const config = PHASE_CONFIG[period.current_phase];
-            
+
             return (
-              <div 
-                key={period.id} 
+              <div
+                key={period.id}
                 className={
                   "bg-white rounded-2xl shadow-sm border-2 overflow-hidden transition-all " +
                   (period.status === 'ACTIVE' ? "border-green-400 shadow-green-100" : "border-gray-200")
                 }
               >
-                <div 
+                <div
                   className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => {
                     setExpandedPeriod(isExpanded ? null : period.id);
@@ -539,7 +539,7 @@ const EnrollmentManager = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       {period.status === 'DRAFT' && (
                         <button
@@ -578,8 +578,8 @@ const EnrollmentManager = () => {
                       >
                         <Trash2 size={20} />
                       </button>
-                      <ChevronRight 
-                        size={24} 
+                      <ChevronRight
+                        size={24}
                         className={"text-gray-400 transition-transform " + (isExpanded ? "rotate-90" : "")}
                       />
                     </div>
@@ -591,12 +591,12 @@ const EnrollmentManager = () => {
                     {renderEnhancedTimeline(period)}
                     {renderCurrentPhaseInfo(period)}
                     {renderPeriodStats(period)}
-                    
+
                     <div className="mt-6 p-4 bg-gray-50 rounded-xl">
                       <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                         <Clock size={16} /> Dates del Període
                       </h4>
-                      <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                         {[
                           { label: 'Sol·licituds', start: period.phase_solicitudes_start, end: period.phase_solicitudes_end, phase: PHASES.SOLICITUDES },
                           { label: 'Assignació', start: null, end: null, phase: PHASES.ASIGNACION },
@@ -605,9 +605,9 @@ const EnrollmentManager = () => {
                         ].map(({ label, start, end, phase }) => {
                           const phaseConfig = PHASE_CONFIG[phase];
                           const isCurrent = period.current_phase === phase;
-                          
+
                           return (
-                            <div 
+                            <div
                               key={label}
                               className={
                                 "p-3 rounded-lg border text-center " +

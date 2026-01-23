@@ -26,10 +26,10 @@ import {
 const TeacherDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Datos del taller
   const [workshop, setWorkshop] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -145,8 +145,8 @@ const TeacherDashboard = () => {
   const todaySession = getTodaySession();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-10">
-      
+    <div className="space-y-6">
+
       {/* Header */}
       <div className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-6">
@@ -172,7 +172,7 @@ const TeacherDashboard = () => {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
-        
+
         {/* Info del Taller */}
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
@@ -205,7 +205,7 @@ const TeacherDashboard = () => {
 
         {/* Sesión de Hoy - Destacada */}
         {todaySession && (
-          <section 
+          <section
             onClick={() => navigate(`/teacher/attendance/${todaySession.id}`)}
             className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-lg p-6 text-white cursor-pointer hover:shadow-xl transition-all transform hover:scale-[1.01]"
           >
@@ -241,13 +241,13 @@ const TeacherDashboard = () => {
               <TrendingUp className="h-5 w-5 text-blue-600" />
               Progrés de la Classe
             </h3>
-            
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                 <div className="text-3xl font-bold text-blue-600">{stats.completedSessions}</div>
                 <div className="text-sm text-gray-500">Sessions fetes</div>
                 <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-blue-500 rounded-full transition-all"
                     style={{ width: `${stats.totalSessions > 0 ? (stats.completedSessions / stats.totalSessions) * 100 : 0}%` }}
                   ></div>
@@ -258,7 +258,7 @@ const TeacherDashboard = () => {
                 <div className="text-3xl font-bold text-green-600">{stats.attendanceRate}%</div>
                 <div className="text-sm text-gray-500">Assistència</div>
                 <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-green-500 rounded-full transition-all"
                     style={{ width: `${stats.attendanceRate}%` }}
                   ></div>
@@ -321,15 +321,13 @@ const TeacherDashboard = () => {
                 <div
                   key={session.id}
                   onClick={() => navigate(`/teacher/attendance/${session.id}`)}
-                  className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
-                    isToday ? 'border-green-300 bg-green-50' : 'border-gray-100'
-                  }`}
+                  className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${isToday ? 'border-green-300 bg-green-50' : 'border-gray-100'
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${
-                        isPast ? 'bg-gray-100 text-gray-400' : isToday ? 'bg-green-500 text-white' : 'bg-blue-100 text-blue-600'
-                      }`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${isPast ? 'bg-gray-100 text-gray-400' : isToday ? 'bg-green-500 text-white' : 'bg-blue-100 text-blue-600'
+                        }`}>
                         {session.session_number}
                       </div>
                       <div>

@@ -1,17 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Card from "../../components/ui/Card.jsx";
 import LoginForm from "../../components/forms/LoginForm.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { LogIn, AlertCircle } from "lucide-react";
 
 /**
  * Login.jsx
- *
- * Página de inicio de sesión.
- * Redirige según el rol del usuario:
- * - ADMIN -> /admin
- * - CENTER_COORD -> /center
- * - TEACHER -> /teacher
+ * Página de inicio de sesión con diseño responsive.
  */
 const Login = () => {
   const { login, loading, isAuthenticated, user } = useAuth();
@@ -19,9 +14,6 @@ const Login = () => {
   const location = useLocation();
   const [error, setError] = useState(null);
 
-  /**
-   * Determina la ruta de redirección según el rol
-   */
   const getRedirectPath = (role) => {
     switch (role) {
       case "ADMIN":
@@ -52,18 +44,11 @@ const Login = () => {
         }
       };
 
-      // Usar el rol del usuario para redirigir
       const userRole = result?.user?.role || "ADMIN";
-
       const savedPath = location.state?.from?.pathname;
       const allowedPrefix = getAllowedPrefix(userRole);
-
-      // Solo redirigir a 'savedPath' si empieza por el prefijo permitido para ese rol
       const isValidRedirect = savedPath && savedPath.startsWith(allowedPrefix);
-
-      const redirectTo = isValidRedirect
-        ? savedPath
-        : getRedirectPath(userRole);
+      const redirectTo = isValidRedirect ? savedPath : getRedirectPath(userRole);
 
       navigate(redirectTo, { replace: true });
     } catch (err) {
@@ -81,30 +66,58 @@ const Login = () => {
   }, [isAuthenticated, user, navigate]);
 
   return (
-    <div style={{ display: "grid", placeItems: "center", minHeight: "70vh" }}>
-      <Card title="Acceso Enginy">
-        {error && (
-          <div
-            style={{
-              padding: "12px",
-              marginBottom: "16px",
-              backgroundColor: "#fee2e2",
-              border: "1px solid #ef4444",
-              borderRadius: "8px",
-              color: "#dc2626",
-            }}
-          >
-            ❌ {error}
+    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
+        {/* Card container */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4">
+              <LogIn className="text-white" size={32} />
+            </div>
+            <h1 className="text-2xl font-bold text-white">Accés Enginy</h1>
+            <p className="text-blue-100 mt-2 text-sm">
+              Plataforma de gestió de tallers educatius
+            </p>
           </div>
-        )}
-        <LoginForm onSubmit={handleSubmit} loading={loading} />
-        <div className="mt-4 text-sm text-gray-500 text-center">
-          <p>Usuarios de prueba:</p>
-          <p>admin@enginy.cat / admin123</p>
-          <p>coord1@escola1.cat / admin123</p>
-          <p>teacher_test@test.cat / admin123</p>
+
+          {/* Form section */}
+          <div className="p-6">
+            {error && (
+              <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-xl text-red-700">
+                <AlertCircle className="shrink-0 mt-0.5" size={20} />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+
+            <LoginForm onSubmit={handleSubmit} loading={loading} />
+
+            {/* Test credentials */}
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <p className="text-xs text-gray-400 text-center mb-3 uppercase tracking-wider font-semibold">
+                Usuaris de prova
+              </p>
+              <div className="grid gap-2 text-xs">
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">Admin:</span>
+                  <code className="text-gray-900 font-mono">admin@enginy.cat</code>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">Coordinador:</span>
+                  <code className="text-gray-900 font-mono">coord1@baixeras.cat</code>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">Professor:</span>
+                  <code className="text-gray-900 font-mono">jordi.lopez@baixeras.cat</code>
+                </div>
+                <p className="text-center text-gray-400 mt-2">
+                  Password: <code className="font-mono text-gray-600">admin123</code>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

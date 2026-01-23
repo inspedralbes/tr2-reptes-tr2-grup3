@@ -184,7 +184,7 @@ const NominalConfirmation = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Capçalera */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
@@ -219,11 +219,10 @@ const NominalConfirmation = () => {
           <div className="text-right">
             <span
               className={`px-3 py-1 rounded text-sm font-semibold 
-               ${
-                 allocation.status === "ACCEPTED"
-                   ? "bg-green-100 text-green-800"
-                   : "bg-yellow-100 text-yellow-800"
-               }`}
+               ${allocation.status === "ACCEPTED"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+                }`}
             >
               {allocation.status === "ACCEPTED"
                 ? "Confirmada"

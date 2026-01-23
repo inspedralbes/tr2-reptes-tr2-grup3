@@ -97,9 +97,9 @@ const AdminDashboard = () => {
         icon: <PauseCircle size={48} />,
       };
     }
-    
+
     const { status, current_phase } = stats.activePeriod;
-    
+
     if (status === "DRAFT") {
       return {
         color: "bg-gray-500",
@@ -107,7 +107,7 @@ const AdminDashboard = () => {
         icon: <Clock size={48} />,
       };
     }
-    
+
     if (status === "CLOSED") {
       return {
         color: "bg-gray-500",
@@ -115,7 +115,7 @@ const AdminDashboard = () => {
         icon: <Lock size={48} />,
       };
     }
-    
+
     // Status ACTIVE - mostrar según fase
     const phaseConfig = {
       SOLICITUDES: {
@@ -139,7 +139,7 @@ const AdminDashboard = () => {
         icon: <Target size={48} />,
       },
     };
-    
+
     return phaseConfig[current_phase] || {
       color: "bg-green-600",
       text: "CONVOCATORIA ACTIVA",
@@ -158,7 +158,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">

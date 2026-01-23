@@ -213,7 +213,7 @@ const CenterManager = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -355,8 +355,8 @@ const CenterManager = () => {
                     <td className="px-6 py-4">
                       {c.ownership_type && (
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${c.ownership_type.includes('Públic') || c.ownership_type.includes('Educació')
-                            ? 'bg-green-50 text-green-700 border-green-200'
-                            : 'bg-orange-50 text-orange-700 border-orange-200'
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-orange-50 text-orange-700 border-orange-200'
                           }`}>
                           {c.ownership_type.includes('Educació') ? 'Generalitat' : c.ownership_type.split(' ')[0]}
                         </span>

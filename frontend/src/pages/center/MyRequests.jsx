@@ -72,7 +72,7 @@ const MyRequests = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
+    <div className="space-y-6">
       {/* Cabecera */}
       <div className="flex justify-between items-center">
         <div>
@@ -195,13 +195,12 @@ const MyRequests = () => {
                                     {s.name}
                                     {s.absentismo > 0 && (
                                       <span
-                                        className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] text-white font-bold ${
-                                          s.absentismo >= 4
+                                        className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] text-white font-bold ${s.absentismo >= 4
                                             ? "bg-red-500"
                                             : s.absentismo >= 2
-                                            ? "bg-yellow-500"
-                                            : "bg-green-500"
-                                        }`}
+                                              ? "bg-yellow-500"
+                                              : "bg-green-500"
+                                          }`}
                                         title="Nivell d'absentisme"
                                       >
                                         {s.absentismo}
@@ -226,7 +225,7 @@ const MyRequests = () => {
                       Acompanyants
                     </h3>
                     {!req.request_teachers ||
-                    req.request_teachers.length === 0 ? (
+                      req.request_teachers.length === 0 ? (
                       <p className="text-gray-400 text-sm italic">
                         Cap professor assignat.
                       </p>
@@ -251,7 +250,7 @@ const MyRequests = () => {
                       Preferències Detallades
                     </h3>
                     {!req.preferences_summary ||
-                    req.preferences_summary.length === 0 ? (
+                      req.preferences_summary.length === 0 ? (
                       <p className="text-gray-400 text-sm italic">
                         Sense preferències registrades.
                       </p>

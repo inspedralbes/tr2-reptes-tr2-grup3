@@ -80,7 +80,7 @@ const StudentManager = () => {
         setError("No hi ha cap període actiu en aquest moment.");
         return;
       }
-      
+
       try {
         const data = await studentsService.getAll();
         setStudents(data);
@@ -322,17 +322,17 @@ const StudentManager = () => {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="space-y-6">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Users className="text-blue-600" /> Els meus alumnes
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <Users className="text-blue-600" size={24} /> Els meus alumnes
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="text-gray-500 mt-1 text-sm">
             Gestiona el teu llistat d'alumnes
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
           <input
             type="file"
             accept=".csv"
@@ -340,24 +340,24 @@ const StudentManager = () => {
             className="hidden"
             onChange={handleImportFile}
           />
-          <Button variant="secondary" onClick={handleDownloadTemplate}>
-            <div className="flex items-center gap-2">
-              <Download size={18} /> Descarregar Plantilla
+          <Button variant="secondary" onClick={handleDownloadTemplate} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Download size={16} /> <span className="hidden sm:inline">Plantilla</span>
             </div>
           </Button>
-          <Button variant="secondary" onClick={handleImportClick}>
-            <div className="flex items-center gap-2">
-              <Upload size={18} /> Importar CSV
+          <Button variant="secondary" onClick={handleImportClick} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Upload size={16} /> <span className="hidden sm:inline">Importar</span>
             </div>
           </Button>
-          <Button variant="secondary" onClick={handleExportCSV}>
-            <div className="flex items-center gap-2">
-              <Download size={18} /> Exportar CSV
+          <Button variant="secondary" onClick={handleExportCSV} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Download size={16} /> <span className="hidden sm:inline">Exportar</span>
             </div>
           </Button>
-          <Button onClick={handleCreate}>
-            <div className="flex items-center gap-2">
-              <Plus size={18} /> Nou alumne
+          <Button onClick={handleCreate} className="text-xs sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Plus size={16} /> Nou
             </div>
           </Button>
         </div>
@@ -442,13 +442,12 @@ const StudentManager = () => {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span
-                          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            student.nivel_absentismo >= 4
-                              ? "bg-red-100 text-red-800"
-                              : student.nivel_absentismo >= 3
+                          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.nivel_absentismo >= 4
+                            ? "bg-red-100 text-red-800"
+                            : student.nivel_absentismo >= 3
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-green-100 text-green-800"
-                          }`}
+                            }`}
                         >
                           {student.nivel_absentismo || 1}
                         </span>
