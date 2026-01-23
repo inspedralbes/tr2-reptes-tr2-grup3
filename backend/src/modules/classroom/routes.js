@@ -11,15 +11,22 @@ const express = require('express');
 const { authenticate } = require('../../common/middleware/authMiddleware');
 const { canManageAttendance } = require('../../common/middleware/phaseMiddleware');
 const { 
+  getMyWorkshops,
   listSessions, 
   getStudentsForEdition,
   saveAttendance,
   getAttendance,
   saveEvaluations,
-  getEvaluations
+  getEvaluations,
+  getStudentNotes,
+  saveStudentNote,
+  getWorkshopStats
 } = require('./controller');
 
 const router = express.Router();
+
+// Talleres asignados al profesor - Solo TEACHER en EJECUCION
+router.get('/my-workshops', authenticate, canManageAttendance, getMyWorkshops);
 
 // Sesiones - Solo TEACHER en EJECUCION
 router.get('/sessions', authenticate, canManageAttendance, listSessions);
@@ -35,5 +42,12 @@ router.get('/attendance/:sessionId', authenticate, canManageAttendance, getAtten
 // Evaluaciones - Solo TEACHER en EJECUCION
 router.post('/evaluations/:editionId', authenticate, canManageAttendance, saveEvaluations);
 router.get('/evaluations/:editionId', authenticate, canManageAttendance, getEvaluations);
+
+// Notas del profesor sobre alumnos - Solo TEACHER en EJECUCION
+router.get('/notes/:editionId', authenticate, canManageAttendance, getStudentNotes);
+router.post('/notes/:editionId/:studentId', authenticate, canManageAttendance, saveStudentNote);
+
+// Estadísticas del taller - Solo TEACHER en EJECUCION
+router.get('/stats/:editionId', authenticate, canManageAttendance, getWorkshopStats);
 
 module.exports = router;

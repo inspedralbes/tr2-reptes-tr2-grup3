@@ -5,14 +5,42 @@
  * Gestiona sesiones, alumnos, asistencia y evaluaciones.
  */
 const pool = require('../../config/db');
+const emailService = require('../../common/services/EmailService');
+const teachersService = require('../teachers/service');
+
+/**
+ * Obtiene los talleres asignados al profesor actual
+ * GET /api/classroom/my-workshops
+ */
+const getMyWorkshops = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const workshops = await teachersService.getTeacherWorkshops(userId);
+    res.json(workshops);
+  } catch (err) {
+    console.error('Error obteniendo talleres del profesor:', err);
+    res.status(500).json({ error: 'Error al obtener talleres' });
+  }
+};
 
 /**
  * Lista las sesiones de un período o edición
+ * Si es TEACHER, solo muestra sesiones de sus talleres asignados
  */
 const listSessions = async (req, res) => {
   try {
     const { editionId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
     
+    // Si es profesor, verificar que tiene acceso a esta edición
+    if (userRole === 'TEACHER' && editionId) {
+      const hasAccess = await teachersService.canAccessWorkshop(userId, editionId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'No tens accés a aquest taller' });
+      }
+    }
+
     let query = `
       SELECT ws.*, we.id as edition_id, w.title as workshop_title
       FROM workshop_sessions ws
@@ -21,7 +49,18 @@ const listSessions = async (req, res) => {
     `;
     const params = [];
     
-    if (editionId) {
+    // Si es profesor y no especifica edición, solo mostrar sus talleres
+    if (userRole === 'TEACHER' && !editionId) {
+      query += `
+        WHERE we.id IN (
+          SELECT wat.workshop_edition_id 
+          FROM workshop_assigned_teachers wat
+          JOIN teachers t ON t.id = wat.teacher_id
+          WHERE t.user_id = $1
+        )
+      `;
+      params.push(userId);
+    } else if (editionId) {
       query += ` WHERE ws.workshop_edition_id = $1`;
       params.push(editionId);
     }
@@ -43,15 +82,24 @@ const listSessions = async (req, res) => {
 const getStudentsForEdition = async (req, res) => {
   try {
     const { editionId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Si es profesor, verificar que tiene acceso a esta edición
+    if (userRole === 'TEACHER') {
+      const hasAccess = await teachersService.canAccessWorkshop(userId, editionId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'No tens accés a aquest taller' });
+      }
+    }
     
     // Obtener alumnos de allocation_students + students
     const query = `
       SELECT DISTINCT 
         ast.id as allocation_student_id,
         s.id as student_id,
-        s.name as student_name,
-        s.course,
-        s.birth_date,
+        s.nombre_completo as student_name,
+        s.curso as course,
         a.school_id,
         sch.name as school_name
       FROM allocations a
@@ -59,8 +107,8 @@ const getStudentsForEdition = async (req, res) => {
       LEFT JOIN allocation_students ast ON ast.allocation_id = a.id
       LEFT JOIN students s ON s.id = ast.student_id
       WHERE a.workshop_edition_id = $1
-        AND a.status IN ('PROVISIONAL', 'ALLOCATED', 'CONFIRMED')
-      ORDER BY s.name ASC NULLS LAST
+        AND a.status IN ('PROVISIONAL', 'PUBLISHED', 'ACCEPTED')
+      ORDER BY s.nombre_completo ASC NULLS LAST
     `;
     
     const result = await pool.query(query, [editionId]);
@@ -73,7 +121,7 @@ const getStudentsForEdition = async (req, res) => {
         FROM allocations a
         JOIN schools sch ON sch.id = a.school_id
         WHERE a.workshop_edition_id = $1 
-          AND a.status IN ('PROVISIONAL', 'ALLOCATED', 'CONFIRMED')
+          AND a.status IN ('PROVISIONAL', 'PUBLISHED', 'ACCEPTED')
       `;
       const allocsResult = await pool.query(allocsQuery, [editionId]);
       
@@ -110,16 +158,43 @@ const getStudentsForEdition = async (req, res) => {
 
 /**
  * Registra la asistencia de una sesión usando attendance_logs
+ * Envía notificación al tutor si un alumno es marcado como ABSENT
  */
 const saveAttendance = async (req, res) => {
   try {
     const { sessionId } = req.params;
     const { attendance } = req.body;
+    const userId = req.user.id;
+    const userRole = req.user.role;
     
     // attendance es un array de { studentId, status, observation }
     // status: 'PRESENT' | 'ABSENT' | 'LATE'
     
-    const client = await pool.pool.connect();
+    // Obtener información de la sesión y taller para los emails
+    const sessionInfo = await pool.query(`
+      SELECT ws.*, w.title as workshop_title, we.id as edition_id
+      FROM workshop_sessions ws
+      JOIN workshop_editions we ON we.id = ws.workshop_edition_id
+      JOIN workshops w ON w.id = we.workshop_id
+      WHERE ws.id = $1
+    `, [sessionId]);
+    
+    if (sessionInfo.rows.length === 0) {
+      return res.status(404).json({ error: 'Sessió no trobada' });
+    }
+    
+    const sessionData = sessionInfo.rows[0];
+    
+    // Si es profesor, verificar que tiene acceso a este taller
+    if (userRole === 'TEACHER') {
+      const hasAccess = await teachersService.canAccessWorkshop(userId, sessionData.edition_id);
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'No tens accés a aquest taller' });
+      }
+    }
+    
+    const client = await pool.getClient();
+    const absentStudents = []; // Para enviar emails después del commit
     
     try {
       await client.query('BEGIN');
@@ -139,14 +214,61 @@ const saveAttendance = async (req, res) => {
              VALUES ($1, $2, $3, $4)`,
             [sessionId, record.studentId, record.status, record.observation || null]
           );
+          
+          // Si es ABSENT o LATE, preparar notificación
+          if (record.status === 'ABSENT' || record.status === 'LATE') {
+            absentStudents.push({
+              studentId: record.studentId,
+              status: record.status,
+              observation: record.observation
+            });
+          }
         }
       }
       
       await client.query('COMMIT');
       
+      // Enviar emails de ausencia (fuera del transaction para no bloquear)
+      let emailResults = [];
+      if (absentStudents.length > 0) {
+        for (const absent of absentStudents) {
+          try {
+            // Obtener datos del alumno y tutor
+            const studentQuery = await pool.query(`
+              SELECT id, nombre_completo, curso as course, tutor_email, tutor_nombre
+              FROM students
+              WHERE id = $1
+            `, [absent.studentId]);
+            
+            if (studentQuery.rows.length > 0) {
+              const studentData = studentQuery.rows[0];
+              const result = await emailService.sendAbsenceNotification(
+                studentData,
+                sessionData,
+                absent.status,
+                absent.observation
+              );
+              emailResults.push({ 
+                studentId: absent.studentId, 
+                success: result.success,
+                reason: result.reason 
+              });
+            }
+          } catch (emailError) {
+            console.error(`Error enviando email de ausencia para alumno ${absent.studentId}:`, emailError.message);
+            emailResults.push({ 
+              studentId: absent.studentId, 
+              success: false, 
+              error: emailError.message 
+            });
+          }
+        }
+      }
+      
       res.json({ 
         message: 'Asistencia guardada correctamente',
-        count: attendance.length
+        count: attendance.length,
+        absence_notifications: emailResults
       });
     } catch (error) {
       await client.query('ROLLBACK');
@@ -168,7 +290,7 @@ const getAttendance = async (req, res) => {
     const { sessionId } = req.params;
     
     const query = `
-      SELECT al.*, s.name as student_name
+      SELECT al.*, s.nombre_completo as student_name
       FROM attendance_logs al
       LEFT JOIN students s ON s.id = al.student_id
       WHERE al.session_id = $1
@@ -220,11 +342,194 @@ const getEvaluations = async (req, res) => {
   }
 };
 
+/**
+ * Obtiene las notas del profesor sobre los alumnos de su taller
+ */
+const getStudentNotes = async (req, res) => {
+  try {
+    const { editionId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Si es profesor, verificar que tiene acceso
+    if (userRole === 'TEACHER') {
+      const hasAccess = await teachersService.canAccessWorkshop(userId, editionId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'No tens accés a aquest taller' });
+      }
+    }
+    
+    // Obtener el teacher_id desde el user_id
+    const teacherQuery = await pool.query(
+      'SELECT id FROM teachers WHERE user_id = $1',
+      [userId]
+    );
+    
+    if (teacherQuery.rows.length === 0) {
+      return res.json([]);
+    }
+    
+    const teacherId = teacherQuery.rows[0].id;
+    
+    const query = `
+      SELECT tsn.*, s.nombre_completo as student_name
+      FROM teacher_student_notes tsn
+      JOIN students s ON s.id = tsn.student_id
+      WHERE tsn.teacher_id = $1 AND tsn.workshop_edition_id = $2
+    `;
+    const result = await pool.query(query, [teacherId, editionId]);
+    
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error obteniendo notas:', err);
+    res.status(500).json({ error: 'Error al obtener notas' });
+  }
+};
+
+/**
+ * Guarda o actualiza una nota del profesor sobre un alumno
+ */
+const saveStudentNote = async (req, res) => {
+  try {
+    const { editionId, studentId } = req.params;
+    const { note } = req.body;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Si es profesor, verificar que tiene acceso
+    if (userRole === 'TEACHER') {
+      const hasAccess = await teachersService.canAccessWorkshop(userId, editionId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'No tens accés a aquest taller' });
+      }
+    }
+    
+    // Obtener el teacher_id desde el user_id
+    const teacherQuery = await pool.query(
+      'SELECT id FROM teachers WHERE user_id = $1',
+      [userId]
+    );
+    
+    if (teacherQuery.rows.length === 0) {
+      return res.status(404).json({ error: 'Professor no trobat' });
+    }
+    
+    const teacherId = teacherQuery.rows[0].id;
+    
+    // Upsert de la nota
+    const query = `
+      INSERT INTO teacher_student_notes (teacher_id, student_id, workshop_edition_id, note)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (teacher_id, student_id, workshop_edition_id)
+      DO UPDATE SET note = $4, updated_at = NOW()
+      RETURNING *
+    `;
+    const result = await pool.query(query, [teacherId, studentId, editionId, note]);
+    
+    res.json({
+      message: 'Nota guardada correctament',
+      note: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Error guardando nota:', err);
+    res.status(500).json({ error: 'Error al guardar nota' });
+  }
+};
+
+/**
+ * Obtiene estadísticas de asistencia del taller para el dashboard
+ */
+const getWorkshopStats = async (req, res) => {
+  try {
+    const { editionId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Si es profesor, verificar que tiene acceso
+    if (userRole === 'TEACHER') {
+      const hasAccess = await teachersService.canAccessWorkshop(userId, editionId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'No tens accés a aquest taller' });
+      }
+    }
+    
+    // Obtener todas las sesiones
+    const sessionsQuery = await pool.query(`
+      SELECT id, session_number, date
+      FROM workshop_sessions
+      WHERE workshop_edition_id = $1
+      ORDER BY session_number
+    `, [editionId]);
+    
+    // Obtener conteo de alumnos
+    const studentsQuery = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM allocation_students als
+      JOIN allocations a ON a.id = als.allocation_id
+      WHERE a.workshop_edition_id = $1
+        AND a.status IN ('PROVISIONAL', 'PUBLISHED', 'ACCEPTED')
+    `, [editionId]);
+    
+    const totalStudents = parseInt(studentsQuery.rows[0]?.total || 0);
+    const totalSessions = sessionsQuery.rows.length;
+    
+    // Obtener asistencia de TODAS las sesiones (sin filtrar por fecha)
+    // Esto permite que se muestren stats aunque se pase lista en sesiones "futuras"
+    let completedSessions = 0;
+    let totalPresent = 0;
+    let totalAbsent = 0;
+    let totalLate = 0;
+    
+    for (const session of sessionsQuery.rows) {
+      // Verificar si hay asistencia registrada para esta sesión
+      const attQuery = await pool.query(`
+        SELECT status, COUNT(*) as count
+        FROM attendance_logs
+        WHERE session_id = $1
+        GROUP BY status
+      `, [session.id]);
+      
+      // Si hay registros de asistencia, contar esta sesión como completada
+      if (attQuery.rows.length > 0) {
+        completedSessions++;
+        attQuery.rows.forEach(row => {
+          if (row.status === 'PRESENT') totalPresent += parseInt(row.count);
+          else if (row.status === 'ABSENT') totalAbsent += parseInt(row.count);
+          else if (row.status === 'LATE') totalLate += parseInt(row.count);
+        });
+      }
+    }
+    
+    const totalAttendanceRecords = totalPresent + totalAbsent + totalLate;
+    const attendanceRate = totalAttendanceRecords > 0 
+      ? Math.round((totalPresent / totalAttendanceRecords) * 100) 
+      : 0;
+    
+    res.json({
+      totalStudents,
+      totalSessions,
+      completedSessions,
+      remainingSessions: totalSessions - completedSessions,
+      attendanceRate,
+      totalPresent,
+      totalAbsent,
+      totalLate
+    });
+  } catch (err) {
+    console.error('Error obteniendo estadísticas:', err);
+    res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+};
+
 module.exports = {
+  getMyWorkshops,
   listSessions,
   getStudentsForEdition,
   saveAttendance,
   getAttendance,
   saveEvaluations,
   getEvaluations,
+  getStudentNotes,
+  saveStudentNote,
+  getWorkshopStats,
 };

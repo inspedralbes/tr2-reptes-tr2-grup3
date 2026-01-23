@@ -278,15 +278,28 @@ const Sidebar = () => {
                 <h3 className="px-6 text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">
                   Docencia
                 </h3>
-                <NavLink to="/teacher" className={getLinkClass}>
+                <NavLink to="/teacher" end className={getLinkClass}>
                   {({ isActive }) => (
                     <>
                       <div className="flex items-center gap-5">
-                        <GraduationCap
+                        <BookOpen
                           size={28}
                           className={getIconClass(isActive)}
                         />
-                        <span className="text-lg">Mis Talleres</span>
+                        <span className="text-lg">El Meu Taller</span>
+                      </div>
+                    </>
+                  )}
+                </NavLink>
+                <NavLink to="/teacher/students" className={getLinkClass}>
+                  {({ isActive }) => (
+                    <>
+                      <div className="flex items-center gap-5">
+                        <Users
+                          size={28}
+                          className={getIconClass(isActive)}
+                        />
+                        <span className="text-lg">Els Meus Alumnes</span>
                       </div>
                     </>
                   )}

@@ -1,24 +1,24 @@
 /**
  * WorkshopAttendance.jsx
  *
- * ZONA PROFESOR: Aula Virtual / Pasar Lista
- * Lista de alumnos con botones grandes para marcar asistencia
- * Diseño PREMIUM "Mobile First" - Optimizado para uso en tablet/móvil
- * 
- * USA DATOS MOCK (INVENTADOS)
+ * ZONA PROFESOR: Pasar Lista
+ * Vista para marcar asistencia de los alumnos en una sesión específica.
+ * Diseño optimizado para tablet/móvil.
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import api from "../../services/api";
 import {
   ArrowLeft,
   Check,
   X,
   Clock,
-  FileText,
   Save,
   Search,
-  MoreVertical,
-  User
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  Users
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -28,49 +28,83 @@ const WorkshopAttendance = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const [session, setSession] = useState(null);
   const [students, setStudents] = useState([]);
   const [attendance, setAttendance] = useState({});
 
-  // MOCK DATA: Sesión
-  const MOCK_SESSION = {
-    id: sessionId || "s1",
-    workshop_title: "Robótica e IA Aplicada",
-    session_number: 3,
-    date: new Date().toISOString().split('T')[0],
-    time: "16:00 - 17:30",
-    location: "Laboratorio T1"
-  };
-
-  // MOCK DATA: Alumnos Inventados
-  const MOCK_STUDENTS = [
-    { id: "st1", name: "Marc Rojano", school: "Institut Pedralbes", avatar_color: "bg-blue-500", initials: "MR" },
-    { id: "st2", name: "Lucía García", school: "Institut Tecnològic", avatar_color: "bg-pink-500", initials: "LG" },
-    { id: "st3", name: "Ahmed Benali", school: "Escuela del Trabajo", avatar_color: "bg-green-500", initials: "AB" },
-    { id: "st4", name: "Sofía Martí", school: "Institut Pedralbes", avatar_color: "bg-purple-500", initials: "SM" },
-    { id: "st5", name: "Joan Vila", school: "Institut Joan Miró", avatar_color: "bg-orange-500", initials: "JV" },
-    { id: "st6", name: "Carla Pineda", school: "Institut Tecnològic", avatar_color: "bg-teal-500", initials: "CP" },
-    { id: "st7", name: "David Ruiz", school: "Institut Pedralbes", avatar_color: "bg-indigo-500", initials: "DR" },
-    { id: "st8", name: "Emma Bosch", school: "Escuela del Trabajo", avatar_color: "bg-rose-500", initials: "EB" },
-    { id: "st9", name: "Pol Ribas", school: "Institut Joan Miró", avatar_color: "bg-cyan-500", initials: "PR" },
-    { id: "st10", name: "Nora Gil", school: "Institut Pedralbes", avatar_color: "bg-lime-500", initials: "NG" },
-    { id: "st11", name: "Hugo Torres", school: "Institut Tecnològic", avatar_color: "bg-amber-500", initials: "HT" },
-    { id: "st12", name: "Sara Méndez", school: "Institut Joan Miró", avatar_color: "bg-fuchsia-500", initials: "SM" },
-  ];
-
   useEffect(() => {
-    // Simular carga
-    setTimeout(() => {
-      setStudents(MOCK_STUDENTS);
-      // Inicializar asistencia vacía
-      const initAttendance = {};
-      MOCK_STUDENTS.forEach(s => {
-        initAttendance[s.id] = { status: null, observation: "" };
+    loadSessionData();
+  }, [sessionId]);
+
+  const loadSessionData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 1. Obtener info del taller del profesor para la sesión
+      const workshopsRes = await api.get('/classroom/my-workshops');
+      const myWorkshop = workshopsRes.data[0];
+
+      if (!myWorkshop) {
+        setError('No tens cap taller assignat.');
+        return;
+      }
+
+      // 2. Obtener sesiones y encontrar la actual
+      const sessionsRes = await api.get(`/classroom/sessions/${myWorkshop.edition_id}`);
+      const currentSession = sessionsRes.data.find(s => s.id === sessionId);
+
+      if (!currentSession) {
+        setError('Sessió no trobada.');
+        return;
+      }
+
+      setSession({
+        ...currentSession,
+        workshop_title: myWorkshop.workshop_title,
+        provider_name: myWorkshop.provider_name
       });
-      setAttendance(initAttendance);
+
+      // 3. Obtener alumnos del taller
+      const studentsRes = await api.get(`/classroom/students/${myWorkshop.edition_id}`);
+      setStudents(studentsRes.data || []);
+
+      // 4. Obtener asistencia existente (si la hay)
+      try {
+        const attRes = await api.get(`/classroom/attendance/${sessionId}`);
+        const existingAttendance = {};
+        (attRes.data || []).forEach(record => {
+          existingAttendance[record.student_id] = {
+            status: record.status,
+            observation: record.observation || ''
+          };
+        });
+        
+        // Inicializar con datos existentes o vacío
+        const initAttendance = {};
+        (studentsRes.data || []).forEach(s => {
+          initAttendance[s.id] = existingAttendance[s.id] || { status: null, observation: '' };
+        });
+        setAttendance(initAttendance);
+      } catch (e) {
+        // No hay asistencia previa, inicializar vacío
+        const initAttendance = {};
+        (studentsRes.data || []).forEach(s => {
+          initAttendance[s.id] = { status: null, observation: '' };
+        });
+        setAttendance(initAttendance);
+      }
+
+    } catch (err) {
+      console.error('Error carregant sessió:', err);
+      setError(err.response?.data?.error || 'Error carregant la sessió');
+    } finally {
       setLoading(false);
-    }, 600);
-  }, []);
+    }
+  };
 
   const handleStatusChange = (studentId, status) => {
     setAttendance(prev => ({
@@ -86,218 +120,316 @@ const WorkshopAttendance = () => {
     }));
   };
 
+  const markAllPresent = () => {
+    const newAttendance = {};
+    students.forEach(s => {
+      newAttendance[s.id] = { ...attendance[s.id], status: 'PRESENT' };
+    });
+    setAttendance(newAttendance);
+    toast.success('Tots marcats com a presents');
+  };
+
+  const [saved, setSaved] = useState(false);
+
   const handleSave = async () => {
-    // Validar que se haya marcado algo (opcional, podría querer guardar parcial)
-    const markedCount = Object.values(attendance).filter(a => a.status).length;
-    if (markedCount === 0) {
-      toast("Marca al menos un alumno", { icon: "⚠️" });
+    // Preparar datos para enviar
+    const attendanceData = Object.entries(attendance)
+      .filter(([_, data]) => data.status) // Solo enviar los que tienen estado
+      .map(([studentId, data]) => ({
+        studentId,
+        status: data.status,
+        observation: data.observation || null
+      }));
+
+    if (attendanceData.length === 0) {
+      toast("Marca almenys un alumne", { icon: "⚠️" });
       return;
     }
 
     setSaving(true);
-    // Simular guardado
-    setTimeout(() => {
+    try {
+      await api.post(`/classroom/attendance/${sessionId}`, {
+        attendance: attendanceData
+      });
+      setSaved(true);
+      toast.success("Assistència guardada correctament! ✅");
+      
+      // NO redirigir automáticamente - dejar que el usuario vea el resultado
+    } catch (err) {
+      console.error('Error guardant assistència:', err);
+      toast.error(err.response?.data?.error || "Error al guardar");
+    } finally {
       setSaving(false);
-      toast.success("Asistencia guardada correctamente");
-      // Opcional: navegar atrás
-      // setTimeout(() => navigate("/teacher"), 1500);
-    }, 1500);
+    }
   };
 
   const getStatusButtonClass = (isActive, type) => {
-    const baseClass = "flex-1 py-3 rounded-lg flex items-center justify-center gap-2 font-medium transition-all duration-200 transform active:scale-95";
+    const baseClass = "flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-medium transition-all duration-200 transform active:scale-95";
 
-    if (!isActive) return `${baseClass} bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent`;
+    if (!isActive) return `${baseClass} bg-gray-50 text-gray-400 hover:bg-gray-100 border-2 border-transparent`;
 
     switch (type) {
-      case "PRESENT": return `${baseClass} bg-green-100 text-green-700 border border-green-200 shadow-sm`;
-      case "ABSENT": return `${baseClass} bg-red-100 text-red-700 border border-red-200 shadow-sm`;
-      case "LATE": return `${baseClass} bg-yellow-100 text-yellow-700 border border-yellow-200 shadow-sm`;
-      case "EXCUSED": return `${baseClass} bg-blue-100 text-blue-700 border border-blue-200 shadow-sm`;
+      case "PRESENT": return `${baseClass} bg-green-100 text-green-700 border-2 border-green-300 shadow-sm`;
+      case "ABSENT": return `${baseClass} bg-red-100 text-red-700 border-2 border-red-300 shadow-sm`;
+      case "LATE": return `${baseClass} bg-amber-100 text-amber-700 border-2 border-amber-300 shadow-sm`;
       default: return baseClass;
     }
   };
 
   const filteredStudents = students.filter(s =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.school.toLowerCase().includes(searchTerm.toLowerCase())
+    s.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.school_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const stats = {
     total: students.length,
     marked: Object.values(attendance).filter(a => a.status).length,
     present: Object.values(attendance).filter(a => a.status === 'PRESENT').length,
-    absent: Object.values(attendance).filter(a => a.status === 'ABSENT').length
+    absent: Object.values(attendance).filter(a => a.status === 'ABSENT').length,
+    late: Object.values(attendance).filter(a => a.status === 'LATE').length
   };
 
-  const progress = (stats.marked / stats.total) * 100;
+  const progress = stats.total > 0 ? (stats.marked / stats.total) * 100 : 0;
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
+          <p className="text-gray-500">Carregant sessió...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Error</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => navigate('/teacher')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Tornar al panell
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32 font-sans">
-      <Toaster position="bottom-center" />
+    <div className="min-h-screen bg-gray-50 pb-32">
+      <Toaster position="top-center" />
 
       {/* HEADER STICKY */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm transition-all duration-300">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate("/teacher")} className="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600">
+            <button 
+              onClick={() => navigate("/teacher")} 
+              className="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600"
+            >
               <ArrowLeft size={24} />
             </button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold text-gray-900 truncate leading-tight">
-                {MOCK_SESSION.workshop_title}
+              <h1 className="text-lg font-bold text-gray-900 truncate">
+                {session?.workshop_title}
               </h1>
-              <p className="text-xs text-gray-500">
-                Sesión {MOCK_SESSION.session_number} • {new Date(MOCK_SESSION.date).toLocaleDateString()}
+              <p className="text-sm text-gray-500">
+                Sessió {session?.session_number} • {new Date(session?.date).toLocaleDateString('ca-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
               </p>
-            </div>
-            <div className="text-right hidden sm:block">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Progreso</div>
-              <div className="text-lg font-bold text-indigo-600">{stats.marked}/{stats.total}</div>
             </div>
           </div>
 
           {/* BARRA DE PROGRESO */}
-          <div className="mt-3 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            ></div>
+          <div className="mt-4">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-500">Progrés</span>
+              <span className="font-medium text-gray-700">{stats.marked} / {stats.total}</span>
+            </div>
+            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 ease-out rounded-full"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* ESTADÍSTICAS RÁPIDAS */}
+          <div className="mt-4 flex gap-4 text-sm">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span className="text-gray-600">{stats.present} presents</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <span className="text-gray-600">{stats.absent} absents</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+              <span className="text-gray-600">{stats.late} tard</span>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
 
-        {/* BUSCADOR */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Buscar alumno..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-xl border-none shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-indigo-500 bg-white"
-          />
+        {/* ACCIONES RÁPIDAS */}
+        <div className="flex gap-3">
+          <button
+            onClick={markAllPresent}
+            className="flex-1 py-3 px-4 bg-green-50 text-green-700 rounded-xl font-medium hover:bg-green-100 transition-colors flex items-center justify-center gap-2"
+          >
+            <CheckCircle size={20} />
+            Tots presents
+          </button>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Cercar alumne..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            />
+          </div>
         </div>
 
         {/* LISTA DE ALUMNOS */}
-        <div className="space-y-4">
-          {filteredStudents.map((student) => {
-            const currentStatus = attendance[student.id]?.status;
-            const hasObservation = attendance[student.id]?.observation?.length > 0;
-
-            return (
-              <div key={student.id} className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 overflow-hidden">
-                <div className="p-4 flex items-center gap-4">
-                  {/* AVATAR */}
-                  <div className={`h-12 w-12 rounded-full ${student.avatar_color} flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0`}>
-                    {student.initials}
-                  </div>
-
-                  {/* INFO */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 truncate text-lg">
-                      {student.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 truncate flex items-center gap-1">
-                      <User size={12} /> {student.school}
-                    </p>
-                  </div>
-
-                  {/* INDICADOR ESTADO (SOLO ICONO EN MÓVIL PEQUEÑO) */}
-                  {currentStatus && (
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${currentStatus === 'PRESENT' ? 'bg-green-100 text-green-600' :
-                        currentStatus === 'ABSENT' ? 'bg-red-100 text-red-600' :
-                          currentStatus === 'LATE' ? 'bg-yellow-100 text-yellow-600' : 'bg-blue-100 text-blue-600'
-                      }`}>
-                      {currentStatus === 'PRESENT' && <Check size={18} strokeWidth={3} />}
-                      {currentStatus === 'ABSENT' && <X size={18} strokeWidth={3} />}
-                      {currentStatus === 'LATE' && <Clock size={18} strokeWidth={3} />}
-                      {currentStatus === 'EXCUSED' && <FileText size={18} strokeWidth={3} />}
-                    </div>
-                  )}
-                </div>
-
-                {/* BOTONES DE ACCIÓN */}
-                <div className="bg-gray-50/50 p-2 sm:p-3 border-t border-gray-100">
-                  <div className="flex gap-2 mb-3">
-                    <button
-                      onClick={() => handleStatusChange(student.id, "PRESENT")}
-                      className={getStatusButtonClass(currentStatus === "PRESENT", "PRESENT")}
-                    >
-                      <span className="hidden sm:inline">Presente</span>
-                      <span className="sm:hidden">Pres.</span>
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(student.id, "LATE")}
-                      className={getStatusButtonClass(currentStatus === "LATE", "LATE")}
-                    >
-                      <span className="hidden sm:inline">Retraso</span>
-                      <span className="sm:hidden">Retr.</span>
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(student.id, "ABSENT")}
-                      className={getStatusButtonClass(currentStatus === "ABSENT", "ABSENT")}
-                    >
-                      <span className="hidden sm:inline">Ausente</span>
-                      <span className="sm:hidden">Aus.</span>
-                    </button>
-                  </div>
-
-                  {/* CAMPO DE OBSERVACIÓN */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Añadir comentario (opcional)..."
-                      value={attendance[student.id]?.observation || ""}
-                      onChange={(e) => handleObservationChange(student.id, e.target.value)}
-                      className={`w-full py-2 px-3 pl-9 rounded-lg text-sm border-none bg-white ring-1 ring-gray-200 focus:ring-2 focus:ring-indigo-500 transition-shadow ${hasObservation ? 'ring-indigo-300 bg-indigo-50/30' : ''}`}
-                    />
-                    <FileText size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${hasObservation ? 'text-indigo-500' : 'text-gray-400'}`} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {filteredStudents.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              No se encontraron alumnos con ese nombre.
+        <div className="space-y-3">
+          {filteredStudents.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center">
+              <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No s'han trobat alumnes</p>
             </div>
+          ) : (
+            filteredStudents.map((student) => {
+              const currentStatus = attendance[student.id]?.status;
+              const initials = student.student_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '??';
+              
+              // Color del avatar basado en el nombre
+              const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-orange-500', 'bg-teal-500', 'bg-indigo-500'];
+              const colorIndex = student.student_name?.charCodeAt(0) % colors.length || 0;
+              const avatarColor = colors[colorIndex];
+
+              return (
+                <div key={student.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="p-4">
+                    {/* INFO ALUMNO */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`h-12 w-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold shadow-sm shrink-0`}>
+                        {initials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-gray-900 truncate">{student.student_name}</h3>
+                        <p className="text-sm text-gray-500 truncate">{student.school_name}</p>
+                      </div>
+                      {currentStatus && (
+                        <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          currentStatus === 'PRESENT' ? 'bg-green-100 text-green-700' :
+                          currentStatus === 'ABSENT' ? 'bg-red-100 text-red-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {currentStatus === 'PRESENT' ? 'Present' : 
+                           currentStatus === 'ABSENT' ? 'Absent' : 'Tard'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* BOTONES DE ESTADO */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleStatusChange(student.id, 'PRESENT')}
+                        className={getStatusButtonClass(currentStatus === 'PRESENT', 'PRESENT')}
+                      >
+                        <Check size={20} />
+                        <span className="hidden sm:inline">Present</span>
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student.id, 'ABSENT')}
+                        className={getStatusButtonClass(currentStatus === 'ABSENT', 'ABSENT')}
+                      >
+                        <X size={20} />
+                        <span className="hidden sm:inline">Absent</span>
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student.id, 'LATE')}
+                        className={getStatusButtonClass(currentStatus === 'LATE', 'LATE')}
+                      >
+                        <Clock size={20} />
+                        <span className="hidden sm:inline">Tard</span>
+                      </button>
+                    </div>
+
+                    {/* OBSERVACIÓN (solo si está ausente o llegó tarde) */}
+                    {(currentStatus === 'ABSENT' || currentStatus === 'LATE') && (
+                      <div className="mt-3">
+                        <input
+                          type="text"
+                          placeholder="Observació (opcional)..."
+                          value={attendance[student.id]?.observation || ''}
+                          onChange={(e) => handleObservationChange(student.id, e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </main>
 
-      {/* FOOTER FLOTANTE */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-lg z-40 pb-6 sm:pb-4 backdrop-blur-lg bg-white/90">
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
-          <div className="text-sm font-medium text-gray-600 hidden sm:block">
-            {stats.marked === stats.total ? "✨ Todos marcados" : `Faltan ${stats.total - stats.marked} alumnos`}
+      {/* BOTÓN GUARDAR FLOTANTE */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-gray-100 to-transparent">
+        <div className="max-w-3xl mx-auto space-y-3">
+          {saved && (
+            <div className="bg-green-100 border border-green-300 text-green-800 rounded-xl p-3 text-center font-medium flex items-center justify-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              Assistència guardada correctament!
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate('/teacher')}
+              className="flex-1 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
+            >
+              ← Tornar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || stats.marked === 0}
+              className={`flex-[2] py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg transition-all ${
+                saved
+                  ? 'bg-green-500 text-white'
+                  : saving || stats.marked === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-xl transform hover:scale-[1.02]'
+              }`}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Guardant...
+                </>
+              ) : saved ? (
+                <>
+                  <CheckCircle size={22} />
+                  Guardat ✓
+                </>
+              ) : (
+                <>
+                  <Save size={22} />
+                  Guardar ({stats.marked}/{stats.total})
+                </>
+              )}
+            </button>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`flex-1 bg-gray-900 text-white rounded-xl py-3.5 px-6 font-bold shadow-lg shadow-gray-900/20 flex items-center justify-center gap-3 transition-transform active:scale-[0.98] ${saving ? 'opacity-80' : 'hover:bg-black'}`}
-          >
-            {saving ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Guardando...
-              </>
-            ) : (
-              <>
-                <Save size={20} />
-                Guardar Asistencia
-              </>
-            )}
-          </button>
         </div>
       </div>
     </div>
