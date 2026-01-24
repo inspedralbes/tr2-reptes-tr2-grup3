@@ -26,17 +26,17 @@ import toast, { Toaster } from "react-hot-toast";
 
 const MyStudents = () => {
   const { user } = useAuth();
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Datos
   const [workshop, setWorkshop] = useState(null);
   const [students, setStudents] = useState([]);
   const [notes, setNotes] = useState({});
   const [attendanceStats, setAttendanceStats] = useState({});
-  
+
   // Edición de notas
   const [editingNote, setEditingNote] = useState(null);
   const [noteText, setNoteText] = useState('');
@@ -84,12 +84,12 @@ const MyStudents = () => {
       try {
         const sessionsRes = await api.get(`/classroom/sessions/${myWorkshop.edition_id}`);
         const stats = {};
-        
+
         // Inicializar stats para cada alumno
         (studentsRes.data || []).forEach(s => {
           stats[s.id] = { present: 0, absent: 0, late: 0, total: 0 };
         });
-        
+
         // Obtener asistencia de cada sesión
         for (const session of sessionsRes.data || []) {
           try {
@@ -106,7 +106,7 @@ const MyStudents = () => {
             // Sesión sin asistencia
           }
         }
-        
+
         setAttendanceStats(stats);
       } catch (e) {
         console.log('Attendance stats no disponibles:', e);
@@ -123,18 +123,18 @@ const MyStudents = () => {
   // Guardar nota de alumno
   const handleSaveNote = async (studentId) => {
     if (!workshop) return;
-    
+
     setSavingNote(true);
     try {
       await api.post(`/classroom/notes/${workshop.edition_id}/${studentId}`, {
         note: noteText
       });
-      
+
       setNotes(prev => ({
         ...prev,
         [studentId]: noteText
       }));
-      
+
       setEditingNote(null);
       setNoteText('');
       toast.success('Nota guardada');
@@ -185,7 +185,7 @@ const MyStudents = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-10">
       <Toaster position="top-center" />
-      
+
       {/* Header */}
       <div className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-6">
@@ -199,7 +199,7 @@ const MyStudents = () => {
                 {students.length} alumnes al taller <span className="font-medium text-gray-700">{workshop?.workshop_title}</span>
               </p>
             </div>
-            
+
             {/* Buscador */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -221,7 +221,7 @@ const MyStudents = () => {
           {filteredStudents.map((student) => {
             const stats = attendanceStats[student.id] || { present: 0, absent: 0, late: 0, total: 0 };
             const attendanceRate = stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : null;
-            
+
             return (
               <div
                 key={student.id}
@@ -232,13 +232,13 @@ const MyStudents = () => {
                   <div className="flex items-start gap-4">
                     <div className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 overflow-hidden">
                       {student.photo_url ? (
-                        <img 
-                          src={student.photo_url} 
+                        <img
+                          src={student.photo_url?.startsWith('http') ? student.photo_url : `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${student.photo_url}`}
                           alt={student.student_name}
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl">
                           {student.student_name?.charAt(0) || '?'}
                         </div>
                       )}
@@ -254,7 +254,7 @@ const MyStudents = () => {
                           {student.course}
                         </span>
                       </div>
-                      
+
                       {/* Estadísticas de asistencia */}
                       {stats.total > 0 && (
                         <div className="flex items-center gap-4 mt-3">
@@ -271,11 +271,10 @@ const MyStudents = () => {
                             <span className="text-gray-600">{stats.late}</span>
                           </div>
                           {attendanceRate !== null && (
-                            <div className={`text-sm font-medium px-2 py-0.5 rounded ${
-                              attendanceRate >= 80 ? 'bg-green-100 text-green-700' :
-                              attendanceRate >= 50 ? 'bg-amber-100 text-amber-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
+                            <div className={`text-sm font-medium px-2 py-0.5 rounded ${attendanceRate >= 80 ? 'bg-green-100 text-green-700' :
+                                attendanceRate >= 50 ? 'bg-amber-100 text-amber-700' :
+                                  'bg-red-100 text-red-700'
+                              }`}>
                               {attendanceRate}% assistència
                             </div>
                           )}
@@ -327,7 +326,7 @@ const MyStudents = () => {
                       </div>
                     </div>
                   ) : (
-                    <div 
+                    <div
                       onClick={() => startEditNote(student.id)}
                       className="cursor-pointer hover:bg-gray-100 rounded-xl p-3 transition-colors group"
                     >

@@ -50,7 +50,7 @@ const StudentManager = () => {
     tutor_email: "",
     tutor_telefono: "",
   });
-  
+
   // Estado para guardar documentos existentes del alumno
   const [existingDocuments, setExistingDocuments] = useState([]);
   const [savingStudent, setSavingStudent] = useState(false);
@@ -58,6 +58,7 @@ const StudentManager = () => {
   // Estado para foto de perfil y documentos
   const [showImageCropper, setShowImageCropper] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(null);
+  const [profilePhotoBlob, setProfilePhotoBlob] = useState(null);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
   const [documents, setDocuments] = useState({
     autoritzacio_imatge: null,
@@ -143,6 +144,7 @@ const StudentManager = () => {
       tutor_telefono: "",
     });
     resetPhotoAndDocs();
+    setProfilePhotoBlob(null);
     setExistingDocuments([]);
     setShowModal(true);
   };
@@ -204,7 +206,7 @@ const StudentManager = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     setSavingStudent(true);
-    
+
     try {
       let savedStudent;
 
@@ -233,9 +235,17 @@ const StudentManager = () => {
       const studentId = savedStudent.id;
 
       // Pujar foto si s'ha seleccionat una nova
-      if (profilePhotoPreview && profilePhotoPreview.startsWith('data:')) {
+      if (profilePhotoBlob) {
         try {
-          // Convertir dataURL a Blob
+          const photoResult = await studentsService.uploadPhoto(studentId, profilePhotoBlob);
+          savedStudent.photo_url = photoResult.photo_url;
+        } catch (photoErr) {
+          console.error("Error pujant foto:", photoErr);
+          toast.error("L'alumne s'ha guardat però la foto no s'ha pogut pujar");
+        }
+      } else if (profilePhotoPreview && profilePhotoPreview.startsWith('data:')) {
+        try {
+          // Convertir dataURL a Blob (fallback si no hay blob explícito)
           const response = await fetch(profilePhotoPreview);
           const blob = await response.blob();
           const photoResult = await studentsService.uploadPhoto(studentId, blob);
@@ -303,7 +313,8 @@ const StudentManager = () => {
     }
   };
 
-  const handleCroppedImage = (croppedDataUrl) => {
+  const handleCroppedImage = (blob, croppedDataUrl) => {
+    setProfilePhotoBlob(blob);
     setProfilePhotoPreview(croppedDataUrl);
     setShowImageCropper(false);
     toast.success("Foto retallada correctament");
@@ -354,6 +365,7 @@ const StudentManager = () => {
 
   const resetPhotoAndDocs = () => {
     setProfilePhoto(null);
+    setProfilePhotoBlob(null);
     setProfilePhotoPreview(null);
     setDocuments({
       autoritzacio_imatge: null,
@@ -616,7 +628,7 @@ const StudentManager = () => {
                           <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
                             {student.photo_url ? (
                               <img
-                                src={student.photo_url}
+                                src={student.photo_url?.startsWith('http') ? student.photo_url : `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${student.photo_url}`}
                                 alt={student.nombre_completo}
                                 className="w-full h-full object-cover"
                               />
@@ -859,11 +871,10 @@ const StudentManager = () => {
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Autorització Imatge */}
-              <div className={`border-2 rounded-lg p-3 transition-all ${
-                documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE')
-                  ? 'bg-green-50 border-green-300' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className={`border-2 rounded-lg p-3 transition-all ${documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE')
+                ? 'bg-green-50 border-green-300'
+                : 'bg-gray-50 border-gray-200'
+                }`}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     {documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE') ? (
@@ -871,20 +882,18 @@ const StudentManager = () => {
                     ) : (
                       <FileText size={18} className="text-gray-400" />
                     )}
-                    <p className={`text-sm font-medium ${
-                      documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE')
-                        ? 'text-green-700' 
-                        : 'text-gray-700'
-                    }`}>Autorització Imatge</p>
+                    <p className={`text-sm font-medium ${documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE')
+                      ? 'text-green-700'
+                      : 'text-gray-700'
+                      }`}>Autorització Imatge</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => documents.autoritzacio_imatge ? removeDocument('autoritzacio_imatge') : handleDocumentUpload('autoritzacio_imatge')}
-                    className={`p-1.5 rounded transition-colors ${
-                      documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE')
-                        ? 'text-green-600 hover:bg-green-100' 
-                        : 'text-blue-600 hover:bg-blue-50'
-                    }`}
+                    className={`p-1.5 rounded transition-colors ${documents.autoritzacio_imatge || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_IMATGE')
+                      ? 'text-green-600 hover:bg-green-100'
+                      : 'text-blue-600 hover:bg-blue-50'
+                      }`}
                   >
                     {documents.autoritzacio_imatge ? <Edit size={16} /> : <Upload size={16} />}
                   </button>
@@ -892,11 +901,10 @@ const StudentManager = () => {
               </div>
 
               {/* Autorització Sortida */}
-              <div className={`border-2 rounded-lg p-3 transition-all ${
-                documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA')
-                  ? 'bg-green-50 border-green-300' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className={`border-2 rounded-lg p-3 transition-all ${documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA')
+                ? 'bg-green-50 border-green-300'
+                : 'bg-gray-50 border-gray-200'
+                }`}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     {documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA') ? (
@@ -904,20 +912,18 @@ const StudentManager = () => {
                     ) : (
                       <FileText size={18} className="text-gray-400" />
                     )}
-                    <p className={`text-sm font-medium ${
-                      documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA')
-                        ? 'text-green-700' 
-                        : 'text-gray-700'
-                    }`}>Autorització Sortida</p>
+                    <p className={`text-sm font-medium ${documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA')
+                      ? 'text-green-700'
+                      : 'text-gray-700'
+                      }`}>Autorització Sortida</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => documents.autoritzacio_sortida ? removeDocument('autoritzacio_sortida') : handleDocumentUpload('autoritzacio_sortida')}
-                    className={`p-1.5 rounded transition-colors ${
-                      documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA')
-                        ? 'text-green-600 hover:bg-green-100' 
-                        : 'text-blue-600 hover:bg-blue-50'
-                    }`}
+                    className={`p-1.5 rounded transition-colors ${documents.autoritzacio_sortida || existingDocuments.some(d => d.document_type === 'AUTORITZACIO_SORTIDA')
+                      ? 'text-green-600 hover:bg-green-100'
+                      : 'text-blue-600 hover:bg-blue-50'
+                      }`}
                   >
                     {documents.autoritzacio_sortida ? <Edit size={16} /> : <Upload size={16} />}
                   </button>
@@ -925,11 +931,10 @@ const StudentManager = () => {
               </div>
 
               {/* DNI Frontal */}
-              <div className={`border-2 rounded-lg p-3 transition-all ${
-                documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT')
-                  ? 'bg-green-50 border-green-300' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className={`border-2 rounded-lg p-3 transition-all ${documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT')
+                ? 'bg-green-50 border-green-300'
+                : 'bg-gray-50 border-gray-200'
+                }`}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     {documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT') ? (
@@ -937,20 +942,18 @@ const StudentManager = () => {
                     ) : (
                       <FileText size={18} className="text-gray-400" />
                     )}
-                    <p className={`text-sm font-medium ${
-                      documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT')
-                        ? 'text-green-700' 
-                        : 'text-gray-700'
-                    }`}>DNI Frontal</p>
+                    <p className={`text-sm font-medium ${documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT')
+                      ? 'text-green-700'
+                      : 'text-gray-700'
+                      }`}>DNI Frontal</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => documents.dni_front ? removeDocument('dni_front') : handleDocumentUpload('dni_front')}
-                    className={`p-1.5 rounded transition-colors ${
-                      documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT')
-                        ? 'text-green-600 hover:bg-green-100' 
-                        : 'text-blue-600 hover:bg-blue-50'
-                    }`}
+                    className={`p-1.5 rounded transition-colors ${documents.dni_front || existingDocuments.some(d => d.document_type === 'DNI_FRONT')
+                      ? 'text-green-600 hover:bg-green-100'
+                      : 'text-blue-600 hover:bg-blue-50'
+                      }`}
                   >
                     {documents.dni_front ? <Edit size={16} /> : <Upload size={16} />}
                   </button>
@@ -958,11 +961,10 @@ const StudentManager = () => {
               </div>
 
               {/* DNI Posterior */}
-              <div className={`border-2 rounded-lg p-3 transition-all ${
-                documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK')
-                  ? 'bg-green-50 border-green-300' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className={`border-2 rounded-lg p-3 transition-all ${documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK')
+                ? 'bg-green-50 border-green-300'
+                : 'bg-gray-50 border-gray-200'
+                }`}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     {documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK') ? (
@@ -970,20 +972,18 @@ const StudentManager = () => {
                     ) : (
                       <FileText size={18} className="text-gray-400" />
                     )}
-                    <p className={`text-sm font-medium ${
-                      documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK')
-                        ? 'text-green-700' 
-                        : 'text-gray-700'
-                    }`}>DNI Posterior</p>
+                    <p className={`text-sm font-medium ${documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK')
+                      ? 'text-green-700'
+                      : 'text-gray-700'
+                      }`}>DNI Posterior</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => documents.dni_back ? removeDocument('dni_back') : handleDocumentUpload('dni_back')}
-                    className={`p-1.5 rounded transition-colors ${
-                      documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK')
-                        ? 'text-green-600 hover:bg-green-100' 
-                        : 'text-blue-600 hover:bg-blue-50'
-                    }`}
+                    className={`p-1.5 rounded transition-colors ${documents.dni_back || existingDocuments.some(d => d.document_type === 'DNI_BACK')
+                      ? 'text-green-600 hover:bg-green-100'
+                      : 'text-blue-600 hover:bg-blue-50'
+                      }`}
                   >
                     {documents.dni_back ? <Edit size={16} /> : <Upload size={16} />}
                   </button>
@@ -997,9 +997,10 @@ const StudentManager = () => {
       {/* Modal del cropper d'imatge */}
       {showImageCropper && profilePhoto && (
         <ImageCropper
+          isOpen={true}
           image={profilePhoto}
-          onCrop={handleCroppedImage}
-          onCancel={() => {
+          onCropComplete={handleCroppedImage}
+          onClose={() => {
             setShowImageCropper(false);
             setProfilePhoto(null);
           }}

@@ -8,8 +8,8 @@ import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { listAllocations } from "../../api/requests.js";
 import { AuthContext } from "../../context/AuthContext.jsx";
-import { 
-  CheckCircle, AlertCircle, Calendar, Users, Clock, 
+import {
+  CheckCircle, AlertCircle, Calendar, Users, Clock,
   BookOpen, MapPin, Info, Download, UserCheck
 } from "lucide-react";
 import Button from "../../components/ui/Button.jsx";
@@ -33,13 +33,13 @@ const MyAllocations = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Cargar período activo
       const periodsRes = await client.get("/enrollment/periods?status=ACTIVE");
       if (periodsRes.data.length > 0) {
         setActivePeriod(periodsRes.data[0]);
       }
-      
+
       // Cargar asignaciones
       const filters = user?.school_id ? { school_id: user.school_id } : {};
       const data = await listAllocations(filters);
@@ -72,7 +72,7 @@ const MyAllocations = () => {
     let content = `RESULTATS D'ASSIGNACIÓ - ${activePeriod?.name || 'Període actual'}\n`;
     content += `${'='.repeat(50)}\n\n`;
     content += `Total places assignades: ${totalStudents} alumnes\n\n`;
-    
+
     if (tuesday.length > 0) {
       content += `DIMARTS:\n`;
       tuesday.forEach(a => {
@@ -80,14 +80,14 @@ const MyAllocations = () => {
       });
       content += `\n`;
     }
-    
+
     if (thursday.length > 0) {
       content += `DIJOUS:\n`;
       thursday.forEach(a => {
         content += `  • ${a.workshop_title}: ${a.assigned_seats} places\n`;
       });
     }
-    
+
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -111,7 +111,7 @@ const MyAllocations = () => {
             Consulteu les places assignades al vostre centre per a aquesta convocatòria.
           </p>
         </div>
-        
+
         {allocations.length > 0 && (
           <Button variant="secondary" onClick={handleExportSummary} size="sm">
             <Download size={16} className="mr-2" /> Exportar resum
@@ -157,7 +157,7 @@ const MyAllocations = () => {
               <div className="text-3xl font-bold text-green-800">{totalStudents}</div>
               <p className="text-sm text-green-600 mt-1">alumnes assignats</p>
             </div>
-            
+
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200">
               <div className="flex items-center gap-3 mb-2">
                 <BookOpen className="text-blue-600" size={24} />
@@ -166,7 +166,7 @@ const MyAllocations = () => {
               <div className="text-3xl font-bold text-blue-800">{allocations.length}</div>
               <p className="text-sm text-blue-600 mt-1">tallers diferents</p>
             </div>
-            
+
             <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-5 border border-purple-200">
               <div className="flex items-center gap-3 mb-2">
                 <Calendar className="text-purple-600" size={24} />
@@ -176,8 +176,8 @@ const MyAllocations = () => {
                 {tuesday.length > 0 && thursday.length > 0 ? '2' : '1'}
               </div>
               <p className="text-sm text-purple-600 mt-1">
-                {tuesday.length > 0 && thursday.length > 0 
-                  ? 'Dimarts i Dijous' 
+                {tuesday.length > 0 && thursday.length > 0
+                  ? 'Dimarts i Dijous'
                   : tuesday.length > 0 ? 'Dimarts' : 'Dijous'}
               </p>
             </div>
@@ -190,8 +190,7 @@ const MyAllocations = () => {
               <p className="font-medium mb-1">Com funciona?</p>
               <p>
                 Aquestes són les places que el vostre centre ha obtingut per als tallers sol·licitats.
-                Feu clic a <strong>"Confirmar alumnes"</strong> per assignar nominalment els alumnes que assistiran a cada taller.
-                Els professors acompanyants que vau indicar a la sol·licitud seran notificats amb accés per passar llista.
+                Feu clic a <strong>"Veure alumnes assignats"</strong> per consultar quins alumnes han estat seleccionats i veure l'estat de la documentació.
               </p>
             </div>
           </div>
@@ -210,9 +209,9 @@ const MyAllocations = () => {
                 </h3>
                 <div className="grid gap-3">
                   {tuesday.map((alloc) => (
-                    <AllocationCard 
-                      key={alloc.id} 
-                      allocation={alloc} 
+                    <AllocationCard
+                      key={alloc.id}
+                      allocation={alloc}
                       currentPhase={activePeriod?.current_phase}
                       onConfirmClick={() => navigate(`/center/allocation/${alloc.id}/confirm`)}
                     />
@@ -233,8 +232,8 @@ const MyAllocations = () => {
                 </h3>
                 <div className="grid gap-3">
                   {thursday.map((alloc) => (
-                    <AllocationCard 
-                      key={alloc.id} 
+                    <AllocationCard
+                      key={alloc.id}
                       allocation={alloc}
                       currentPhase={activePeriod?.current_phase}
                       onConfirmClick={() => navigate(`/center/allocation/${alloc.id}/confirm`)}
@@ -254,19 +253,18 @@ const MyAllocations = () => {
 const AllocationCard = ({ allocation, currentPhase, onConfirmClick }) => {
   // Mostrar botón de confirmación solo en fase PUBLICACION o EJECUCION
   const canConfirm = ['PUBLICACION', 'EJECUCION'].includes(currentPhase);
-  
+
   // Verificar si ya tiene alumnos confirmados (campo students_confirmed o similar)
   const hasConfirmedStudents = allocation.confirmed_students > 0;
-  
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <div className={`p-3 rounded-xl ${
-            allocation.day_of_week === 'TUESDAY' 
-              ? 'bg-blue-100 text-blue-600' 
+          <div className={`p-3 rounded-xl ${allocation.day_of_week === 'TUESDAY'
+              ? 'bg-blue-100 text-blue-600'
               : 'bg-purple-100 text-purple-600'
-          }`}>
+            }`}>
             <BookOpen size={24} />
           </div>
           <div>
@@ -283,7 +281,7 @@ const AllocationCard = ({ allocation, currentPhase, onConfirmClick }) => {
                 </span>
               )}
             </div>
-            
+
             {/* Botón de confirmación nominal */}
             {canConfirm && (
               <div className="mt-3">
@@ -294,21 +292,20 @@ const AllocationCard = ({ allocation, currentPhase, onConfirmClick }) => {
                   className="flex items-center gap-2"
                 >
                   <UserCheck size={16} />
-                  {hasConfirmedStudents 
-                    ? `Gestionar alumnes (${allocation.confirmed_students || 0}/${allocation.assigned_seats})` 
-                    : "Confirmar alumnes"}
+                  {hasConfirmedStudents
+                    ? `Veure alumnes assignats (${allocation.confirmed_students || 0}/${allocation.assigned_seats})`
+                    : "Veure alumnes assignats"}
                 </Button>
               </div>
             )}
           </div>
         </div>
-        
+
         <div className="text-right">
-          <div className={`px-4 py-2 rounded-xl ${
-            hasConfirmedStudents 
-              ? 'bg-green-100 text-green-800' 
+          <div className={`px-4 py-2 rounded-xl ${hasConfirmedStudents
+              ? 'bg-green-100 text-green-800'
               : 'bg-amber-100 text-amber-800'
-          }`}>
+            }`}>
             <div className="text-2xl font-bold">{allocation.assigned_seats}</div>
             <div className="text-xs font-medium">places</div>
           </div>

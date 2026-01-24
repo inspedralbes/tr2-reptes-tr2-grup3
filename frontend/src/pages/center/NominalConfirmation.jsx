@@ -6,9 +6,7 @@
  */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import client from "../../api/client";
-import ConfirmModal from "../../components/common/ConfirmModal";
 
 const NominalConfirmation = () => {
   const { allocationId } = useParams();
@@ -20,13 +18,7 @@ const NominalConfirmation = () => {
   const [error, setError] = useState(null);
   const [uploadingFor, setUploadingFor] = useState(null);
 
-  // Modal de confirmación
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: null
-  });
+
 
   useEffect(() => {
     loadAllocationData();
@@ -102,33 +94,7 @@ const NominalConfirmation = () => {
     );
   };
 
-  // Confirmar toda la asignación (cambiar estado a ACCEPTED)
-  const handleConfirmGlobal = () => {
-    setConfirmModal({
-      isOpen: true,
-      title: "Confirmar assignació",
-      message: "Estàs segur que vols confirmar aquesta assignació? No podràs modificar-la després.",
-      onConfirm: async () => {
-        try {
-          // Mapeamos al formato que espera el backend
-          const studentPayload = students.map((s) => ({
-            name: s.nombre_completo || s.full_name,
-            idalu: s.idalu,
-          }));
 
-          await client.put(`/allocation/${allocationId}/confirm`, {
-            students: studentPayload,
-          });
-
-          toast.success("Assignació confirmada correctament");
-          navigate("/center/allocations");
-        } catch (err) {
-          toast.error(err.response?.data?.message || err.message);
-        }
-        setConfirmModal(prev => ({ ...prev, isOpen: false }));
-      }
-    });
-  };
 
   if (loading) {
     return (
@@ -143,11 +109,10 @@ const NominalConfirmation = () => {
       {/* Capçalera */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Confirmació Nominal
+          Detall de l'Assignació
         </h1>
         <p className="text-gray-500 mt-2">
-          Revisa els alumnes assignats i puja la documentació necessària per
-          confirmar la plaça.
+          Aquests són els alumnes que han estat assignats a aquest taller.
         </p>
       </div>
 
@@ -193,6 +158,9 @@ const NominalConfirmation = () => {
           <h3 className="font-semibold text-gray-700">
             Llistat d'Alumnes Assignats
           </h3>
+          <span className="text-sm text-gray-500 italic">
+            Seleccionats per nivell d'absentisme
+          </span>
         </div>
 
         {students.length === 0 ? (
@@ -202,69 +170,62 @@ const NominalConfirmation = () => {
             </p>
           </div>
         ) : (
-          <table className="min-w-full">
-            <thead className="bg-gray-50 text-gray-600 font-medium text-sm">
-              <tr>
-                <th className="px-6 py-3 text-left">Alumne</th>
-                <th className="px-6 py-3 text-left">Email</th>
-                <th className="px-6 py-3 text-center">Estat</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {students.map((student) => (
-                <tr
-                  key={student.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {student.full_name || student.nombre_completo}
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    {student.email || "-"}
-                  </td>
-
-                  {/* Estat complet */}
-                  <td className="px-6 py-4 text-center">
-                    {hasAllDocuments(student) ? (
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium border border-green-200">
-                        Complet
-                      </span>
-                    ) : (
-                      <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium border border-yellow-200">
-                        Pendent
-                      </span>
-                    )}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 text-gray-600 font-medium text-sm">
+                <tr>
+                  <th className="px-6 py-3 text-left">Alumne</th>
+                  <th className="px-6 py-3 text-center">Nivell Absentisme</th>
+                  <th className="px-6 py-3 text-center">Documentació</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {students.map((student) => (
+                  <tr
+                    key={student.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div>{student.full_name || student.nombre_completo}</div>
+                      <div className="text-xs text-gray-500">{student.email}</div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${student.nivel_absentismo >= 3 ? 'bg-red-100 text-red-700' :
+                        student.nivel_absentismo === 2 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-green-100 text-green-700'
+                        }`}>
+                        {student.nivel_absentismo || 1} / 5
+                      </span>
+                    </td>
+
+                    {/* Estat complet */}
+                    <td className="px-6 py-4 text-center">
+                      {hasAllDocuments(student) ? (
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium border border-green-200">
+                          Complet
+                        </span>
+                      ) : (
+                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium border border-gray-200">
+                          Pendent
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
-      {/* Botón de Confirmación Global */}
-      {allocation && allocation.status !== "ACCEPTED" && (
-        <div className="flex justify-end pt-4 border-t border-gray-200">
-          <button
-            onClick={handleConfirmGlobal}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg font-bold text-lg hover:bg-green-700 shadow-lg transition-transform transform active:scale-95 flex items-center gap-2"
-          >
-            <span>✓</span> Confirmar Assignació
-          </button>
-        </div>
-      )}
-
-      {/* Modal de confirmación */}
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-        onConfirm={confirmModal.onConfirm}
-        title={confirmModal.title}
-        message={confirmModal.message}
-        variant="success"
-        confirmText="Confirmar"
-        cancelText="Cancel·lar"
-      />
+      <div className="flex justify-start">
+        <button
+          onClick={() => navigate("/center/allocations")}
+          className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+        >
+          ← Tornar al llistat
+        </button>
+      </div>
     </div>
   );
 };

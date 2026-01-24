@@ -4,15 +4,16 @@
  * Component per retallar imatges (fotografies) de perfil.
  * Permet seleccionar una imatge, ajustar-la i retallar-la en format quadrat.
  */
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { X, Upload, ZoomIn, ZoomOut, RotateCw, Check, Camera } from "lucide-react";
 import Modal from "./Modal";
 import Button from "../ui/Button";
 
-const ImageCropper = ({ 
-  isOpen, 
-  onClose, 
-  onCropComplete, 
+const ImageCropper = ({
+  isOpen,
+  onClose,
+  onCropComplete,
+  image: imageProp, // Rename prop to avoid conflict with state
   aspectRatio = 1, // 1 = cuadrado (perfil)
   title = "Retallar imatge",
   maxSizeMB = 2
@@ -25,10 +26,21 @@ const ImageCropper = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [error, setError] = useState(null);
-  
+
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+
+  // Inicializar con la web si se pasa
+  useEffect(() => {
+    if (isOpen && imageProp) {
+      setImage(imageProp);
+      setPreview(imageProp);
+      setZoom(1);
+      setRotation(0);
+      setPosition({ x: 0, y: 0 });
+    }
+  }, [isOpen, imageProp]);
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -90,7 +102,7 @@ const ImageCropper = ({
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       // Tamaño de salida (cuadrado 300x300 para fotos de perfil)
       const outputSize = 300;
@@ -111,7 +123,7 @@ const ImageCropper = ({
       const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const scaledWidth = img.width * scale;
       const scaledHeight = img.height * scale;
-      
+
       ctx.drawImage(
         img,
         -scaledWidth / 2 + position.x / zoom,
@@ -119,7 +131,7 @@ const ImageCropper = ({
         scaledWidth,
         scaledHeight
       );
-      
+
       ctx.restore();
 
       // Convertir a blob
@@ -170,7 +182,7 @@ const ImageCropper = ({
 
         {/* Input de archivo */}
         {!image ? (
-          <div 
+          <div
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all"
           >
@@ -190,7 +202,7 @@ const ImageCropper = ({
         ) : (
           <>
             {/* Área de previsualización y recorte */}
-            <div 
+            <div
               ref={containerRef}
               className="relative w-full aspect-square bg-gray-900 rounded-xl overflow-hidden cursor-move"
               onMouseDown={handleMouseDown}
@@ -201,15 +213,15 @@ const ImageCropper = ({
               {/* Marco de recorte */}
               <div className="absolute inset-4 border-2 border-white/50 rounded-full pointer-events-none z-10" />
               <div className="absolute inset-0 bg-black/40 pointer-events-none">
-                <div 
+                <div
                   className="absolute inset-4 rounded-full"
-                  style={{ 
-                    background: 'transparent', 
-                    boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)' 
-                  }} 
+                  style={{
+                    background: 'transparent',
+                    boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)'
+                  }}
                 />
               </div>
-              
+
               {/* Imagen */}
               <img
                 src={preview}
@@ -234,11 +246,11 @@ const ImageCropper = ({
               >
                 <ZoomOut size={20} className="text-gray-600" />
               </button>
-              
+
               <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-lg min-w-[80px] justify-center">
                 <span className="text-sm font-medium text-gray-700">{Math.round(zoom * 100)}%</span>
               </div>
-              
+
               <button
                 onClick={() => handleZoom(0.1)}
                 className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -246,9 +258,9 @@ const ImageCropper = ({
               >
                 <ZoomIn size={20} className="text-gray-600" />
               </button>
-              
+
               <div className="w-px h-6 bg-gray-300" />
-              
+
               <button
                 onClick={handleRotate}
                 className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"

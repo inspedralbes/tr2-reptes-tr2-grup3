@@ -14,7 +14,12 @@ services:
       #   docker exec -i enginy_postgres psql -U admin -d enginy_db < database/insert.sql
       #   docker exec -i enginy_postgres psql -U admin -d enginy_db < database/test_data.sql
       - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
-      # - ./database/insert.sql:/docker-entrypoint-initdb.d/02-insert.sql  # DESACTIVADO - insertar manualmente
+      # Migraciones automáticas
+      - ./database/migrations/03_add_priority_and_preferences.sql:/docker-entrypoint-initdb.d/03_add_priority.sql
+      - ./database/migrations/add_photo_url_to_students.sql:/docker-entrypoint-initdb.d/04_add_photo.sql
+      - ./database/migrations/add_teacher_student_notes.sql:/docker-entrypoint-initdb.d/05_add_notes.sql
+      - ./database/migrations/add_tutor_fields.sql:/docker-entrypoint-initdb.d/06_add_tutor.sql
+      # - ./database/insert.sql:/docker-entrypoint-initdb.d/99-insert.sql  # Seed manual (desactivado por defecto)
       - postgres_data:/var/lib/postgresql/data
     networks:
       - enginy_network

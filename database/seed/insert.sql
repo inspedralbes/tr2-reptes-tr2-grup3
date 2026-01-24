@@ -62,27 +62,27 @@ INSERT INTO schools (id, code, name, address, municipality, email, phone, coordi
 -- 3. PROFESORES ACOMPAÑANTES (2-3 por centro)
 -- ==================================================================
 -- Pueden hacer login para pasar lista en fase EJECUCION
-INSERT INTO teachers (id, school_id, full_name, email, phone_number, password_hash) VALUES
+INSERT INTO teachers (id, school_id, full_name, email, phone_number) VALUES
 -- El Roure
-('70000001-0001-0001-0001-000000000001', '50000001-0001-0001-0001-000000000001', 'Jordi Lopez Fernandez', 'jordi.lopez@elroure.cat', '612345001', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
-('70000002-0002-0002-0002-000000000002', '50000001-0001-0001-0001-000000000001', 'Marta Sanchez Gil', 'marta.sanchez@elroure.cat', '612345002', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
+('70000001-0001-0001-0001-000000000001', '50000001-0001-0001-0001-000000000001', 'Jordi Lopez Fernandez', 'jordi.lopez@elroure.cat', '612345001'),
+('70000002-0002-0002-0002-000000000002', '50000001-0001-0001-0001-000000000001', 'Marta Sanchez Gil', 'marta.sanchez@elroure.cat', '612345002'),
 -- Mediterrani
-('70000003-0003-0003-0003-000000000003', '50000002-0002-0002-0002-000000000002', 'Carles Prat Molina', 'carles.prat@mediterrani.cat', '612345003', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
-('70000004-0004-0004-0004-000000000004', '50000002-0002-0002-0002-000000000002', 'Nuria Camps Bosch', 'nuria.camps@mediterrani.cat', '612345004', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
-('70000005-0005-0005-0005-000000000005', '50000002-0002-0002-0002-000000000002', 'Albert Riera Font', 'albert.riera@mediterrani.cat', '612345005', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
+('70000003-0003-0003-0003-000000000003', '50000002-0002-0002-0002-000000000002', 'Carles Prat Molina', 'carles.prat@mediterrani.cat', '612345003'),
+('70000004-0004-0004-0004-000000000004', '50000002-0002-0002-0002-000000000002', 'Nuria Camps Bosch', 'nuria.camps@mediterrani.cat', '612345004'),
+('70000005-0005-0005-0005-000000000005', '50000002-0002-0002-0002-000000000002', 'Albert Riera Font', 'albert.riera@mediterrani.cat', '612345005'),
 -- La Marina
-('70000006-0006-0006-0006-000000000006', '50000003-0003-0003-0003-000000000003', 'Elena Ruiz Torres', 'elena.ruiz@lamarina.cat', '612345006', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
-('70000007-0007-0007-0007-000000000007', '50000003-0003-0003-0003-000000000003', 'David Moreno Sala', 'david.moreno@lamarina.cat', '612345007', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
+('70000006-0006-0006-0006-000000000006', '50000003-0003-0003-0003-000000000003', 'Elena Ruiz Torres', 'elena.ruiz@lamarina.cat', '612345006'),
+('70000007-0007-0007-0007-000000000007', '50000003-0003-0003-0003-000000000003', 'David Moreno Sala', 'david.moreno@lamarina.cat', '612345007'),
 -- Les Corts
-('70000008-0008-0008-0008-000000000008', '50000004-0004-0004-0004-000000000004', 'Cristina Valls Puig', 'cristina.valls@lescorts.cat', '612345008', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
-('70000009-0009-0009-0009-000000000009', '50000004-0004-0004-0004-000000000004', 'Sergi Mas Comas', 'sergi.mas@lescorts.cat', '612345009', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
+('70000008-0008-0008-0008-000000000008', '50000004-0004-0004-0004-000000000004', 'Cristina Valls Puig', 'cristina.valls@lescorts.cat', '612345008'),
+('70000009-0009-0009-0009-000000000009', '50000004-0004-0004-0004-000000000004', 'Sergi Mas Comas', 'sergi.mas@lescorts.cat', '612345009'),
 -- Sant Jordi
-('7000000a-000a-000a-000a-00000000000a', '50000005-0005-0005-0005-000000000005', 'Rosa Blanc Marin', 'rosa.blanc@santjordi.cat', '612345010', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
-('7000000b-000b-000b-000b-00000000000b', '50000005-0005-0005-0005-000000000005', 'Pau Vilar Soler', 'pau.vilar@santjordi.cat', '612345011', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
-('7000000c-000c-000c-000c-00000000000c', '50000005-0005-0005-0005-000000000005', 'Gemma Rius Pons', 'gemma.rius@santjordi.cat', '612345012', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
+('7000000a-000a-000a-000a-00000000000a', '50000005-0005-0005-0005-000000000005', 'Rosa Blanc Marin', 'rosa.blanc@santjordi.cat', '612345010'),
+('7000000b-000b-000b-000b-00000000000b', '50000005-0005-0005-0005-000000000005', 'Pau Vilar Soler', 'pau.vilar@santjordi.cat', '612345011'),
+('7000000c-000c-000c-000c-00000000000c', '50000005-0005-0005-0005-000000000005', 'Gemma Rius Pons', 'gemma.rius@santjordi.cat', '612345012'),
 -- Gaudi
-('7000000d-000d-000d-000d-00000000000d', '50000006-0006-0006-0006-000000000006', 'Xavier Costa Mir', 'xavier.costa@gaudi.cat', '612345013', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG'),
-('7000000e-000e-000e-000e-00000000000e', '50000006-0006-0006-0006-000000000006', 'Laia Pujol Vives', 'laia.pujol@gaudi.cat', '612345014', '$2b$10$DpFC.WbzTSxl4KNdvAMfIerUCxoNk/QrhRwdWL51UBEF5t61My7DG');
+('7000000d-000d-000d-000d-00000000000d', '50000006-0006-0006-0006-000000000006', 'Xavier Costa Mir', 'xavier.costa@gaudi.cat', '612345013'),
+('7000000e-000e-000e-000e-00000000000e', '50000006-0006-0006-0006-000000000006', 'Laia Pujol Vives', 'laia.pujol@gaudi.cat', '612345014');
 
 -- ==================================================================
 -- 4. ALUMNOS (8-10 por centro = ~60 total)

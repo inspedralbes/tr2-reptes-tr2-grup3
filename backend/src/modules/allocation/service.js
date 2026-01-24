@@ -78,7 +78,7 @@ const runAllocationAlgorithm = async (periodId) => {
 
     if (requestsQuery.rows.length === 0) {
       await client.query('COMMIT');
-      return { 
+      return {
         success: true,
         message: 'No hi ha sol·licituds per assignar',
         allocations_created: 0,
@@ -141,7 +141,7 @@ const runAllocationAlgorithm = async (periodId) => {
     }
 
     const priorities = Object.keys(requestsByPriority).map(Number).sort((a, b) => a - b);
-    
+
     console.log('\n🎯 ALGORITME D\'ASSIGNACIÓ v3.0 - Distribució Equitativa');
     console.log(`📊 Centres participants: ${allSchools.length}`);
     console.log(`📋 Sol·licituds totals: ${requestsQuery.rows.length}`);
@@ -153,28 +153,28 @@ const runAllocationAlgorithm = async (periodId) => {
     // 5. PROCESAR POR RONDAS DE PRIORIDAD
     for (const priority of priorities) {
       console.log(`\n--- Processant Prioritat ${priority} ---`);
-      
+
       const requestsInPriority = requestsByPriority[priority];
-      
+
       // 5.1 ORDENAR SOLICITUDES DE ESTA PRIORIDAD
       // Criterio: Primera vez > Absentismo alto > Menos asignaciones previas > Aleatorio
       const scoredRequests = requestsInPriority.map(req => {
         let score = 0;
-        
+
         // Bonus primera participación (+100)
         if (req.is_first_time_participation) score += 100;
-        
+
         // Bonus absentismo (+10 por nivel, máx +50)
         score += (req.avg_absenteeism || 0) * 10;
-        
+
         // Penalización por asignaciones previas (-20 por cada una)
         score -= schoolState[req.school_id].workshopsAssigned * 20;
-        
+
         // Componente aleatorio para desempate (0-10)
         // Usamos el hash del school_id + priority como seed para reproducibilidad
         const seed = req.school_id.charCodeAt(0) + priority * 1000;
         score += seededRandom(seed) * 10;
-        
+
         return { ...req, _score: score };
       });
 
@@ -184,7 +184,7 @@ const runAllocationAlgorithm = async (periodId) => {
       // 5.2 PROCESAR CADA SOLICITUD
       for (const request of scoredRequests) {
         const result = tryAssignRequest(request, editionState, schoolState);
-        
+
         if (result.success) {
           allocations.push(result.allocation);
           console.log(`  ✅ ${request.school_name} → ${editionState[request.workshop_edition_id].workshopTitle}: ${result.allocation.assigned_seats} places (score: ${request._score.toFixed(1)})`);
@@ -212,8 +212,8 @@ const runAllocationAlgorithm = async (periodId) => {
         if (remainingCapacity <= 0) continue;
 
         // Buscar solicitudes rechazadas para este taller
-        const rejectedForThis = rejections.filter(r => 
-          r.workshop === edition.workshopTitle && 
+        const rejectedForThis = rejections.filter(r =>
+          r.workshop === edition.workshopTitle &&
           r.reason.includes('equilibri')
         );
 
@@ -235,11 +235,35 @@ const runAllocationAlgorithm = async (periodId) => {
 
     // 7. INSERTAR ASIGNACIONES EN BD
     for (const alloc of allocations) {
-      await client.query(
+      const allocResult = await client.query(
         `INSERT INTO allocations (workshop_edition_id, school_id, assigned_seats, status)
-         VALUES ($1, $2, $3, $4)`,
+         VALUES ($1, $2, $3, $4)
+         RETURNING id`,
         [alloc.workshop_edition_id, alloc.school_id, alloc.assigned_seats, alloc.status]
       );
+
+      const allocationId = allocResult.rows[0].id;
+
+      // 7.1 INSERTAR ALUMNOS ASOCIADOS A ESTA ASIGNACIÓN
+      // Obtenemos los alumnos de la solicitud original (request_item_students)
+      // LOGICA CAMBIADA: Priorizar alumnos con mayor absentismo
+      const studentsQuery = await client.query(
+        `SELECT ris.student_id 
+         FROM request_item_students ris
+         JOIN students s ON ris.student_id = s.id
+         WHERE ris.request_item_id = $1
+         ORDER BY s.nivel_absentismo DESC, s.created_at ASC
+         LIMIT $2`, // Quedarnos con los N alumnos con más absentismo
+        [alloc.item_id, alloc.assigned_seats]
+      );
+
+      for (const student of studentsQuery.rows) {
+        await client.query(
+          `INSERT INTO allocation_students (allocation_id, student_id, status)
+           VALUES ($1, $2, 'ACTIVE')`,
+          [allocationId, student.student_id]
+        );
+      }
     }
 
     // 8. ASIGNAR PROFESORES REFERENTES
@@ -249,7 +273,7 @@ const runAllocationAlgorithm = async (periodId) => {
 
     // 9. GENERAR INFORME
     const report = generateReport(allocations, rejections, editionState, schoolState, teacherAssignments);
-    
+
     return report;
 
   } catch (error) {
@@ -307,6 +331,7 @@ const tryAssignRequest = (request, editionState, schoolState, isSecondPass = fal
   if (canAssign > 0) {
     const allocation = {
       workshop_edition_id: editionId,
+      item_id: request.item_id, // Añadimos item_id para poder rescatar los alumnos después
       school_id: schoolId,
       assigned_seats: canAssign,
       status: 'PROVISIONAL'
@@ -384,7 +409,7 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
     const schoolId = request.school_id;
     const schoolName = request.school_name;
     const schoolWorkshops = workshopsBySchool[schoolId] || [];
-    
+
     if (schoolWorkshops.length === 0) {
       continue;
     }
@@ -392,9 +417,9 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
     // Obtener profesores del centro (de request_teachers JSON)
     let schoolTeachers = [];
     try {
-      schoolTeachers = request.request_teachers ? 
-        (typeof request.request_teachers === 'string' ? 
-          JSON.parse(request.request_teachers) : request.request_teachers) 
+      schoolTeachers = request.request_teachers ?
+        (typeof request.request_teachers === 'string' ?
+          JSON.parse(request.request_teachers) : request.request_teachers)
         : [];
     } catch (e) {
       console.log(`⚠️ Error parsing teachers for ${schoolName}:`, e.message);
@@ -433,7 +458,7 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
 
       assignedTeacherIds.add(pref.teacher_id);
       assignedWorkshopIds.add(pref.workshop_edition_id);
-      
+
       console.log(`👨‍🏫 ${pref.teacher_name} (${schoolName}) → Taller preferit com a acompanyant`);
     }
 
@@ -444,7 +469,7 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
     for (let i = 0; i < remainingWorkshops.length; i++) {
       const workshopId = remainingWorkshops[i];
       const teacher = remainingTeachers[i];
-      
+
       if (teacher && teacher.id) {
         await client.query(
           `INSERT INTO workshop_assigned_teachers (workshop_edition_id, teacher_id, is_main_referent)
@@ -463,7 +488,7 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
 
         assignedTeacherIds.add(teacher.id);
         assignedWorkshopIds.add(workshopId);
-        
+
         console.log(`👨‍🏫 ${teacher.name || teacher.full_name} (${schoolName}) → Taller auto-assignat com a acompanyant`);
       } else {
         console.log(`⚠️ ${schoolName}: Taller sense professor disponible (falten professors declarats)`);
@@ -474,20 +499,20 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
   // 5. VERIFICAR que cada edición de taller con alumnos tenga al menos 1 profesor
   // Obtener todas las ediciones que tienen asignaciones (alumnos)
   const editionsWithStudents = [...new Set(allocations.map(a => a.workshop_edition_id))];
-  
+
   for (const editionId of editionsWithStudents) {
     // Verificar si ya tiene profesor asignado
     const hasTeacher = await client.query(
       `SELECT COUNT(*) as count FROM workshop_assigned_teachers WHERE workshop_edition_id = $1`,
       [editionId]
     );
-    
+
     if (parseInt(hasTeacher.rows[0].count) === 0) {
       // No tiene profesor! Buscar uno de los centros que tienen alumnos en este taller
       const schoolsInEdition = allocations
         .filter(a => a.workshop_edition_id === editionId)
         .map(a => a.school_id);
-      
+
       // Buscar un profesor disponible de cualquiera de estos centros
       const availableTeacher = await client.query(
         `SELECT t.id, t.full_name, t.school_id, s.name as school_name
@@ -501,7 +526,7 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
          LIMIT 1`,
         [schoolsInEdition, editionId]
       );
-      
+
       if (availableTeacher.rows.length > 0) {
         const teacher = availableTeacher.rows[0];
         await client.query(
@@ -510,7 +535,7 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
            ON CONFLICT (workshop_edition_id, teacher_id) DO NOTHING`,
           [editionId, teacher.id]
         );
-        
+
         assignments.push({
           workshop_edition_id: editionId,
           teacher_id: teacher.id,
@@ -518,7 +543,7 @@ const assignTeacherReferents = async (client, periodId, allocations) => {
           school_name: teacher.school_name,
           role: 'Acompanyant (auto-assignat per cobertura)'
         });
-        
+
         console.log(`✅ Cobertura: ${teacher.full_name} (${teacher.school_name}) assignat a taller sense professor`);
       } else {
         console.log(`❌ ALERTA: Taller ${editionId} sense professor i sense candidats disponibles!`);
