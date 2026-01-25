@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import LoginForm from "../../components/forms/LoginForm.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { LogIn, AlertCircle } from "lucide-react";
+import client from "../../api/client";
 
 /**
  * Login.jsx
@@ -13,6 +14,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState(null);
+  const [activePhase, setActivePhase] = useState(null);
 
   const getRedirectPath = (role) => {
     switch (role) {
@@ -65,6 +67,23 @@ const Login = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
+  useEffect(() => {
+    // Load active enrollment period to know current phase (used to show teacher accounts)
+    const loadActivePeriod = async () => {
+      try {
+        const periodsRes = await client.get("/enrollment/periods?status=ACTIVE");
+        if (periodsRes.data && periodsRes.data.length > 0) {
+          setActivePhase(periodsRes.data[0].current_phase);
+        }
+      } catch (err) {
+        // ignore errors here (login page should still work offline/test)
+        console.debug("Could not load active period:", err?.message || err);
+      }
+    };
+
+    loadActivePeriod();
+  }, []);
+
   return (
     <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
@@ -92,103 +111,74 @@ const Login = () => {
 
             <LoginForm onSubmit={handleSubmit} loading={loading} />
 
-            {/* Test credentials: admin, coordinadores y profesores */}
+            {/* Test credentials: grouped and conditional teachers */}
             <div className="mt-6 pt-6 border-t border-gray-100">
               <p className="text-xs text-gray-400 text-center mb-3 uppercase tracking-wider font-semibold">
-                Usuaris de prova (totes les fases)
+                Comptes de prova (contrassenya comuna)
               </p>
+
+              {/* Accounts that always use admin password */}
               <div className="grid gap-2 text-xs">
                 <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">Admin:</span>
+                  <span className="text-gray-600">Admin</span>
                   <code className="text-gray-900 font-mono">admin@enginy.cat</code>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">Coordinadors:</span>
-                  <code className="text-gray-900 font-mono">coord@elroure.cat</code>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">coord@mediterrani.cat</span>
-                  <code className="text-gray-900 font-mono">coord@mediterrani.cat</code>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">coord@lamarina.cat</span>
-                  <code className="text-gray-900 font-mono">coord@lamarina.cat</code>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">coord@lescorts.cat</span>
-                  <code className="text-gray-900 font-mono">coord@lescorts.cat</code>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">coord@santjordi.cat</span>
-                  <code className="text-gray-900 font-mono">coord@santjordi.cat</code>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">coord@gaudi.cat</span>
-                  <code className="text-gray-900 font-mono">coord@gaudi.cat</code>
-                </div>
-                <p className="text-xs text-gray-400 text-center mt-3 mb-1 font-semibold">Professors (fase execució):</p>
-                <div className="grid gap-1 text-xs">
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">jordi.lopez@elroure.cat</span>
-                    <code className="text-gray-900 font-mono">jordi.lopez@elroure.cat</code>
+
+                <div className="text-xs text-gray-500 font-semibold mt-2 mb-1">Coordinadors</div>
+                {[
+                  "coord@elroure.cat",
+                  "coord@mediterrani.cat",
+                  "coord@lamarina.cat",
+                  "coord@lescorts.cat",
+                  "coord@santjordi.cat",
+                  "coord@gaudi.cat",
+                ].map((c) => (
+                  <div key={c} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">{c}</span>
+                    <code className="text-gray-900 font-mono">{c}</code>
                   </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">marta.sanchez@elroure.cat</span>
-                    <code className="text-gray-900 font-mono">marta.sanchez@elroure.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">carles.prat@mediterrani.cat</span>
-                    <code className="text-gray-900 font-mono">carles.prat@mediterrani.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">nuria.camps@mediterrani.cat</span>
-                    <code className="text-gray-900 font-mono">nuria.camps@mediterrani.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">albert.riera@mediterrani.cat</span>
-                    <code className="text-gray-900 font-mono">albert.riera@mediterrani.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">elena.ruiz@lamarina.cat</span>
-                    <code className="text-gray-900 font-mono">elena.ruiz@lamarina.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">david.moreno@lamarina.cat</span>
-                    <code className="text-gray-900 font-mono">david.moreno@lamarina.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">cristina.valls@lescorts.cat</span>
-                    <code className="text-gray-900 font-mono">cristina.valls@lescorts.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">sergi.mas@lescorts.cat</span>
-                    <code className="text-gray-900 font-mono">sergi.mas@lescorts.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">rosa.blanc@santjordi.cat</span>
-                    <code className="text-gray-900 font-mono">rosa.blanc@santjordi.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">pau.vilar@santjordi.cat</span>
-                    <code className="text-gray-900 font-mono">pau.vilar@santjordi.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">gemma.rius@santjordi.cat</span>
-                    <code className="text-gray-900 font-mono">gemma.rius@santjordi.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">xavier.costa@gaudi.cat</span>
-                    <code className="text-gray-900 font-mono">xavier.costa@gaudi.cat</code>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">laia.pujol@gaudi.cat</span>
-                    <code className="text-gray-900 font-mono">laia.pujol@gaudi.cat</code>
-                  </div>
-                </div>
+                ))}
+
                 <p className="text-center text-gray-400 mt-2">
                   Contrasenya per a tots: <code className="font-mono text-gray-600">admin123</code>
                 </p>
               </div>
+
+              {/* Teachers: either shown only in EJECUCION with password 123, or always grouped above */}
+              {activePhase === "EJECUCION" ? (
+                <div className="mt-4">
+                  <p className="text-xs text-gray-400 text-center mt-3 mb-2 font-semibold">Professors (creats - fase EJECUCIÓ)</p>
+                  <div className="grid gap-1 text-xs">
+                    {[
+                      "jordi.lopez@elroure.cat",
+                      "marta.sanchez@elroure.cat",
+                      "carles.prat@mediterrani.cat",
+                      "nuria.camps@mediterrani.cat",
+                      "albert.riera@mediterrani.cat",
+                      "elena.ruiz@lamarina.cat",
+                      "david.moreno@lamarina.cat",
+                      "cristina.valls@lescorts.cat",
+                      "sergi.mas@lescorts.cat",
+                      "rosa.blanc@santjordi.cat",
+                      "pau.vilar@santjordi.cat",
+                      "gemma.rius@santjordi.cat",
+                      "xavier.costa@gaudi.cat",
+                      "laia.pujol@gaudi.cat",
+                    ].map((t) => (
+                      <div key={t} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                        <span className="text-gray-600">{t}</span>
+                        <code className="text-gray-900 font-mono">123</code>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-center text-gray-400 mt-2">En fase d'execució, les contrasenyes generades es mostraran aquí (per ara: <code className="font-mono">123</code>).</p>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <p className="text-xs text-gray-400 text-center mt-3 mb-2 font-semibold">Professors (visibles a execució)</p>
+                  <p className="text-center text-gray-400 text-xs">Els comptes de professors i les seves contrasenyes automàtiques es mostraran quan la fase arribi a <strong>EXECUCIÓ</strong>.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
