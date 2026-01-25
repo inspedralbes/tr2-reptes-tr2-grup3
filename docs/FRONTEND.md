@@ -2,7 +2,7 @@
 
 ## Visió General
 
-El frontend d'Enginy és una **Single Page Application (SPA)** construïda amb React 18 i Vite. Utilitza TailwindCSS per l'estilització i React Router per la navegació.
+El frontend d'Enginy és una **Single Page Application (SPA)** construïda amb React 19 i Vite. Utilitza TailwindCSS 4 per l'estilització i React Router 7 per la navegació.
 
 ## Estructura de Carpetes
 
@@ -144,7 +144,8 @@ frontend/src/
 | `/teacher` | TeacherDashboard | TEACHER | Dashboard professor |
 | `/teacher/students` | MyStudents | TEACHER | Els meus alumnes |
 | `/teacher/attendance/:sessionId` | WorkshopAttendance | TEACHER | Passar llista |
-| `/teacher/workshop/:editionId/evaluate` | WorkshopEvaluate | TEACHER | Avaluar taller |
+| `/center/student/:id/documents` | StudentDocuments | CENTER_COORD | Gestió documental |
+| `/center/survey` | SurveyResponse | CENTER_COORD | Enquestes satisfacció |
 
 ---
 

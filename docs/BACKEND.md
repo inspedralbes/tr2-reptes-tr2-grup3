@@ -295,20 +295,17 @@ try {
 
 ### Auth Module
 
-Gestiona autenticació JWT i login de professors.
+Gestiona autenticació JWT unificada per a usuaris i professors.
 
 ```javascript
 // POST /api/auth/login
-// Retorna token JWT per usuaris (admin, coordinadors)
-
-// POST /api/auth/teacher-login
-// Envia magic link per email als professors
+// Retorna token JWT.
+// 1. Cerca a taula 'users' (Admin, Coord).
+// 2. Si no troba, cerca a taula 'teachers'.
+// Body: { email, password }
 
 // GET /api/auth/me
-// Retorna dades de l'usuari autenticat
-
-// POST /api/auth/verify-token
-// Verifica token del magic link de professor
+// Retorna dades de l'usuari/professor autenticat
 ```
 
 ### Allocation Module
@@ -510,13 +507,12 @@ const sendEmail = async (to, subject, html) => {
   });
 };
 
-// Exemple: Magic link per professor
-const sendMagicLink = async (email, token) => {
-  const link = `${process.env.FRONTEND_URL}/auth/verify?token=${token}`;
+// Exemple: Enviament de credencials
+const sendCredentials = async (email, password) => {
   await sendEmail(
     email,
-    'Accés a Enginy',
-    `<p>Clica <a href="${link}">aquí</a> per accedir a Enginy.</p>`
+    'Benvingut a Enginy - Credencials d\'accés',
+    `<p>Les teves credencials són:</p><p>Email: ${email}</p><p>Contrasenya: ${password}</p>`
   );
 };
 ```

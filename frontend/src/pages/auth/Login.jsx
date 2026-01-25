@@ -144,41 +144,33 @@ const Login = () => {
                 </p>
               </div>
 
-              {/* Teachers: either shown only in EJECUCION with password 123, or always grouped above */}
-              {activePhase === "EJECUCION" ? (
-                <div className="mt-4">
-                  <p className="text-xs text-gray-400 text-center mt-3 mb-2 font-semibold">Professors (creats - fase EJECUCIÓ)</p>
-                  <div className="grid gap-1 text-xs">
-                    {[
-                      "jordi.lopez@elroure.cat",
-                      "marta.sanchez@elroure.cat",
-                      "carles.prat@mediterrani.cat",
-                      "nuria.camps@mediterrani.cat",
-                      "albert.riera@mediterrani.cat",
-                      "elena.ruiz@lamarina.cat",
-                      "david.moreno@lamarina.cat",
-                      "cristina.valls@lescorts.cat",
-                      "sergi.mas@lescorts.cat",
-                      "rosa.blanc@santjordi.cat",
-                      "pau.vilar@santjordi.cat",
-                      "gemma.rius@santjordi.cat",
-                      "xavier.costa@gaudi.cat",
-                      "laia.pujol@gaudi.cat",
-                    ].map((t) => (
-                      <div key={t} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                        <span className="text-gray-600">{t}</span>
-                        <code className="text-gray-900 font-mono">123</code>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-center text-gray-400 mt-2">En fase d'execució, les contrasenyes generades es mostraran aquí (per ara: <code className="font-mono">123</code>).</p>
+              <div className="mt-4">
+                <p className="text-xs text-gray-400 text-center mt-3 mb-2 font-semibold">Professors (comptes de prova)</p>
+                <div className="grid gap-1 text-xs">
+                  {[
+                    "jordi.lopez@elroure.cat",
+                    "marta.sanchez@elroure.cat",
+                    "carles.prat@mediterrani.cat",
+                    "nuria.camps@mediterrani.cat",
+                    "albert.riera@mediterrani.cat",
+                    "elena.ruiz@lamarina.cat",
+                    "david.moreno@lamarina.cat",
+                    "cristina.valls@lescorts.cat",
+                    "sergi.mas@lescorts.cat",
+                    "rosa.blanc@santjordi.cat",
+                    "pau.vilar@santjordi.cat",
+                    "gemma.rius@santjordi.cat",
+                    "xavier.costa@gaudi.cat",
+                    "laia.pujol@gaudi.cat",
+                  ].map((t) => (
+                    <div key={t} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                      <span className="text-gray-600">{t}</span>
+                      <code className="text-gray-900 font-mono">admin123</code>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="mt-4">
-                  <p className="text-xs text-gray-400 text-center mt-3 mb-2 font-semibold">Professors (visibles a execució)</p>
-                  <p className="text-center text-gray-400 text-xs">Els comptes de professors i les seves contrasenyes automàtiques es mostraran quan la fase arribi a <strong>EXECUCIÓ</strong>.</p>
-                </div>
-              )}
+                <p className="text-center text-gray-400 mt-2">Contrasenya per a tots: <code className="font-mono text-gray-600">admin123</code></p>
+              </div>
             </div>
           </div>
         </div>

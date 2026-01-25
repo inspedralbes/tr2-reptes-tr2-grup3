@@ -35,6 +35,7 @@
 ### Per a Coordinadors de Centre
 - 📝 Sol·licitar places per a tallers del catàleg
 - 👥 Gestionar alumnes i professors acompanyants
+- 📂 Pujada de documentació (autoritzacions, DNI)
 - 📊 Visualitzar assignacions obtingudes
 - ✅ Confirmar nominalment els alumnes
 
@@ -43,10 +44,11 @@
 - 📚 Administrar catàleg de tallers i proveïdors
 - ⚙️ Executar algoritme d'assignació
 - 📈 Monitoritzar sol·licituds i estadístiques
+- 📄 Validar documentació d'alumnes
 
 ### Per a Professors
 - 📋 Passar llista d'assistència
-- ⭐ Avaluar els tallers realitzats
+- ⭐ Avaluar competències i tallers
 - 👀 Veure els alumnes assignats
 
 ---
@@ -95,7 +97,7 @@ npm run dev
 |-----|-------|-------------|
 | Admin | admin@enginy.cat | admin123 |
 | Coordinador | coord@escola-mari.cat | admin123 |
-| Professor | maria.garcia@mail.com | (accés per email) |
+| Professor | jordi.lopez@elroure.cat | admin123 |
 
 ---
 
@@ -127,9 +129,9 @@ Tota la documentació detallada es troba a la carpeta [`/docs`](./docs/):
 </td>
 <td>
 
-- React 18 + Vite
-- TailwindCSS
-- React Router DOM
+- React 19 + Vite
+- TailwindCSS 4
+- React Router DOM 7
 - React Hot Toast
 - Lucide Icons
 
