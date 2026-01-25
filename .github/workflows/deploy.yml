@@ -150,8 +150,10 @@ jobs:
             echo "🔁 Ejecutando scripts de actualización de backend (update_schema_*.js)"
             for s in backend/update_schema_*.js; do
               if [ -f "$s" ]; then
-                echo "➡️ Running node $s inside backend container"
-                docker compose -f docker-compose.prod.yml exec -T backend node "$s" || true
+                BASENAME=$(basename "$s")
+                echo "➡️ Running node $BASENAME inside backend container (path: /app/$BASENAME)"
+                # En el contenedor backend el código está en /app, por eso ejecutamos /app/<basename>
+                docker compose -f docker-compose.prod.yml exec -T backend node "/app/$BASENAME" || true
               fi
             done
 
