@@ -9,10 +9,12 @@ const bcrypt = require('bcrypt');
 const emailService = require('../../common/services/EmailService');
 
 /**
- * Genera una contraseña aleatoria segura
+ * Genera la contraseña para cuentas de profesor en entornos de testing.
+ * Para facilitar pruebas, devolvemos '123' tal y como solicitó el equipo.
+ * Si se quiere volver al comportamiento aleatorio, restaurar la implementación anterior.
  */
 const generatePassword = () => {
-  return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4);
+  return '123';
 };
 
 /**

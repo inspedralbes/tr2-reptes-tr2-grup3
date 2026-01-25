@@ -415,7 +415,9 @@ const sendCredentials = async (req, res) => {
 
     // 2. Comprovar si té usuari
     let userId = teacher.user_id;
-    let generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-2); // Random ~10 chars
+    // For testing we set a deterministic password so it's easier to access accounts
+    // DO NOT use in production. Password set to '123' as requested.
+    let generatedPassword = '123';
 
     // Si NO tiene usuario, CREARLO
     if (!userId) {
@@ -448,13 +450,18 @@ const sendCredentials = async (req, res) => {
 
     // 3. Enviar Email
     const emailService = require('../../common/services/EmailService');
-    const sent = await emailService.sendTeacherCredentials(teacher.email, generatedPassword, teacher.full_name);
+      // Optionally send email. For testing we can skip sending (password is known).
+      let sent = { success: true };
+      try {
+        sent = await emailService.sendTeacherCredentials(teacher.email, generatedPassword, teacher.full_name);
+      } catch (e) {
+        // If email fails, we still return success because password is deterministic for testing
+        console.warn('Email send failed (testing):', e.message || e);
+        sent = { success: false };
+      }
 
-    if (sent) {
-      res.json({ message: "Credencials enviades correctament" });
-    } else {
-      res.status(500).json({ error: "Error enviant el correu" });
-    }
+    // Return the password so UI or caller can display it when appropriate (only for testing)
+    res.json({ message: "Credencials generades", password: generatedPassword, email_sent: !!sent.success });
 
   } catch (error) {
     res.status(500).json({ error: `Error enviant credencials: ${error.message}` });
