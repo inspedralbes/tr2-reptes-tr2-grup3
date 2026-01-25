@@ -92,10 +92,10 @@ const Login = () => {
 
             <LoginForm onSubmit={handleSubmit} loading={loading} />
 
-            {/* Test credentials */}
+            {/* Test credentials: admin, coordinadores y profesores */}
             <div className="mt-6 pt-6 border-t border-gray-100">
               <p className="text-xs text-gray-400 text-center mb-3 uppercase tracking-wider font-semibold">
-                Usuaris de prova
+                Usuaris de prova (totes les fases)
               </p>
               <div className="grid gap-2 text-xs">
                 <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
@@ -103,15 +103,90 @@ const Login = () => {
                   <code className="text-gray-900 font-mono">admin@enginy.cat</code>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">Coordinador:</span>
-                  <code className="text-gray-900 font-mono">coord1@baixeras.cat</code>
+                  <span className="text-gray-600">Coordinadors:</span>
+                  <code className="text-gray-900 font-mono">coord@elroure.cat</code>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">Professor:</span>
-                  <code className="text-gray-900 font-mono">jordi.lopez@baixeras.cat</code>
+                  <span className="text-gray-600">coord@mediterrani.cat</span>
+                  <code className="text-gray-900 font-mono">coord@mediterrani.cat</code>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">coord@lamarina.cat</span>
+                  <code className="text-gray-900 font-mono">coord@lamarina.cat</code>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">coord@lescorts.cat</span>
+                  <code className="text-gray-900 font-mono">coord@lescorts.cat</code>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">coord@santjordi.cat</span>
+                  <code className="text-gray-900 font-mono">coord@santjordi.cat</code>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">coord@gaudi.cat</span>
+                  <code className="text-gray-900 font-mono">coord@gaudi.cat</code>
+                </div>
+                <p className="text-xs text-gray-400 text-center mt-3 mb-1 font-semibold">Professors (fase execució):</p>
+                <div className="grid gap-1 text-xs">
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">jordi.lopez@elroure.cat</span>
+                    <code className="text-gray-900 font-mono">jordi.lopez@elroure.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">marta.sanchez@elroure.cat</span>
+                    <code className="text-gray-900 font-mono">marta.sanchez@elroure.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">carles.prat@mediterrani.cat</span>
+                    <code className="text-gray-900 font-mono">carles.prat@mediterrani.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">nuria.camps@mediterrani.cat</span>
+                    <code className="text-gray-900 font-mono">nuria.camps@mediterrani.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">albert.riera@mediterrani.cat</span>
+                    <code className="text-gray-900 font-mono">albert.riera@mediterrani.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">elena.ruiz@lamarina.cat</span>
+                    <code className="text-gray-900 font-mono">elena.ruiz@lamarina.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">david.moreno@lamarina.cat</span>
+                    <code className="text-gray-900 font-mono">david.moreno@lamarina.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">cristina.valls@lescorts.cat</span>
+                    <code className="text-gray-900 font-mono">cristina.valls@lescorts.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">sergi.mas@lescorts.cat</span>
+                    <code className="text-gray-900 font-mono">sergi.mas@lescorts.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">rosa.blanc@santjordi.cat</span>
+                    <code className="text-gray-900 font-mono">rosa.blanc@santjordi.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">pau.vilar@santjordi.cat</span>
+                    <code className="text-gray-900 font-mono">pau.vilar@santjordi.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">gemma.rius@santjordi.cat</span>
+                    <code className="text-gray-900 font-mono">gemma.rius@santjordi.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">xavier.costa@gaudi.cat</span>
+                    <code className="text-gray-900 font-mono">xavier.costa@gaudi.cat</code>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                    <span className="text-gray-600">laia.pujol@gaudi.cat</span>
+                    <code className="text-gray-900 font-mono">laia.pujol@gaudi.cat</code>
+                  </div>
                 </div>
                 <p className="text-center text-gray-400 mt-2">
-                  Contrasenya: <code className="font-mono text-gray-600">admin123</code>
+                  Contrasenya per a tots: <code className="font-mono text-gray-600">admin123</code>
                 </p>
               </div>
             </div>

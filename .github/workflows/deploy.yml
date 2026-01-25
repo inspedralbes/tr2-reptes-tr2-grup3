@@ -138,7 +138,11 @@ jobs:
             echo "📊 Service status:"
             docker compose -f docker-compose.prod.yml ps
 
-            # 7. Limpiar
+            # 7. Resetear y poblar la base de datos con datos de testing
+            echo "🗑️ Borrando estado actual de la base de datos y cargando datos de testing..."
+            docker compose -f docker-compose.prod.yml exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < database/seed/insert.sql
+
+            # 8. Limpiar
             echo "🧹 Cleaning up..."
             docker image prune -f
 
