@@ -138,11 +138,29 @@ jobs:
             echo "📊 Service status:"
             docker compose -f docker-compose.prod.yml ps
 
-            # 7. Resetear y poblar la base de datos con datos de testing
-            echo "🗑️ Borrando estado actual de la base de datos y cargando datos de testing..."
-            docker compose -f docker-compose.prod.yml exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < database/seed/insert.sql
+            # 7. Ejecutar migraciones SQL y scripts de actualización antes del seed
+            echo "🔁 Ejecutando migraciones SQL desde database/migrations/..."
+            for f in database/migrations/*.sql; do
+              if [ -f "$f" ]; then
+                echo "➡️ Running $f"
+                docker compose -f docker-compose.prod.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$f" || true
+              fi
+            done
 
-            # 8. Limpiar
+            echo "🔁 Ejecutando scripts de actualización de backend (update_schema_*.js)"
+            for s in backend/update_schema_*.js; do
+              if [ -f "$s" ]; then
+                echo "➡️ Running node $s inside backend container"
+                docker compose -f docker-compose.prod.yml exec -T backend node "$s" || true
+              fi
+            done
+
+            # 8. Resetear y poblar la base de datos con datos de testing
+            echo "🗑️ Borrando estado actual de la base de datos y cargando datos de testing..."
+            # Ejecutar seed tras aplicar migraciones (si hay errores, se registrarán)
+            docker compose -f docker-compose.prod.yml exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" < database/seed/insert.sql || true
+
+            # 9. Limpiar
             echo "🧹 Cleaning up..."
             docker image prune -f
 
