@@ -14,7 +14,7 @@ const emailService = require('../../common/services/EmailService');
  * Si se quiere volver al comportamiento aleatorio, restaurar la implementación anterior.
  */
 const generatePassword = () => {
-  return '123';
+  return 'admin123';
 };
 
 /**

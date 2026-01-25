@@ -416,8 +416,8 @@ const sendCredentials = async (req, res) => {
     // 2. Comprovar si té usuari
     let userId = teacher.user_id;
     // For testing we set a deterministic password so it's easier to access accounts
-    // DO NOT use in production. Password set to '123' as requested.
-    let generatedPassword = '123';
+    // DO NOT use in production. Password set to 'admin123' as requested.
+    let generatedPassword = 'admin123';
 
     // Si NO tiene usuario, CREARLO
     if (!userId) {
