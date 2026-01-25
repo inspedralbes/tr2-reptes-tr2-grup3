@@ -32,7 +32,9 @@ client.interceptors.response.use(
     ) {
       localStorage.removeItem("enginy_token");
       localStorage.removeItem("enginy_user");
-      window.location.href = "/login";
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
