@@ -124,10 +124,16 @@ jobs:
             EOF
 
             # 4. Build de imágenes
-            echo "🔨 Building Docker images..."
+            echo "🔨 Building Docker imágenes..."
             docker compose -f docker-compose.prod.yml build
 
-            # 5. Iniciar servicios
+            # 5. Forzar re-inicialización de la base de datos (opcional)
+            # WARNING: Esto eliminará el volumen de datos declarado en la compose
+            # y por tanto borrará todas las tablas y datos actuales.
+            echo "🧨 Removing DB volumes to force init.sql re-run (this WILL erase DB data)..."
+            docker compose -f docker-compose.prod.yml down -v --remove-orphans || true
+
+            # 6. Iniciar servicios (limpios)
             echo "🐳 Starting services..."
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
